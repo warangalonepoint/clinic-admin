@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Clinic Admin Login</title>
+  <link rel="manifest" href="manifest.json" />
+  <style>
+    body {
+      background: #000;
+      color: #fff;
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    input[type="password"] {
+      padding: 10px;
+      font-size: 20px;
+      width: 200px;
+      margin-bottom: 10px;
+      border-radius: 10px;
+      border: none;
+      text-align: center;
+    }
+    button {
+      padding: 10px 20px;
+      background: #1f80e0;
+      color: white;
+      border: none;
+      font-size: 16px;
+      border-radius: 10px;
+    }
+    .error {
+      color: red;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Admin Access</h2>
+  <input type="password" id="pin" placeholder="Enter PIN" maxlength="4" />
+  <button onclick="checkPIN()">Login</button>
+  <div id="msg" class="error"></div>
+
+  <script>
+    const defaultPIN = localStorage.getItem('adminPIN') || "2525";
+    function checkPIN() {
+      const pin = document.getElementById('pin').value;
+      if (pin === defaultPIN) {
+        window.location.href = "dashboard.html";
+      } else {
+        document.getElementById('msg').textContent = "Invalid PIN. Try again.";
+      }
+    }
+
+    document.getElementById('pin').addEventListener('keyup', function(e) {
+      if (e.key === "Enter") checkPIN();
+    });
+  </script>
+</body>
+</html>
