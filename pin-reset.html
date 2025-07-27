@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Reset Admin PIN</title>
+  <style>
+    body {
+      background-color: #000;
+      color: #fff;
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    input {
+      margin: 10px;
+      padding: 10px;
+      font-size: 18px;
+      border-radius: 8px;
+      border: none;
+      text-align: center;
+    }
+    button {
+      padding: 10px 20px;
+      background-color: #1f80e0;
+      color: white;
+      border: none;
+      font-size: 16px;
+      border-radius: 10px;
+      margin-top: 10px;
+    }
+    .message {
+      margin-top: 15px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Reset PIN (Admin Only)</h2>
+  <input type="password" id="current" placeholder="Current PIN" />
+  <input type="password" id="newpin" placeholder="New PIN" />
+  <input type="password" id="confirm" placeholder="Confirm New PIN" />
+  <button onclick="resetPIN()">Update PIN</button>
+  <div class="message" id="msg"></div>
+
+  <script>
+    let storedPIN = localStorage.getItem("adminPIN") || "2525";
+
+    function resetPIN() {
+      const current = document.getElementById('current').value;
+      const newpin = document.getElementById('newpin').value;
+      const confirm = document.getElementById('confirm').value;
+      const msg = document.getElementById('msg');
+
+      if (current !== storedPIN) {
+        msg.textContent = "❌ Incorrect current PIN.";
+        msg.style.color = 'red';
+        return;
+      }
+
+      if (newpin !== confirm || newpin.length !== 4) {
+        msg.textContent = "❌ PINs don’t match or not 4 digits.";
+        msg.style.color = 'red';
+        return;
+      }
+
+      localStorage.setItem("adminPIN", newpin);
+      msg.textContent = "✅ PIN updated successfully.";
+      msg.style.color = 'lightgreen';
+    }
+  </script>
+</body>
+</html>
