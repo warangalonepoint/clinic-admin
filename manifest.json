@@ -1,16 +1,17 @@
 {
-  "name": "Clinic Admin App",
-  "short_name": "ClinicAdmin",
+  "name": "Warangal OneStop Clinic",
+  "short_name": "WOS Clinic",
   "start_url": "index.html",
   "display": "standalone",
   "background_color": "#000000",
-  "theme_color": "#1f80e0",
+  "theme_color": "#ff6a00",
   "orientation": "portrait",
   "icons": [
     {
       "src": "logo.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
