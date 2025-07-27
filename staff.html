@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Staff Attendance</title>
+  <style>
+    body {
+      background-color: #111;
+      color: white;
+      font-family: sans-serif;
+      padding: 20px;
+    }
+    h2 {
+      color: #1f80e0;
+    }
+    .staff {
+      background-color: #222;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+    }
+    select {
+      margin-top: 5px;
+      padding: 5px;
+      border-radius: 6px;
+    }
+    a.whatsapp {
+      display: inline-block;
+      margin-top: 8px;
+      background: green;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 6px;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <h2>👨‍⚕️ Staff Panel</h2>
+  <div id="staffList"></div>
+
+  <script>
+    const staff = [
+      { name: "Anil", role: "Reception", phone: "9390664001" },
+      { name: "Meena", role: "Nurse", phone: "9390664002" },
+      { name: "Dr. Ravi", role: "Doctor", phone: "9390664003" }
+    ];
+
+    function loadStaff() {
+      const container = document.getElementById("staffList");
+      container.innerHTML = "";
+      staff.forEach((s, index) => {
+        container.innerHTML += `
+          <div class="staff">
+            <strong>${s.name}</strong><br>
+            Current Role: 
+            <select onchange="updateRole(${index}, this.value)">
+              <option ${s.role === 'Doctor' ? 'selected' : ''}>Doctor</option>
+              <option ${s.role === 'Reception' ? 'selected' : ''}>Reception</option>
+              <option ${s.role === 'Nurse' ? 'selected' : ''}>Nurse</option>
+              <option ${s.role === 'Lab' ? 'selected' : ''}>Lab</option>
+              <option ${s.role === 'Pharmacy' ? 'selected' : ''}>Pharmacy</option>
+            </select><br>
+            <a class="whatsapp" href="https://wa.me/91${s.phone}" target="_blank">WhatsApp ${s.name}</a>
+          </div>
+        `;
+      });
+    }
+
+    function updateRole(index, newRole) {
+      staff[index].role = newRole;
+      alert(`${staff[index].name}'s role updated to ${newRole}`);
+    }
+
+    loadStaff();
+  </script>
+</body>
+</html>
