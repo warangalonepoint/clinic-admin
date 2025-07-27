@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      background: #000;
+      color: #fff;
+      font-family: sans-serif;
+      padding: 20px;
+    }
+    h2 {
+      color: #1f80e0;
+    }
+    a {
+      display: inline-block;
+      margin: 10px 0;
+      padding: 10px 20px;
+      background: #1f80e0;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+    }
+    canvas {
+      background: #111;
+      padding: 10px;
+      border-radius: 12px;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h2>📋 Dashboard</h2>
+  <a href="bookings.html">📅 Bookings</a>
+  <a href="staff.html">👨‍⚕️ Staff</a>
+  <a href="sync.html">🔄 Sync</a>
+  <a href="backup.html">💾 Backup</a>
+  <a href="pin-reset.html">🔐 Reset PIN</a>
+
+  <h3 style="margin-top:30px;">📊 Appointment Analytics</h3>
+  <canvas id="appointmentsChart" width="350" height="200"></canvas>
+
+  <script>
+    const ctx = document.getElementById('appointmentsChart');
+    const chart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['9AM', '10AM', '11AM', '12PM', '5PM', '6PM', '7PM', '8PM'],
+        datasets: [{
+          label: 'Appointments by Hour',
+          data: [3, 7, 5, 2, 4, 6, 8, 1],
+          backgroundColor: '#1f80e0'
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { color: 'white' },
+            grid: { color: '#333' }
+          },
+          x: {
+            ticks: { color: 'white' },
+            grid: { color: '#333' }
+          }
+        },
+        plugins: {
+          legend: { labels: { color: 'white' } }
+        }
+      }
+    });
+  </script>
+</body>
+</html>
