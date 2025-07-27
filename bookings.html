@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Appointments</title>
+  <style>
+    body {
+      background-color: #111;
+      color: white;
+      font-family: sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+    h2 {
+      color: #1f80e0;
+    }
+    .search-bar, .filters {
+      margin-bottom: 10px;
+    }
+    input, select {
+      padding: 8px;
+      margin: 5px;
+      border-radius: 8px;
+      border: none;
+    }
+    .appointment {
+      background: #222;
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 10px;
+    }
+    .note {
+      background-color: #333;
+      color: #ccc;
+      padding: 8px;
+      margin-top: 5px;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Appointment History</h2>
+  <div class="search-bar">
+    <input type="text" id="search" placeholder="Search by name or phone" onkeyup="filterAppointments()" />
+  </div>
+  <div class="filters">
+    <select id="statusFilter" onchange="filterAppointments()">
+      <option value="">All Status</option>
+      <option value="Pending">Pending</option>
+      <option value="Checked-in">Checked-in</option>
+      <option value="Completed">Completed</option>
+    </select>
+    <select id="doctorFilter" onchange="filterAppointments()">
+      <option value="">All Doctors</option>
+      <option value="Dr. A">Dr. A</option>
+      <option value="Dr. B">Dr. B</option>
+    </select>
+  </div>
+  <div id="appointments"></div>
+
+  <script>
+    const appointments = [
+      { name: "Ravi", phone: "9390660000", status: "Pending", doctor: "Dr. A", note: "BP Check last visit" },
+      { name: "Priya", phone: "9390661111", status: "Completed", doctor: "Dr. B", note: "Diabetic follow-up" },
+      { name: "Ahmed", phone: "9390662222", status: "Checked-in", doctor: "Dr. A", note: "Prescription renewal" },
+    ];
+
+    function filterAppointments() {
+      const keyword = document.getElementById('search').value.toLowerCase();
+      const status = document.getElementById('statusFilter').value;
+      const doctor = document.getElementById('doctorFilter').value;
+
+      const filtered = appointments.filter(app => {
+        return (
+          (app.name.toLowerCase().includes(keyword) || app.phone.includes(keyword)) &&
+          (status === "" || app.status === status) &&
+          (doctor === "" || app.doctor === doctor)
+        );
+      });
+      renderAppointments(filtered);
+    }
+
+    function renderAppointments(data) {
+      const container = document.getElementById('appointments');
+      container.innerHTML = '';
+      data.forEach(app => {
+        container.innerHTML += `
+          <div class="appointment">
+            <strong>${app.name}</strong> (${app.phone})<br>
+            Status: ${app.status}<br>
+            Doctor: ${app.doctor}<br>
+            <div class="note">Note: ${app.note}</div>
+          </div>
+        `;
+      });
+    }
+
+    filterAppointments();
+  </script>
+</body>
+</html>
