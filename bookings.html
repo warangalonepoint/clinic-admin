@@ -69,9 +69,10 @@
 
       rows.forEach(row => {
         const cols = row.split(",");
-        const time = cols[1];
-        const status = (cols[2] || "").trim();
-        if (status.toLowerCase() === "available") {
+        const time = cols[1]?.replace(/"/g, "").trim();    
+        const status = cols[2]?.replace(/"/g, "").trim().toLowerCase(); 
+
+        if (status === "available") {
           const option = document.createElement("option");
           option.value = time;
           option.textContent = time;
@@ -91,7 +92,6 @@
         return;
       }
 
-      // Your working form link
       const formBase = "https://docs.google.com/forms/d/e/1FAIpQLSfRgG6j30W1L1cfjTLvSnKYoGpBYey4JwE1W9XDlzh2sQPVjw/viewform?usp=pp_url&entry.1999716804=";
       const redirectUrl = formBase + encodeURIComponent(selected);
       window.open(redirectUrl, "_blank");
