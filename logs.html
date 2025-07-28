@@ -1,0 +1,107 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Clinic Booking Logs</title>
+  <style>
+    body {
+      background-color: #000;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    h1 {
+      color: #00e6e6;
+      text-align: center;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      padding: 10px;
+      text-align: left;
+      border-bottom: 1px solid #444;
+    }
+    th {
+      background-color: #111;
+      color: #00c2c2;
+    }
+    tr:hover {
+      background-color: #222;
+    }
+    #downloadBtn {
+      margin-top: 20px;
+      background-color: #00e6b8;
+      color: #000;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 10px;
+      font-weight: bold;
+      cursor: pointer;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>Daily Booking Logs</h1>
+  <table id="logTable">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Time Slot</th>
+        <th>Patient Name</th>
+        <th>Reason</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td colspan="4">Loading...</td></tr>
+    </tbody>
+  </table><button id="downloadBtn" onclick="downloadCSV()">Export to CSV</button>
+
+  <script>
+    const sheetCSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQyTuU2qw0Yxk6GKRdpbzWtoYcKJy2nfVcq294q0aSpyCsntFJ01FKjigBAesiC7g8cCbEK_lUWVdr/pub?gid=2111801909&single=true&output=csv";
+
+    async function loadLogs() {
+      const res = await fetch(sheetCSV);
+      const text = await res.text();
+      const rows = text.trim().split('\n').slice(1); // skip header
+
+      const tbody = document.querySelector("#logTable tbody");
+      tbody.innerHTML = "";
+      rows.forEach(row => {
+        const [date, time, name, reason] = row.split(",");
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${formatDate(date)}</td><td>${formatTime(time)}</td><td>${name}</td><td>${reason || '-'}</td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function formatDate(dateStr) {
+      const [y, m, d] = dateStr.split("-");
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      return `${parseInt(d)} ${months[parseInt(m)-1]} ${y}`;
+    }
+
+    function formatTime(timeStr) {
+      if (!timeStr) return "";
+      const [h, m] = timeStr.split(":");
+      const hour = parseInt(h);
+      const suffix = hour >= 12 ? "PM" : "AM";
+      const displayHour = hour % 12 || 12;
+      return `${displayHour}:${m} ${suffix}`;
+    }
+
+    function downloadCSV() {
+      const a = document.createElement('a');
+      a.href = sheetCSV;
+      a.download = "booking_logs.csv";
+      a.click();
+    }
+
+    loadLogs();
+  </script></body>
+</html>
