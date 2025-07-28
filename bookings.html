@@ -59,14 +59,13 @@
   <div id="status"></div>
 
   <script>
-    const publicSheetURL = "https://docs.google.com/spreadsheets/d/1jG38gTpE2YbubT5JcIAiklB_Ua0utCZW/edit?usp=sharing";
+    const publicSheetURL = "https://docs.google.com/spreadsheets/d/1Sby5FqvmSEGQcId106sz-MLJF1nlwarbfEVMMSIKM74/edit?usp=sharing";
     const formBase = "https://docs.google.com/forms/d/e/1FAIpQLSfRgG6j30W1L1cfjTLvSnKYoGpBYey4JwE1W9XDlzh2sQPVjw/viewform?usp=pp_url&entry.1999716804=";
 
     function init() {
       Tabletop.init({
         key: publicSheetURL,
         simpleSheet: true,
-        wanted: ["Today"],
         callback: function(data) {
           const dropdown = document.getElementById("slot");
           dropdown.innerHTML = `<option value="">-- Select an Available Slot --</option>`;
