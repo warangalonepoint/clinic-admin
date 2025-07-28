@@ -6,155 +6,110 @@
   <title>Clinic Booking</title>
   <style>
     body {
-      background-color: #000;
-      font-family: Arial, sans-serif;
+      background: #000;
       color: #fff;
+      font-family: Arial, sans-serif;
       padding: 20px;
       text-align: center;
     }
     h1 {
-      color: #00e6e6;
-      font-size: 26px;
-    }
-    label {
-      font-size: 18px;
-      color: #00c2c2;
-      margin: 15px 0 5px;
-      display: block;
+      color: #00ffc8;
     }
     select, input, button {
-      width: 90%;
-      max-width: 400px;
-      padding: 12px;
-      margin-top: 10px;
       font-size: 16px;
-      border-radius: 10px;
-      border: none;
+      margin: 10px;
+      padding: 10px;
+      width: 80%;
+      max-width: 400px;
     }
-    button {
-      background-color: #00e6b8;
-      color: #000;
+    .status {
+      margin-top: 10px;
       font-weight: bold;
-      margin-top: 20px;
     }
-    select:disabled {
-      background-color: #555;
-      color: #999;
+    .status.success {
+      color: #00ff80;
+    }
+    .status.error {
+      color: #ff4d4d;
     }
   </style>
 </head>
 <body>
+  <h1>Book Your Appointment</h1>
 
-  <h1>Warangal Onestop Clinic Booking</h1>
+  <select id="slotSelect">
+    <option disabled selected>Loading available slots...</option>
+  </select><br>
 
-  <label for="dateSelect">Select Date:</label>
-  <select id="dateSelect">
-    <option>Loading dates...</option>
-  </select>
+  <input type="text" id="patientName" placeholder="Your Name" required><br>
+  <input type="text" id="reason" placeholder="Reason for Visit (optional)"><br>
 
-  <label for="timeSlotSelect">Select Time Slot:</label>
-  <select id="timeSlotSelect" disabled>
-    <option>Select a date first</option>
-  </select>
+  <button onclick="checkAndBook()">Confirm & Book</button>
 
-  <label for="patientName">Enter Patient Name:</label>
-  <input type="text" id="patientName" placeholder="Enter Patient Name" required>
-
-  <label for="reason">Reason for Visit <span style="color:gray">(optional)</span>:</label>
-  <input type="text" id="reason" placeholder="Type reason (optional)" />
-
-  <button onclick="submitBooking()">Continue to Book</button>
+  <div class="status" id="statusMsg"></div>
 
   <script>
-    const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQyTuU2qw0Yxk6GKRdpbzWtoYcKJy2nfVcq294q0aSpyCsntFJ01FKjigBAesiC7g8cCbEK_lUWVdr/pub?gid=1762577234&single=true&output=csv";
-    const googleFormURL = "https://docs.google.com/forms/d/e/1FAIpQLSe_dyiHzDLItC6EFmKfWZXv5RXtkkewWCIu6ZBTik37jkUBVg/formResponse";
+    const sheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQQyTuU2qw0Yxk6GKRdpbzWtoYcKJy2nfVcq294q0aSpyCsntFJ01FKjigBAesiC7g8cCbEK_lUWVdr/pub?gid=0&single=true&output=csv';
+    let slots = [];
 
-    const dateSelect = document.getElementById('dateSelect');
-    const timeSlotSelect = document.getElementById('timeSlotSelect');
-    const patientNameInput = document.getElementById('patientName');
-    const reasonInput = document.getElementById('reason');
-
-    let slotData = [];
-
-    async function loadCSV() {
-      const res = await fetch(csvUrl);
+    async function loadSlots() {
+      const res = await fetch(sheetURL);
       const text = await res.text();
-      const rows = text.trim().split('\n').slice(1);
-      const data = rows.map(row => {
-        const [date, time, status] = row.split(',').map(s => s.trim());
-        return { date, time, status };
-      }).filter(slot => slot.status.toLowerCase() === 'available');
+      const rows = text.trim().split('\n').slice(1).map(row => row.split(','));
 
-      slotData = data;
+      slots = rows.filter(r => r[2]?.toLowerCase() === 'available');
 
-      const uniqueDates = [...new Set(data.map(d => d.date))];
-      dateSelect.innerHTML = '<option disabled selected>Select a date</option>' + 
-        uniqueDates.map(d => `<option value="${d}">${formatDate(d)}</option>`).join('');
-    }
+      const slotSelect = document.getElementById('slotSelect');
+      slotSelect.innerHTML = '';
 
-    dateSelect.addEventListener('change', () => {
-      const selectedDate = dateSelect.value;
-      const filteredSlots = slotData.filter(slot => slot.date === selectedDate);
-      
-      timeSlotSelect.disabled = false;
-      timeSlotSelect.innerHTML = '<option disabled selected>Select a time slot</option>' +
-        filteredSlots.map(slot => `<option value="${slot.time}">${formatTime(slot.time)}</option>`).join('');
-    });
-
-    function formatDate(dateStr) {
-      const parts = dateStr.split(/[-\/\s]/);
-      let d, m, y;
-      if (parts[0].length === 4) [y, m, d] = parts;
-      else if (parts[2].length === 4) [d, m, y] = parts;
-      else return dateStr;
-
-      const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-      const monthName = monthNames[parseInt(m, 10) - 1] || m;
-      return `${parseInt(d)} ${monthName} ${y}`;
-    }
-
-    function formatTime(timeStr) {
-      const match = timeStr.replace(/\s+/g, '').match(/^(\d{1,2}):(\d{2})(AM|PM)?$/i);
-      if (!match) return timeStr;
-      let [, hourStr, minStr, meridian] = match;
-      let hour = parseInt(hourStr);
-      if (!meridian) {
-        meridian = hour >= 12 ? "PM" : "AM";
-        if (hour > 12) hour -= 12;
-      }
-      return `${hour}:${minStr} ${meridian.toUpperCase()}`;
-    }
-
-    function submitBooking() {
-      const date = dateSelect.value;
-      const time = timeSlotSelect.value;
-      const name = patientNameInput.value.trim();
-      const reason = reasonInput.value.trim();
-
-      if (!date || !time || !name) {
-        alert("Please fill all required fields.");
+      if (slots.length === 0) {
+        slotSelect.innerHTML = '<option>No available slots</option>';
         return;
       }
 
-      const formData = new FormData();
-      formData.append("entry.1980537005", date); // Date
-      formData.append("entry.866095998", time); // Time Slot
-      formData.append("entry.855658739", name); // Name
-      formData.append("entry.928964258", reason); // Reason
-
-      fetch(googleFormURL, {
-        method: "POST",
-        mode: "no-cors",
-        body: formData
-      }).then(() => {
-        const msg = `Hi, I booked an appointment on ${formatDate(date)} at ${formatTime(time)} for ${name}.${reason ? ' Reason: ' + reason : ''}`;
-        const whatsappLink = `https://wa.me/919390664577?text=${encodeURIComponent(msg)}`;
-        window.open(whatsappLink, "_blank");
+      slots.forEach(([date, time]) => {
+        const option = document.createElement('option');
+        option.value = `${date} ${time}`;
+        option.textContent = `${date} - ${time}`;
+        slotSelect.appendChild(option);
       });
     }
 
-    loadCSV();
-  </script>
+    async function checkAndBook() {
+      const name = document.getElementById('patientName').value.trim();
+      const reason = document.getElementById('reason').value.trim();
+      const slotVal = document.getElementById('slotSelect').value;
+      const statusMsg = document.getElementById('statusMsg');
+      statusMsg.textContent = '';
+      statusMsg.className = 'status';
 
+      if (!slotVal || !name) {
+        statusMsg.textContent = 'Please fill all required fields.';
+        statusMsg.classList.add('error');
+        return;
+      }
+
+      const [selectedDate, selectedTime] = slotVal.split(' - ');
+      await loadSlots();
+      const isStillAvailable = slots.some(([date, time]) =>
+        `${date} ${time}` === slotVal && time
+      );
+
+      if (!isStillAvailable) {
+        statusMsg.textContent = 'Slot no longer available. Please refresh.';
+        statusMsg.classList.add('error');
+        return;
+      }
+
+      statusMsg.textContent = 'Slot confirmed. Redirecting...';
+      statusMsg.classList.add('success');
+
+      const message = `Hello, I would like to book an appointment.\n\n📅 Date: ${selectedDate}\n⏰ Time: ${selectedTime}\n👤 Name: ${name}\n📝 Reason: ${reason || 'Not specified'}`;
+      const encoded = encodeURIComponent(message);
+      window.location.href = `https://wa.me/919390664577?text=${encoded}`;
+    }
+
+    loadSlots();
+  </script>
 </body>
 </html>
