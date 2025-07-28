@@ -12,19 +12,16 @@
       padding: 20px;
       text-align: center;
     }
-
     h1 {
       color: #00e6e6;
       font-size: 26px;
     }
-
     label {
       font-size: 18px;
       color: #00c2c2;
       margin: 15px 0 5px;
       display: block;
     }
-
     select, input, button {
       width: 90%;
       max-width: 400px;
@@ -34,31 +31,15 @@
       border-radius: 10px;
       border: none;
     }
-
     button {
       background-color: #00e6b8;
       color: #000;
       font-weight: bold;
       margin-top: 20px;
     }
-
     select:disabled {
       background-color: #555;
       color: #999;
-    }
-
-    #confirmationBox {
-      display: none;
-      background-color: #111;
-      padding: 20px;
-      margin-top: 20px;
-      border-radius: 10px;
-      border: 1px solid #00e6e6;
-    }
-
-    .confirm-line {
-      margin: 10px 0;
-      font-size: 16px;
     }
   </style>
 </head>
@@ -76,33 +57,22 @@
     <option>Select a date first</option>
   </select>
 
-  <input type="text" id="patientName" placeholder="Enter Patient Name" required />
-  
-  <label for="reasonInput">Reason for Visit <span style="color:#999;">(optional)</span>:</label>
-  <input type="text" id="reasonInput" placeholder="Type reason (optional)" />
+  <label for="patientName">Enter Patient Name:</label>
+  <input type="text" id="patientName" placeholder="Enter Patient Name" required>
 
-  <button onclick="showConfirmation()">Continue to Book</button>
+  <label for="reason">Reason for Visit <span style="color:gray">(optional)</span>:</label>
+  <input type="text" id="reason" placeholder="Type reason (optional)" />
 
-  <div id="confirmationBox">
-    <div class="confirm-line" id="confirmDate"></div>
-    <div class="confirm-line" id="confirmTime"></div>
-    <div class="confirm-line" id="confirmName"></div>
-    <div class="confirm-line" id="confirmReason"></div>
-    <button onclick="sendWhatsApp()">Confirm & Continue</button>
-  </div>
+  <button onclick="submitBooking()">Continue to Book</button>
 
   <script>
     const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQyTuU2qw0Yxk6GKRdpbzWtoYcKJy2nfVcq294q0aSpyCsntFJ01FKjigBAesiC7g8cCbEK_lUWVdr/pub?gid=1762577234&single=true&output=csv";
+    const googleFormURL = "https://docs.google.com/forms/d/e/1FAIpQLSe_dyiHzDLItC6EFmKfWZXv5RXtkkewWCIu6ZBTik37jkUBVg/formResponse";
 
     const dateSelect = document.getElementById('dateSelect');
     const timeSlotSelect = document.getElementById('timeSlotSelect');
-    const patientName = document.getElementById('patientName');
-    const reasonInput = document.getElementById('reasonInput');
-    const confirmationBox = document.getElementById('confirmationBox');
-    const confirmDate = document.getElementById('confirmDate');
-    const confirmTime = document.getElementById('confirmTime');
-    const confirmName = document.getElementById('confirmName');
-    const confirmReason = document.getElementById('confirmReason');
+    const patientNameInput = document.getElementById('patientName');
+    const reasonInput = document.getElementById('reason');
 
     let slotData = [];
 
@@ -113,7 +83,7 @@
       const data = rows.map(row => {
         const [date, time, status] = row.split(',').map(s => s.trim());
         return { date, time, status };
-      }).filter(slot => slot.status && slot.status.trim().toLowerCase() === 'available');
+      }).filter(slot => slot.status.toLowerCase() === 'available');
 
       slotData = data;
 
@@ -133,53 +103,54 @@
 
     function formatDate(dateStr) {
       const parts = dateStr.split(/[-\/\s]/);
-      if (parts.length !== 3) return dateStr;
-      let d = parseInt(parts[0]) || parseInt(parts[1]);
-      let m = parts[1] || parts[0];
-      let y = parts[2];
-      if (!isNaN(m)) m = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][parseInt(m)-1];
-      return `${d} ${m} ${y}`;
+      let d, m, y;
+      if (parts[0].length === 4) [y, m, d] = parts;
+      else if (parts[2].length === 4) [d, m, y] = parts;
+      else return dateStr;
+
+      const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+      const monthName = monthNames[parseInt(m, 10) - 1] || m;
+      return `${parseInt(d)} ${monthName} ${y}`;
     }
 
     function formatTime(timeStr) {
-      const match = timeStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
+      const match = timeStr.replace(/\s+/g, '').match(/^(\d{1,2}):(\d{2})(AM|PM)?$/i);
       if (!match) return timeStr;
-      let [, hour, minute, meridian] = match;
-      hour = parseInt(hour);
+      let [, hourStr, minStr, meridian] = match;
+      let hour = parseInt(hourStr);
       if (!meridian) {
         meridian = hour >= 12 ? "PM" : "AM";
         if (hour > 12) hour -= 12;
       }
-      return `${hour}:${minute} ${meridian.toUpperCase()}`;
+      return `${hour}:${minStr} ${meridian.toUpperCase()}`;
     }
 
-    function showConfirmation() {
-      const selectedDate = dateSelect.value;
-      const selectedTime = timeSlotSelect.value;
-      const name = patientName.value.trim();
+    function submitBooking() {
+      const date = dateSelect.value;
+      const time = timeSlotSelect.value;
+      const name = patientNameInput.value.trim();
       const reason = reasonInput.value.trim();
 
-      if (!selectedDate || !selectedTime || !name) {
-        alert("Please fill in date, time and patient name.");
+      if (!date || !time || !name) {
+        alert("Please fill all required fields.");
         return;
       }
 
-      confirmDate.innerText = `📅 Date: ${formatDate(selectedDate)}`;
-      confirmTime.innerText = `🕒 Time: ${formatTime(selectedTime)}`;
-      confirmName.innerText = `👤 Patient: ${name}`;
-      confirmReason.innerText = reason ? `💬 Reason: ${reason}` : '';
+      const formData = new FormData();
+      formData.append("entry.1980537005", date); // Date
+      formData.append("entry.866095998", time); // Time Slot
+      formData.append("entry.855658739", name); // Name
+      formData.append("entry.928964258", reason); // Reason
 
-      confirmationBox.style.display = 'block';
-    }
-
-    function sendWhatsApp() {
-      const selectedDate = dateSelect.value;
-      const selectedTime = timeSlotSelect.value;
-      const name = patientName.value.trim();
-      const reason = reasonInput.value.trim();
-      const msg = `Hello, I’d like to book an appointment for ${name} on ${formatDate(selectedDate)} at ${formatTime(selectedTime)}.` + (reason ? ` Reason: ${reason}.` : '');
-      const url = `https://wa.me/919390664577?text=${encodeURIComponent(msg)}`;
-      window.open(url, "_blank");
+      fetch(googleFormURL, {
+        method: "POST",
+        mode: "no-cors",
+        body: formData
+      }).then(() => {
+        const msg = `Hi, I booked an appointment on ${formatDate(date)} at ${formatTime(time)} for ${name}.${reason ? ' Reason: ' + reason : ''}`;
+        const whatsappLink = `https://wa.me/919390664577?text=${encodeURIComponent(msg)}`;
+        window.open(whatsappLink, "_blank");
+      });
     }
 
     loadCSV();
