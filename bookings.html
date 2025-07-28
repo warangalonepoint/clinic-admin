@@ -46,7 +46,7 @@
 </head>
 <body>
 
-  <h1>Book an Appointment</h1>
+  <h1>Warangal Onestop Clinic Booking</h1>
 
   <label for="slot">Select Time Slot:</label>
   <select id="slot">
@@ -91,8 +91,8 @@
         return;
       }
 
-      // Replace this with your real Google Form prefill URL
-      const formBase = "https://docs.google.com/forms/d/e/YOUR-FORM-ID/viewform?usp=pp_url&entry.XYZ=";
+      // Your working form link
+      const formBase = "https://docs.google.com/forms/d/e/1FAIpQLSfRgG6j30W1L1cfjTLvSnKYoGpBYey4JwE1W9XDlzh2sQPVjw/viewform?usp=pp_url&entry.1999716804=";
       const redirectUrl = formBase + encodeURIComponent(selected);
       window.open(redirectUrl, "_blank");
     }
