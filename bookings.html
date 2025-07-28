@@ -1,86 +1,128 @@
-<script>
-  const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQQyTuU2qw0Yxk6GKRdpbzWtoYcKJy2nfVcq294q0aSpyCsntFJ01FKjigBAesiC7g8cCbEK_lUWVdr/pub?gid=1762577234&single=true&output=csv';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Warangal Onestop Clinic Booking</title>
+  <style>
+    body {
+      background-color: #000;
+      font-family: Arial, sans-serif;
+      color: #00e6e6;
+      padding: 40px 20px;
+      text-align: center;
+    }
+    select, button {
+      padding: 12px;
+      font-size: 16px;
+      width: 90%;
+      max-width: 400px;
+      margin: 12px auto;
+      display: block;
+      border-radius: 8px;
+      border: none;
+    }
+    button {
+      background-color: #00d9a0;
+      color: #fff;
+      font-weight: bold;
+    }
+    #loader {
+      color: #ccc;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Warangal Onestop Clinic Booking</h1>
+  <label for="dateDropdown">Select Date:</label>
+  <select id="dateDropdown">
+    <option>Loading dates...</option>
+  </select>
 
-  const dateSelect = document.getElementById("date-select");
-  const slotSelect = document.getElementById("slot-select");
-  const bookBtn = document.getElementById("book-btn");
+  <label for="slotDropdown">Select Time Slot:</label>
+  <select id="slotDropdown">
+    <option>Loading slots...</option>
+  </select>
 
-  let slotData = {}; // { '2025-07-28': [ '09:00 AM', '09:10 AM', ... ] }
+  <button id="bookBtn">Continue to Book</button>
+  <div id="loader"></div>
 
-  function convertSerialToDate(serial) {
-    const excelEpoch = new Date(1899, 11, 30);
-    const date = new Date(excelEpoch.getTime() + serial * 86400000);
-    return date.toISOString().split("T")[0]; // "YYYY-MM-DD"
-  }
+  <script>
+    const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQyTuU2qw0Yxk6GKRdpbzWtoYcKJy2nfVcq294q0aSpyCsntFJ01FKjigBAesiC7g8cCbEK_lUWVdr/pub?gid=1762577234&single=true&output=csv";
+    const dateDropdown = document.getElementById("dateDropdown");
+    const slotDropdown = document.getElementById("slotDropdown");
+    const loader = document.getElementById("loader");
+    const bookBtn = document.getElementById("bookBtn");
 
-  function loadSlots() {
-    fetch(sheetUrl)
+    let allSlots = [];
+
+    function excelDateToJSDate(serial) {
+      const utcDays = serial - 25569;
+      const utcValue = utcDays * 86400;
+      const date = new Date(utcValue * 1000);
+      return date.toISOString().split('T')[0];
+    }
+
+    function updateSlotDropdown(date) {
+      slotDropdown.innerHTML = "";
+      const filtered = allSlots.filter(row => row.date === date && row.status.toLowerCase() === "available");
+      if (filtered.length === 0) {
+        slotDropdown.innerHTML = `<option>No slots available</option>`;
+        return;
+      }
+      filtered.forEach(slot => {
+        const option = document.createElement("option");
+        option.value = slot.slot;
+        option.textContent = slot.slot;
+        slotDropdown.appendChild(option);
+      });
+    }
+
+    fetch(sheetURL)
       .then(res => res.text())
       .then(csv => {
-        const lines = csv.trim().split("\n").slice(1); // remove headers
-        lines.forEach(line => {
-          const [serialDate, time, status] = line.split(",");
-          if (status && status.trim().toLowerCase() === "available") {
-            const readableDate = convertSerialToDate(parseInt(serialDate));
-            if (!slotData[readableDate]) {
-              slotData[readableDate] = [];
-            }
-            slotData[readableDate].push(time.trim());
-          }
+        const rows = csv.split("\n").slice(1);
+        allSlots = rows.map(row => {
+          const [date, slot, status] = row.split(",");
+          return {
+            date: excelDateToJSDate(parseFloat(date.trim())),
+            slot: slot.trim(),
+            status: status.trim()
+          };
         });
 
-        populateDates();
-      });
-  }
+        const uniqueDates = [...new Set(allSlots.map(slot => slot.date))];
+        dateDropdown.innerHTML = "";
+        uniqueDates.forEach(date => {
+          const option = document.createElement("option");
+          option.value = date;
+          option.textContent = date;
+          dateDropdown.appendChild(option);
+        });
 
-  function populateDates() {
-    dateSelect.innerHTML = `<option value="">Select a Date</option>`;
-    Object.keys(slotData).forEach(date => {
-      const opt = document.createElement("option");
-      opt.value = date;
-      opt.textContent = date;
-      dateSelect.appendChild(opt);
+        updateSlotDropdown(uniqueDates[0]);
+        loader.textContent = "";
+      })
+      .catch(err => {
+        loader.textContent = "Failed to load data.";
+        console.error(err);
+      });
+
+    dateDropdown.addEventListener("change", () => {
+      updateSlotDropdown(dateDropdown.value);
     });
 
-    // Disable slotSelect until date is picked
-    slotSelect.innerHTML = `<option>Select a date first</option>`;
-    slotSelect.disabled = true;
-  }
-
-  dateSelect.addEventListener("change", () => {
-    const selectedDate = dateSelect.value;
-    const slots = slotData[selectedDate] || [];
-
-    slotSelect.innerHTML = "";
-    if (slots.length > 0) {
-      slots.forEach(slot => {
-        const opt = document.createElement("option");
-        opt.value = slot;
-        opt.textContent = slot;
-        slotSelect.appendChild(opt);
-      });
-      slotSelect.disabled = false;
-    } else {
-      slotSelect.innerHTML = `<option>No slots available</option>`;
-      slotSelect.disabled = true;
-    }
-  });
-
-  bookBtn.addEventListener("click", () => {
-    const selectedDate = dateSelect.value;
-    const selectedSlot = slotSelect.value;
-
-    if (!selectedDate || !selectedSlot || slotSelect.disabled) {
-      alert("Please select both date and slot.");
-      return;
-    }
-
-    const encodedMsg = encodeURIComponent(
-      `Hi, I would like to book an appointment on ${selectedDate} at ${selectedSlot}`
-    );
-    const waUrl = `https://wa.me/919390664577?text=${encodedMsg}`;
-    window.open(waUrl, "_blank");
-  });
-
-  loadSlots();
-</script>
+    bookBtn.addEventListener("click", () => {
+      const date = dateDropdown.value;
+      const slot = slotDropdown.value;
+      if (slot.toLowerCase().includes("no slot")) {
+        alert("Please select a valid time slot.");
+        return;
+      }
+      const message = `Hi, I would like to book an appointment on ${date} at ${slot}`;
+      window.open(`https://wa.me/919390664577?text=${encodeURIComponent(message)}`, "_blank");
+    });
+  </script>
+</body>
+</html>
