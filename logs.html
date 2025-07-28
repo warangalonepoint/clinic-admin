@@ -1,54 +1,67 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <title>Daily Booking Logs</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Clinic Booking Logs</title>
   <style>
     body {
       background-color: #000;
-      color: #fff;
+      color: #00fcd1;
       font-family: Arial, sans-serif;
+      margin: 0;
       padding: 20px;
     }
+
     h1 {
-      color: #00e6e6;
       text-align: center;
+      color: #00fcd1;
+      margin-bottom: 20px;
     }
+
     table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 20px;
+      background-color: #111;
     }
+
     th, td {
+      border: 1px solid #00fcd1;
       padding: 10px;
       text-align: left;
-      border-bottom: 1px solid #444;
+      color: #fff;
     }
+
     th {
-      background-color: #111;
-      color: #00c2c2;
-    }
-    tr:hover {
       background-color: #222;
     }
-    #downloadBtn {
+
+    #exportBtn {
       margin-top: 20px;
-      background-color: #00e6b8;
-      color: #000;
       padding: 10px 20px;
+      background-color: #00fcd1;
       border: none;
-      border-radius: 10px;
+      color: #000;
       font-weight: bold;
       cursor: pointer;
       display: block;
       margin-left: auto;
       margin-right: auto;
+      border-radius: 8px;
+    }
+
+    #loading {
+      text-align: center;
+      margin-top: 50px;
+      color: #fff;
     }
   </style>
 </head>
 <body>
   <h1>Daily Booking Logs</h1>
-  <table id="logTable">
+  <div id="loading">Loading...</div>
+  <table id="bookingTable" style="display:none;">
     <thead>
       <tr>
         <th>Date</th>
@@ -57,51 +70,58 @@
         <th>Reason</th>
       </tr>
     </thead>
-    <tbody>
-      <tr><td colspan="4">Loading...</td></tr>
-    </tbody>
-  </table><button id="downloadBtn" onclick="downloadCSV()">Export to CSV</button>
+    <tbody id="tableBody"></tbody>
+  </table>
+
+  <button id="exportBtn" onclick="exportTableToCSV()">Export to CSV</button>
 
   <script>
-    const sheetCSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQyTuU2qw0Yxk6GKRdpbzWtoYcKJy2nfVcq294q0aSpyCsntFJ01FKjigBAesiC7g8cCbEK_lUWVdr/pub?gid=2111801909&single=true&output=csv";
+    const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQyTuU2qw0Yxk6GKRdpbzWtoYcKJy2nfVcq294q0aSpyCsntFJ01FKjigBAesiC7g8cCbEK_lUWVdr/pub?gid=2115782150&single=true&output=csv";
 
-    async function loadLogs() {
-      const res = await fetch(sheetCSV);
-      const text = await res.text();
-      const rows = text.trim().split('\n').slice(1); // skip header
+    fetch(sheetUrl)
+      .then(response => response.text())
+      .then(data => {
+        const rows = data.split("\n").slice(1); // Skip header
+        const tbody = document.getElementById("tableBody");
 
-      const tbody = document.querySelector("#logTable tbody");
-      tbody.innerHTML = "";
-      rows.forEach(row => {
-        const [date, time, name, reason] = row.split(",");
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${formatDate(date)}</td><td>${formatTime(time)}</td><td>${name}</td><td>${reason || '-'}</td>`;
-        tbody.appendChild(tr);
+        rows.forEach(row => {
+          const columns = row.split(",");
+          if (columns.length >= 4) {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+              <td>${columns[1]}</td>
+              <td>${columns[2]}</td>
+              <td>${columns[3]}</td>
+              <td>${columns[4] || ''}</td>
+            `;
+            tbody.appendChild(tr);
+          }
+        });
+
+        document.getElementById("loading").style.display = "none";
+        document.getElementById("bookingTable").style.display = "table";
+      })
+      .catch(error => {
+        document.getElementById("loading").textContent = "Failed to load data.";
+        console.error("Error loading CSV:", error);
       });
-    }
 
-    function formatDate(dateStr) {
-      const [y, m, d] = dateStr.split("-");
-      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-      return `${parseInt(d)} ${months[parseInt(m)-1]} ${y}`;
-    }
+    function exportTableToCSV() {
+      const rows = document.querySelectorAll("table tr");
+      const csv = Array.from(rows)
+        .map(row => Array.from(row.children).map(cell => `"${cell.textContent}"`).join(","))
+        .join("\n");
 
-    function formatTime(timeStr) {
-      if (!timeStr) return "";
-      const [h, m] = timeStr.split(":");
-      const hour = parseInt(h);
-      const suffix = hour >= 12 ? "PM" : "AM";
-      const displayHour = hour % 12 || 12;
-      return `${displayHour}:${m} ${suffix}`;
-    }
-
-    function downloadCSV() {
-      const a = document.createElement('a');
-      a.href = sheetCSV;
-      a.download = "booking_logs.csv";
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.setAttribute("hidden", "");
+      a.setAttribute("href", url);
+      a.setAttribute("download", "clinic-booking-logs.csv");
+      document.body.appendChild(a);
       a.click();
+      document.body.removeChild(a);
     }
-
-    loadLogs();
-  </script></body>
+  </script>
+</body>
 </html>
