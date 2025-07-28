@@ -2,101 +2,103 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Appointments</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Book Appointment</title>
   <style>
     body {
-      background-color: #111;
-      color: white;
-      font-family: sans-serif;
-      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #121212;
+      color: #fff;
       padding: 20px;
     }
-    h2 {
-      color: #1f80e0;
+
+    h1 {
+      color: #00e6e6;
+      text-align: center;
     }
-    .search-bar, .filters {
-      margin-bottom: 10px;
-    }
-    input, select {
-      padding: 8px;
-      margin: 5px;
-      border-radius: 8px;
+
+    select, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 15px;
+      font-size: 16px;
+      border-radius: 6px;
       border: none;
     }
-    .appointment {
-      background: #222;
-      margin: 10px 0;
-      padding: 10px;
-      border-radius: 10px;
+
+    select {
+      background: #fff;
+      color: #000;
     }
-    .note {
-      background-color: #333;
-      color: #ccc;
-      padding: 8px;
-      margin-top: 5px;
-      border-radius: 6px;
+
+    button {
+      background: #00cc99;
+      color: white;
+      cursor: pointer;
+    }
+
+    #status {
+      margin-top: 15px;
+      font-style: italic;
+      text-align: center;
     }
   </style>
 </head>
 <body>
-  <h2>Appointment History</h2>
-  <div class="search-bar">
-    <input type="text" id="search" placeholder="Search by name or phone" onkeyup="filterAppointments()" />
-  </div>
-  <div class="filters">
-    <select id="statusFilter" onchange="filterAppointments()">
-      <option value="">All Status</option>
-      <option value="Pending">Pending</option>
-      <option value="Checked-in">Checked-in</option>
-      <option value="Completed">Completed</option>
-    </select>
-    <select id="doctorFilter" onchange="filterAppointments()">
-      <option value="">All Doctors</option>
-      <option value="Dr. A">Dr. A</option>
-      <option value="Dr. B">Dr. B</option>
-    </select>
-  </div>
-  <div id="appointments"></div>
+
+  <h1>Book an Appointment</h1>
+
+  <label for="slot">Select Time Slot:</label>
+  <select id="slot">
+    <option value="">Loading slots...</option>
+  </select>
+
+  <button onclick="bookNow()">Continue to Book</button>
+
+  <div id="status"></div>
 
   <script>
-    const appointments = [
-      { name: "Ravi", phone: "9390660000", status: "Pending", doctor: "Dr. A", note: "BP Check last visit" },
-      { name: "Priya", phone: "9390661111", status: "Completed", doctor: "Dr. B", note: "Diabetic follow-up" },
-      { name: "Ahmed", phone: "9390662222", status: "Checked-in", doctor: "Dr. A", note: "Prescription renewal" },
-    ];
+    const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS3ZiW7ZPd580PV_lwp2sfSOGfDBkcNfFTwOt7DflfsC_Xy2pYXO-N8WWvLVQ3aK9g/pub?gid=1762577234&single=true&output=csv";
 
-    function filterAppointments() {
-      const keyword = document.getElementById('search').value.toLowerCase();
-      const status = document.getElementById('statusFilter').value;
-      const doctor = document.getElementById('doctorFilter').value;
+    async function fetchSlots() {
+      const res = await fetch(csvUrl);
+      const data = await res.text();
+      const rows = data.split("\n").slice(1);
+      const dropdown = document.getElementById("slot");
+      dropdown.innerHTML = `<option value="">-- Select an Available Slot --</option>`;
 
-      const filtered = appointments.filter(app => {
-        return (
-          (app.name.toLowerCase().includes(keyword) || app.phone.includes(keyword)) &&
-          (status === "" || app.status === status) &&
-          (doctor === "" || app.doctor === doctor)
-        );
+      rows.forEach(row => {
+        const cols = row.split(",");
+        const time = cols[1];
+        const status = (cols[2] || "").trim();
+        if (status.toLowerCase() === "available") {
+          const option = document.createElement("option");
+          option.value = time;
+          option.textContent = time;
+          dropdown.appendChild(option);
+        }
       });
-      renderAppointments(filtered);
+
+      if (dropdown.options.length === 1) {
+        dropdown.innerHTML = `<option value="">No slots available</option>`;
+      }
     }
 
-    function renderAppointments(data) {
-      const container = document.getElementById('appointments');
-      container.innerHTML = '';
-      data.forEach(app => {
-        container.innerHTML += `
-          <div class="appointment">
-            <strong>${app.name}</strong> (${app.phone})<br>
-            Status: ${app.status}<br>
-            Doctor: ${app.doctor}<br>
-            <div class="note">Note: ${app.note}</div>
-          </div>
-        `;
-      });
+    function bookNow() {
+      const selected = document.getElementById("slot").value;
+      if (!selected) {
+        document.getElementById("status").innerText = "Please select a time slot.";
+        return;
+      }
+
+      // Replace this with your real Google Form prefill URL
+      const formBase = "https://docs.google.com/forms/d/e/YOUR-FORM-ID/viewform?usp=pp_url&entry.XYZ=";
+      const redirectUrl = formBase + encodeURIComponent(selected);
+      window.open(redirectUrl, "_blank");
     }
 
-    filterAppointments();
+    fetchSlots();
   </script>
+
 </body>
 </html>
