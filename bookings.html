@@ -63,9 +63,9 @@
   </select>
 
   <input type="text" id="patientName" placeholder="Enter Patient Name" required />
-
-  <label for="visitReason">Reason for Visit <span style="color:#888;">(optional)</span>:</label>
-  <input type="text" id="visitReason" placeholder="Type reason (optional)" />
+  
+  <label for="reasonInput">Reason for Visit <span style="color:#999;">(optional)</span>:</label>
+  <input type="text" id="reasonInput" placeholder="Type reason (optional)" />
 
   <button onclick="confirmBooking()">Continue to Book</button>
 
@@ -74,6 +74,8 @@
 
     const dateSelect = document.getElementById('dateSelect');
     const timeSlotSelect = document.getElementById('timeSlotSelect');
+    const patientName = document.getElementById('patientName');
+    const reasonInput = document.getElementById('reasonInput');
     let slotData = [];
 
     async function loadCSV() {
@@ -83,7 +85,7 @@
       const data = rows.map(row => {
         const [date, time, status] = row.split(',').map(s => s.trim());
         return { date, time, status };
-      }).filter(slot => slot.status.toLowerCase() === 'available');
+      }).filter(slot => slot.status && slot.status.trim().toLowerCase() === 'available');
 
       slotData = data;
 
@@ -103,26 +105,22 @@
 
     function formatDate(dateStr) {
       const parts = dateStr.split(/[-\/\s]/);
-      let d, m, y;
-      if (parts[0].length === 4) {
-        [y, m, d] = parts;
-      } else if (parts[2].length === 4) {
-        [d, m, y] = parts;
-      } else {
-        return dateStr;
-      }
-      const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-      const monthName = monthNames[parseInt(m, 10) - 1] || m;
-      return `${parseInt(d)} ${monthName} ${y}`;
+      if (parts.length !== 3) return dateStr;
+      let d = parseInt(parts[0]) || parseInt(parts[1]);
+      let m = parts[1] || parts[0];
+      let y = parts[2];
+      if (!isNaN(m)) m = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][parseInt(m)-1];
+      return `${d} ${m} ${y}`;
     }
 
     function formatTime(timeStr) {
-      const [hourStr, minStr, meridian] = timeStr.replace(/\s+/g, '').match(/^(\d{1,2}):(\d{2})(AM|PM)?$/i) || [];
-      let hour = parseInt(hourStr);
-      let minute = minStr;
+      const match = timeStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
+      if (!match) return timeStr;
+      let [, hour, minute, meridian] = match;
+      hour = parseInt(hour);
       if (!meridian) {
-        if (hour >= 12) return `${hour - 12}:${minute} PM`;
-        return `${hour}:${minute} AM`;
+        meridian = hour >= 12 ? "PM" : "AM";
+        if (hour > 12) hour -= 12;
       }
       return `${hour}:${minute} ${meridian.toUpperCase()}`;
     }
@@ -130,19 +128,15 @@
     function confirmBooking() {
       const selectedDate = dateSelect.value;
       const selectedTime = timeSlotSelect.value;
-      const patientName = document.getElementById('patientName').value.trim();
-      const visitReason = document.getElementById('visitReason').value.trim();
+      const name = patientName.value.trim();
+      const reason = reasonInput.value.trim();
 
-      if (!selectedDate || !selectedTime || !patientName) {
-        alert("Please fill date, time, and patient name.");
+      if (!selectedDate || !selectedTime || !name) {
+        alert("Please fill in date, time and patient name.");
         return;
       }
 
-      let msg = `Hello, I’d like to book an appointment.\n\n📅 *Date:* ${formatDate(selectedDate)}\n⏰ *Time:* ${formatTime(selectedTime)}\n👤 *Name:* ${patientName}`;
-      if (visitReason !== "") {
-        msg += `\n📝 *Reason:* ${visitReason}`;
-      }
-
+      const msg = `Hello, I’d like to book an appointment for ${name} on ${formatDate(selectedDate)} at ${formatTime(selectedTime)}.` + (reason ? ` Reason: ${reason}.` : '');
       const url = `https://wa.me/919390664577?text=${encodeURIComponent(msg)}`;
       window.open(url, "_blank");
     }
