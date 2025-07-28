@@ -3,126 +3,121 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Warangal Onestop Clinic Booking</title>
+  <title>Clinic Booking</title>
   <style>
     body {
-      background-color: #000;
       font-family: Arial, sans-serif;
-      color: #00e6e6;
-      padding: 40px 20px;
+      background-color: #111;
+      color: #0ff;
       text-align: center;
+      padding: 20px;
+    }
+    h1 {
+      font-size: 24px;
+      margin-bottom: 20px;
     }
     select, button {
-      padding: 12px;
       font-size: 16px;
+      padding: 12px;
+      margin: 10px 0;
       width: 90%;
-      max-width: 400px;
-      margin: 12px auto;
-      display: block;
+      max-width: 320px;
       border-radius: 8px;
       border: none;
     }
     button {
-      background-color: #00d9a0;
-      color: #fff;
+      background-color: #00d09c;
+      color: white;
       font-weight: bold;
     }
-    #loader {
+    .loading {
       color: #ccc;
-      margin-top: 20px;
+      font-size: 14px;
     }
   </style>
 </head>
 <body>
   <h1>Warangal Onestop Clinic Booking</h1>
-  <label for="dateDropdown">Select Date:</label>
-  <select id="dateDropdown">
-    <option>Loading dates...</option>
-  </select>
-
-  <label for="slotDropdown">Select Time Slot:</label>
-  <select id="slotDropdown">
-    <option>Loading slots...</option>
-  </select>
-
-  <button id="bookBtn">Continue to Book</button>
-  <div id="loader"></div>
+  <label for="dateSelect">Select Date:</label><br>
+  <select id="dateSelect"></select><br>
+  <label for="slotSelect">Select Time Slot:</label><br>
+  <select id="slotSelect">
+    <option>Loading...</option>
+  </select><br>
+  <button onclick="bookSlot()">Continue to Book</button>
 
   <script>
-    const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQyTuU2qw0Yxk6GKRdpbzWtoYcKJy2nfVcq294q0aSpyCsntFJ01FKjigBAesiC7g8cCbEK_lUWVdr/pub?gid=1762577234&single=true&output=csv";
-    const dateDropdown = document.getElementById("dateDropdown");
-    const slotDropdown = document.getElementById("slotDropdown");
-    const loader = document.getElementById("loader");
-    const bookBtn = document.getElementById("bookBtn");
+    const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQyTuU2qw0Yxk6GKRdpbzWtoYcKJy2nfVcq294q0aSpyCsntFJ01FKjigBAesiC7g8cCbEK_lUWVdr/pub?gid=1762577234&single=true&output=csv";
+    const slotSelect = document.getElementById("slotSelect");
+    const dateSelect = document.getElementById("dateSelect");
 
-    let allSlots = [];
+    let allData = {};
 
-    function excelDateToJSDate(serial) {
-      const utcDays = serial - 25569;
-      const utcValue = utcDays * 86400;
-      const date = new Date(utcValue * 1000);
-      return date.toISOString().split('T')[0];
-    }
-
-    function updateSlotDropdown(date) {
-      slotDropdown.innerHTML = "";
-      const filtered = allSlots.filter(row => row.date === date && row.status.toLowerCase() === "available");
-      if (filtered.length === 0) {
-        slotDropdown.innerHTML = `<option>No slots available</option>`;
-        return;
-      }
-      filtered.forEach(slot => {
-        const option = document.createElement("option");
-        option.value = slot.slot;
-        option.textContent = slot.slot;
-        slotDropdown.appendChild(option);
-      });
-    }
-
-    fetch(sheetURL)
+    fetch(sheetUrl)
       .then(res => res.text())
       .then(csv => {
-        const rows = csv.split("\n").slice(1);
-        allSlots = rows.map(row => {
-          const [date, slot, status] = row.split(",");
-          return {
-            date: excelDateToJSDate(parseFloat(date.trim())),
-            slot: slot.trim(),
-            status: status.trim()
-          };
+        const rows = csv.trim().split("\n").slice(1);
+        rows.forEach(row => {
+          const [dateRaw, timeSlot, status] = row.split(",");
+          if (status.trim().toLowerCase() === "available") {
+            if (!allData[dateRaw]) allData[dateRaw] = [];
+            allData[dateRaw].push(timeSlot);
+          }
         });
 
-        const uniqueDates = [...new Set(allSlots.map(slot => slot.date))];
-        dateDropdown.innerHTML = "";
-        uniqueDates.forEach(date => {
+        const sortedDates = Object.keys(allData).sort();
+        sortedDates.forEach(date => {
+          const formatted = formatDate(date);
           const option = document.createElement("option");
           option.value = date;
-          option.textContent = date;
-          dateDropdown.appendChild(option);
+          option.textContent = formatted;
+          dateSelect.appendChild(option);
         });
 
-        updateSlotDropdown(uniqueDates[0]);
-        loader.textContent = "";
-      })
-      .catch(err => {
-        loader.textContent = "Failed to load data.";
-        console.error(err);
+        // Trigger change event to load slots
+        dateSelect.value = sortedDates[0];
+        loadSlotsForDate(sortedDates[0]);
       });
 
-    dateDropdown.addEventListener("change", () => {
-      updateSlotDropdown(dateDropdown.value);
+    dateSelect.addEventListener("change", () => {
+      loadSlotsForDate(dateSelect.value);
     });
 
-    bookBtn.addEventListener("click", () => {
-      const date = dateDropdown.value;
-      const slot = slotDropdown.value;
-      if (slot.toLowerCase().includes("no slot")) {
+    function loadSlotsForDate(date) {
+      const slots = allData[date] || [];
+      slotSelect.innerHTML = "";
+      if (slots.length === 0) {
+        const opt = document.createElement("option");
+        opt.textContent = "No slots available";
+        slotSelect.appendChild(opt);
+        return;
+      }
+
+      slots.forEach(slot => {
+        const opt = document.createElement("option");
+        opt.textContent = slot;
+        opt.value = slot;
+        slotSelect.appendChild(opt);
+      });
+    }
+
+    function formatDate(serial) {
+      const excelEpoch = new Date(1899, 11, 30);
+      const realDate = new Date(excelEpoch.getTime() + (serial * 86400000));
+      return realDate.toISOString().split("T")[0]; // yyyy-mm-dd
+    }
+
+    function bookSlot() {
+      const date = dateSelect.value;
+      const time = slotSelect.value;
+      if (!time || time.includes("No slots")) {
         alert("Please select a valid time slot.");
         return;
       }
-      const message = `Hi, I would like to book an appointment on ${date} at ${slot}`;
-      window.open(`https://wa.me/919390664577?text=${encodeURIComponent(message)}`, "_blank");
-    });
+      const msg = `Hi, I want to book an appointment on ${formatDate(date)} at ${time}`;
+      const whatsappUrl = `https://wa.me/919390664577?text=${encodeURIComponent(msg)}`;
+      window.open(whatsappUrl, "_blank");
+    }
   </script>
 </body>
 </html>
