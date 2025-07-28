@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Book Appointment</title>
+  <script src="https://unpkg.com/tabletop@1.6.0/tabletop.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -58,31 +59,34 @@
   <div id="status"></div>
 
   <script>
-    const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSX7dcEpOyb3a2EfK-MEz_LYXScZKyoJjONaCRGosFEYuLRgUhdpTTwNND8yAXzCfsMIxtOR68i5LfU/pub?gid=0&single=true&output=csv";
+    const publicSheetURL = "https://docs.google.com/spreadsheets/d/1jG38gTpE2YbubT5JcIAiklB_Ua0utCZW/edit?usp=sharing";
+    const formBase = "https://docs.google.com/forms/d/e/1FAIpQLSfRgG6j30W1L1cfjTLvSnKYoGpBYey4JwE1W9XDlzh2sQPVjw/viewform?usp=pp_url&entry.1999716804=";
 
-    async function fetchSlots() {
-      const res = await fetch(csvUrl);
-      const data = await res.text();
-      const rows = data.split("\n").slice(1);
-      const dropdown = document.getElementById("slot");
-      dropdown.innerHTML = `<option value="">-- Select an Available Slot --</option>`;
+    function init() {
+      Tabletop.init({
+        key: publicSheetURL,
+        simpleSheet: true,
+        wanted: ["Today"],
+        callback: function(data) {
+          const dropdown = document.getElementById("slot");
+          dropdown.innerHTML = `<option value="">-- Select an Available Slot --</option>`;
 
-      rows.forEach(row => {
-        const cols = row.split(",");
-        const time = cols[1]?.replace(/"/g, "").trim();    
-        const status = cols[2]?.replace(/"/g, "").trim().toLowerCase(); 
+          data.forEach(row => {
+            const time = (row["Time Slot"] || "").trim();
+            const status = (row["Status"] || "").trim().toLowerCase();
+            if (status === "available") {
+              const option = document.createElement("option");
+              option.value = time;
+              option.textContent = time;
+              dropdown.appendChild(option);
+            }
+          });
 
-        if (status === "available") {
-          const option = document.createElement("option");
-          option.value = time;
-          option.textContent = time;
-          dropdown.appendChild(option);
+          if (dropdown.options.length === 1) {
+            dropdown.innerHTML = `<option value="">No slots available</option>`;
+          }
         }
       });
-
-      if (dropdown.options.length === 1) {
-        dropdown.innerHTML = `<option value="">No slots available</option>`;
-      }
     }
 
     function bookNow() {
@@ -91,13 +95,11 @@
         document.getElementById("status").innerText = "Please select a time slot.";
         return;
       }
-
-      const formBase = "https://docs.google.com/forms/d/e/1FAIpQLSfRgG6j30W1L1cfjTLvSnKYoGpBYey4JwE1W9XDlzh2sQPVjw/viewform?usp=pp_url&entry.1999716804=";
       const redirectUrl = formBase + encodeURIComponent(selected);
       window.open(redirectUrl, "_blank");
     }
 
-    fetchSlots();
+    window.addEventListener('DOMContentLoaded', init);
   </script>
 
 </body>
