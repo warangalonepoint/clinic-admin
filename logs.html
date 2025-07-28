@@ -1,134 +1,97 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Daily Booking Logs</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <title>Booking Logs</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
       background-color: #000;
-      color: #00fcd1;
+      color: #00ffd5;
       font-family: Arial, sans-serif;
-      margin: 0;
+      text-align: center;
       padding: 20px;
     }
+
     h1 {
-      text-align: center;
-      color: #00fcd1;
       margin-bottom: 20px;
     }
+
     table {
       width: 100%;
       border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+
+    th, td {
+      border: 1px solid #00ffd5;
+      padding: 10px;
+    }
+
+    th {
       background-color: #111;
     }
-    th, td {
-      border: 1px solid #00fcd1;
-      padding: 10px;
-      text-align: left;
-      color: #fff;
+
+    td {
+      color: white;
     }
-    th {
-      background-color: #222;
-    }
-    #exportBtn {
-      margin: 20px auto;
+
+    button {
       padding: 10px 20px;
-      background-color: #00fcd1;
-      border: none;
-      color: #000;
+      background-color: #00ffd5;
+      color: black;
       font-weight: bold;
-      cursor: pointer;
-      display: block;
+      border: none;
       border-radius: 8px;
-    }
-    #loading {
-      text-align: center;
-      margin-top: 50px;
-      color: #fff;
     }
   </style>
 </head>
 <body>
   <h1>Daily Booking Logs</h1>
-  <div id="loading">Loading...</div>
-  <table id="bookingTable" style="display:none;">
-    <thead>
-      <tr>
-        <th>Date</th>
-        <th>Time Slot</th>
-        <th>Patient Name</th>
-        <th>Reason</th>
-      </tr>
-    </thead>
-    <tbody id="tableBody"></tbody>
-  </table>
-  <button id="exportBtn" onclick="exportTableToCSV()">Export to CSV</button>
+  <div id="log-table">
+    <p>Loading...</p>
+  </div>
+  <button onclick="downloadCSV()">Export to CSV</button>
 
   <script>
-    const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQyTuU2qw0Yxk6GKRdpbzWtoYcKJy2nfVcq294q0aSpyCsntFJ01FKjigBAesiC7g8cCbEK_lUWVdr/pub?gid=2115782150&single=true&output=csv";
+    const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQyTuU2qw0Yxk6GKRdpbzWtoYcKJy2nfVcq294q0aSpyCsntFJ01FKjigBAesiC7g8cCbEK_lUWVdr/pub?gid=2115782150&single=true&output=csv";
 
-    function parseCSV(text) {
-      const rows = [];
-      const regex = /(?:\"([^\"]*(?:\"\"[^\"]*)*)\"|([^\",]+)|)(?:,|$)/g;
-      const lines = text.split("\n").slice(1); // skip header
-      for (let line of lines) {
-        const cols = [];
-        line = line.trim();
-        let match;
-        let re = new RegExp(regex);
-        while ((match = re.exec(line)) !== null) {
-          cols.push(match[1] ? match[1].replace(/""/g, '"') : match[2] || "");
-        }
-        if (cols.length > 1) rows.push(cols);
-      }
-      return rows;
-    }
+    async function loadData() {
+      try {
+        const response = await fetch(sheetURL);
+        const data = await response.text();
+        const rows = data.split("\n").slice(1).filter(row => row.trim() !== "");
 
-    fetch(sheetUrl)
-      .then(response => response.text())
-      .then(csv => {
-        const rows = parseCSV(csv);
-        const tbody = document.getElementById("tableBody");
+        let table = `<table><tr>
+                      <th>Date</th>
+                      <th>Time Slot</th>
+                      <th>Patient Name</th>
+                      <th>Reason</th>
+                    </tr>`;
 
         rows.forEach(row => {
-          const date = row[1];
-          const time = row[2];
-          const name = row[3];
-          const reason = row[4] || "";
-          if (date && time && name) {
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-              <td>${date}</td>
-              <td>${time}</td>
-              <td>${name}</td>
-              <td>${reason}</td>
-            `;
-            tbody.appendChild(tr);
-          }
+          const columns = row.split(",");
+          table += `<tr>
+                      <td>${columns[1]}</td>
+                      <td>${columns[2]}</td>
+                      <td>${columns[3]}</td>
+                      <td>${columns[4]}</td>
+                    </tr>`;
         });
 
-        document.getElementById("loading").style.display = "none";
-        document.getElementById("bookingTable").style.display = "table";
-      })
-      .catch(err => {
-        document.getElementById("loading").innerText = "Failed to load booking data.";
-        console.error(err);
-      });
+        table += `</table>`;
+        document.getElementById("log-table").innerHTML = table;
 
-    function exportTableToCSV() {
-      const rows = document.querySelectorAll("table tr");
-      const csv = Array.from(rows)
-        .map(row => Array.from(row.children).map(cell => `"${cell.textContent}"`).join(","))
-        .join("\n");
-
-      const blob = new Blob([csv], { type: "text/csv" });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "clinic-booking-logs.csv";
-      a.click();
+      } catch (error) {
+        document.getElementById("log-table").innerHTML = "<p style='color:red'>Failed to load booking data.</p>";
+      }
     }
+
+    function downloadCSV() {
+      window.open(sheetURL, '_blank');
+    }
+
+    loadData();
   </script>
 </body>
 </html>
