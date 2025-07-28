@@ -3,103 +3,86 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Book Appointment</title>
-  <script src="https://unpkg.com/tabletop@1.6.0/tabletop.js"></script>
+  <title>Clinic Booking</title>
   <style>
     body {
+      background-color: #111;
+      color: #00e6e6;
       font-family: Arial, sans-serif;
-      background: #121212;
-      color: #fff;
+      text-align: center;
       padding: 20px;
     }
-
-    h1 {
-      color: #00e6e6;
-      text-align: center;
-    }
-
     select, button {
-      width: 100%;
       padding: 10px;
-      margin-top: 15px;
-      font-size: 16px;
-      border-radius: 6px;
-      border: none;
+      font-size: 18px;
+      width: 80%;
+      max-width: 400px;
+      margin-top: 20px;
     }
-
-    select {
-      background: #fff;
-      color: #000;
-    }
-
     button {
-      background: #00cc99;
-      color: white;
+      background-color: #00cc99;
+      color: #fff;
+      border: none;
       cursor: pointer;
     }
-
-    #status {
-      margin-top: 15px;
-      font-style: italic;
-      text-align: center;
+    button:hover {
+      background-color: #009973;
     }
   </style>
 </head>
 <body>
-
   <h1>Warangal Onestop Clinic Booking</h1>
 
-  <label for="slot">Select Time Slot:</label>
-  <select id="slot">
-    <option value="">Loading slots...</option>
-  </select>
+  <label for="slots">Select Time Slot:</label><br>
+  <select id="slots">
+    <option>Loading slots...</option>
+  </select><br>
 
-  <button onclick="bookNow()">Continue to Book</button>
-
-  <div id="status"></div>
+  <button onclick="continueBooking()">Continue to Book</button>
 
   <script>
-    const publicSheetURL = "https://docs.google.com/spreadsheets/d/1Sby5FqvmSEGQcId106sz-MLJF1nlwarbfEVMMSIKM74/edit?usp=sharing";
-    const formBase = "https://docs.google.com/forms/d/e/1FAIpQLSfRgG6j30W1L1cfjTLvSnKYoGpBYey4JwE1W9XDlzh2sQPVjw/viewform?usp=pp_url&entry.1999716804=";
+    const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQyTuU2qw0Yxk6GKRdpbzWtoYcKJy2nfVcq294q0aSpyCsntFJ01FKjigBAesiC7g8cCbEK_lUWVdr/pub?gid=1762577234&single=true&output=csv";
+    const dropdown = document.getElementById('slots');
 
-    function init() {
-      Tabletop.init({
-        key: publicSheetURL,
-        simpleSheet: true,
-        callback: function(data) {
-          const dropdown = document.getElementById("slot");
-          dropdown.innerHTML = `<option value="">-- Select an Available Slot --</option>`;
+    async function fetchSlots() {
+      try {
+        const response = await fetch(sheetURL);
+        const data = await response.text();
+        const lines = data.trim().split('\n').slice(1); // Skip headers
+        let available = [];
 
-          data.forEach(row => {
-            const time = (row["Time Slot"] || "").trim();
-            const status = (row["Status"] || "").trim().toLowerCase();
-            if (status === "available") {
-              const option = document.createElement("option");
-              option.value = time;
-              option.textContent = time;
-              dropdown.appendChild(option);
-            }
-          });
+        lines.forEach(row => {
+          const cols = row.split(',');
+          const time = cols[1]?.trim();
+          const status = cols[2]?.trim();
 
-          if (dropdown.options.length === 1) {
-            dropdown.innerHTML = `<option value="">No slots available</option>`;
+          if (status?.toLowerCase() === 'available') {
+            available.push(time);
           }
-        }
-      });
+        });
+
+        dropdown.innerHTML = available.length
+          ? available.map(slot => `<option value="${slot}">${slot}</option>`).join('')
+          : '<option>No slots available</option>';
+
+      } catch (error) {
+        console.error('Failed to fetch slots:', error);
+        dropdown.innerHTML = '<option>Error loading slots</option>';
+      }
     }
 
-    function bookNow() {
-      const selected = document.getElementById("slot").value;
-      if (!selected) {
-        document.getElementById("status").innerText = "Please select a time slot.";
+    function continueBooking() {
+      const slot = dropdown.value;
+      if (!slot || slot === 'No slots available') {
+        alert('Please choose a valid time slot.');
         return;
       }
-      const redirectUrl = formBase + encodeURIComponent(selected);
-      window.open(redirectUrl, "_blank");
+
+      const formURL = `https://docs.google.com/forms/d/e/1FAIpQLSfRgG6j30W1L1cfjTLvSnKYoGpBYey4JwE1W9XDlzh2sQPVjw/viewform?usp=pp_url&entry.1999716804=${encodeURIComponent(slot)}`;
+      window.open(formURL, '_blank');
     }
 
-    window.addEventListener('DOMContentLoaded', init);
+    fetchSlots();
   </script>
-
 </body>
 </html>
