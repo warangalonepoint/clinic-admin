@@ -46,6 +46,20 @@
       background-color: #555;
       color: #999;
     }
+
+    #confirmationBox {
+      display: none;
+      background-color: #111;
+      padding: 20px;
+      margin-top: 20px;
+      border-radius: 10px;
+      border: 1px solid #00e6e6;
+    }
+
+    .confirm-line {
+      margin: 10px 0;
+      font-size: 16px;
+    }
   </style>
 </head>
 <body>
@@ -67,7 +81,15 @@
   <label for="reasonInput">Reason for Visit <span style="color:#999;">(optional)</span>:</label>
   <input type="text" id="reasonInput" placeholder="Type reason (optional)" />
 
-  <button onclick="confirmBooking()">Continue to Book</button>
+  <button onclick="showConfirmation()">Continue to Book</button>
+
+  <div id="confirmationBox">
+    <div class="confirm-line" id="confirmDate"></div>
+    <div class="confirm-line" id="confirmTime"></div>
+    <div class="confirm-line" id="confirmName"></div>
+    <div class="confirm-line" id="confirmReason"></div>
+    <button onclick="sendWhatsApp()">Confirm & Continue</button>
+  </div>
 
   <script>
     const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQyTuU2qw0Yxk6GKRdpbzWtoYcKJy2nfVcq294q0aSpyCsntFJ01FKjigBAesiC7g8cCbEK_lUWVdr/pub?gid=1762577234&single=true&output=csv";
@@ -76,6 +98,12 @@
     const timeSlotSelect = document.getElementById('timeSlotSelect');
     const patientName = document.getElementById('patientName');
     const reasonInput = document.getElementById('reasonInput');
+    const confirmationBox = document.getElementById('confirmationBox');
+    const confirmDate = document.getElementById('confirmDate');
+    const confirmTime = document.getElementById('confirmTime');
+    const confirmName = document.getElementById('confirmName');
+    const confirmReason = document.getElementById('confirmReason');
+
     let slotData = [];
 
     async function loadCSV() {
@@ -125,7 +153,7 @@
       return `${hour}:${minute} ${meridian.toUpperCase()}`;
     }
 
-    function confirmBooking() {
+    function showConfirmation() {
       const selectedDate = dateSelect.value;
       const selectedTime = timeSlotSelect.value;
       const name = patientName.value.trim();
@@ -136,6 +164,19 @@
         return;
       }
 
+      confirmDate.innerText = `📅 Date: ${formatDate(selectedDate)}`;
+      confirmTime.innerText = `🕒 Time: ${formatTime(selectedTime)}`;
+      confirmName.innerText = `👤 Patient: ${name}`;
+      confirmReason.innerText = reason ? `💬 Reason: ${reason}` : '';
+
+      confirmationBox.style.display = 'block';
+    }
+
+    function sendWhatsApp() {
+      const selectedDate = dateSelect.value;
+      const selectedTime = timeSlotSelect.value;
+      const name = patientName.value.trim();
+      const reason = reasonInput.value.trim();
       const msg = `Hello, I’d like to book an appointment for ${name} on ${formatDate(selectedDate)} at ${formatTime(selectedTime)}.` + (reason ? ` Reason: ${reason}.` : '');
       const url = `https://wa.me/919390664577?text=${encodeURIComponent(msg)}`;
       window.open(url, "_blank");
