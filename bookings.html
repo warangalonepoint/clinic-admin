@@ -64,6 +64,7 @@
     const sheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQqyTuU2qw0Yxk6GKRdpbzWtoYcKJy2nfVcq294qOaSpyCsntFJ01FKjgBAsciGRgBcCbEK_IUWdr/pub?gid=642851090&single=true&output=csv';
 
     const today = new Date().toISOString().split("T")[0];
+
     const slotSelect = document.getElementById("slotSelect");
     const bookingForm = document.getElementById("bookingForm");
     const noSlotsMsg = document.getElementById("noSlotsMsg");
@@ -71,19 +72,20 @@
     fetch(sheetURL)
       .then(response => response.text())
       .then(csv => {
-        const rows = csv.split("\n").map(row => row.trim().split(","));
+        const rows = csv.trim().split("\n").map(row => row.split(",").map(cell => cell.trim()));
         const header = rows.shift();
         const dateIndex = header.indexOf("Appointment Date");
         const timeIndex = header.indexOf("Time Slot");
         const statusIndex = header.indexOf("Status");
 
-        const slots = rows.filter(row => 
-          row[dateIndex]?.trim() === today &&
-          row[statusIndex]?.trim().toLowerCase() === "available"
-        );
+        const availableSlots = rows.filter(row => {
+          const rowDate = row[dateIndex]?.trim();
+          const rowStatus = row[statusIndex]?.trim().toLowerCase();
+          return rowDate === today && rowStatus === "available";
+        });
 
-        if (slots.length > 0) {
-          slotSelect.innerHTML = slots.map(row =>
+        if (availableSlots.length > 0) {
+          slotSelect.innerHTML = availableSlots.map(row =>
             `<option value="${row[timeIndex]}">${row[timeIndex]}</option>`
           ).join("");
           bookingForm.style.display = "block";
