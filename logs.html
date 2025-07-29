@@ -1,33 +1,147 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <title>📊 Booking Logs</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Appointment Logs</title>
   <style>
     body {
-      background-color: #000;
+      background-color: #111;
       color: #fff;
       font-family: Arial, sans-serif;
-      margin: 0;
       padding: 20px;
     }
-    h1 {
+    h2 {
+      color: #ffa500;
       text-align: center;
-      color: #00ff99;
-      margin-bottom: 20px;
     }
-    .controls {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-bottom: 20px;
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
     }
-    input[type="date"], button {
+    th, td {
       padding: 10px;
-      font-size: 16px;
-      border-radius: 5px;
-      border: none;
+      border: 1px solid #444;
+      text-align: left;
     }
-    button {
-      background-color: #00ff99;
-      color: #000
+    th {
+      background-color: #222;
+    }
+    input, button {
+      padding: 10px;
+      margin-top: 10px;
+      width: 100%;
+      max-width: 300px;
+      font-size: 16px;
+    }
+    .pin-section, .reset-section {
+      margin-top: 30px;
+      border: 1px solid #555;
+      padding: 15px;
+      background: #1c1c1c;
+      max-width: 400px;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h2>📊 Booking Logs Dashboard</h2>
+  <div>
+    <label for="dateFilter">Filter by Date:</label>
+    <input type="date" id="dateFilter" onchange="filterLogs()" />
+  </div>
+  <table id="logsTable">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Time</th>
+        <th>Name</th>
+        <th>Reason</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <button onclick="exportLogs()">⬇️ Export Logs</button>
+
+  <div class="pin-section">
+    <h3>🔐 Enter Admin PIN to Access Controls</h3>
+    <input type="password" id="adminPin" placeholder="Enter Admin PIN" />
+    <button onclick="verifyAdminPin()">🔓 Unlock</button>
+  </div>
+
+  <div class="reset-section hidden" id="resetSection">
+    <h3>🛠️ Reset Clinic PIN</h3>
+    <input type="text" id="clinicName" placeholder="Clinic Name" />
+    <input type="text" id="newPin" placeholder="New PIN" />
+    <button onclick="resetClinicPin()">✅ Reset PIN</button>
+    <p id="resetMsg"></p>
+  </div>
+
+  <script>
+    const csvUrl = "https://warangalonepoint.github.io/clinic-admin/logs.csv";
+
+    async function loadLogs() {
+      const response = await fetch(csvUrl);
+      const data = await response.text();
+      const rows = data.split("\n").slice(1); // skip header
+      const tbody = document.querySelector("#logsTable tbody");
+      tbody.innerHTML = "";
+      rows.forEach(row => {
+        const cols = row.split(",");
+        if (cols.length >= 4) {
+          const tr = document.createElement("tr");
+          cols.forEach(cell => {
+            const td = document.createElement("td");
+            td.textContent = cell.trim();
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        }
+      });
+    }
+
+    function filterLogs() {
+      const date = document.getElementById("dateFilter").value;
+      const rows = document.querySelectorAll("#logsTable tbody tr");
+      rows.forEach(row => {
+        const logDate = row.children[0].textContent;
+        row.style.display = logDate === date || date === "" ? "" : "none";
+      });
+    }
+
+    function exportLogs() {
+      const a = document.createElement("a");
+      a.href = csvUrl;
+      a.download = "logs.csv";
+      a.click();
+    }
+
+    function verifyAdminPin() {
+      const pin = document.getElementById("adminPin").value.trim();
+      if (pin === "2525") {
+        document.getElementById("resetSection").classList.remove("hidden");
+        alert("✅ Admin Access Granted");
+      } else {
+        alert("❌ Incorrect PIN");
+      }
+    }
+
+    function resetClinicPin() {
+      const clinic = document.getElementById("clinicName").value.trim();
+      const newPin = document.getElementById("newPin").value.trim();
+      if (!clinic || !newPin) {
+        document.getElementById("resetMsg").textContent = "❌ Both fields are required.";
+        return;
+      }
+      localStorage.setItem(`PIN_${clinic}`, newPin);
+      document.getElementById("resetMsg").textContent = `✅ PIN reset for ${clinic} to ${newPin}`;
+    }
+
+    loadLogs();
+  </script>
+</body>
+</html>
