@@ -93,27 +93,37 @@
     async function loadAvailableSlots() {
       const sheetUrl = 'https://docs.google.com/spreadsheets/d/1Sby5FqvmSEGQcId106sz-MLJF1nlwarbfEVMMSIKM74/gviz/tq?tqx=out:csv&sheet=AvailableSlots';
 
-      const response = await fetch(sheetUrl);
-      const csvText = await response.text();
-      const rows = csvText.trim().split('\\n').map(row => row.split(','));
+      try {
+        const response = await fetch(sheetUrl);
+        const csvText = await response.text();
+        const rows = csvText.trim().split('\n').map(row => row.split(','));
 
-      const container = document.getElementById('slotContainer');
-      container.innerHTML = '';
+        const container = document.getElementById('slotContainer');
+        container.innerHTML = '';
 
-      for (let i = 1; i < rows.length; i++) {
-        const [dateRaw, timeRaw, status] = rows[i];
+        for (let i = 1; i < rows.length; i++) {
+          let [dateRaw, timeRaw, status] = rows[i];
 
-        const date = dateRaw.replace(/"/g, '').trim();
-        const fullTime = timeRaw.replace(/"/g, '').trim();
-        const time = fullTime.includes(' ') ? fullTime.split(' ')[1] : fullTime;
+          let date = dateRaw.replace(/"/g, '').trim();
+          let time = timeRaw.replace(/"/g, '').trim();
 
-        if (status.trim().toLowerCase() !== 'booked') {
-          const slotBtn = document.createElement('button');
-          slotBtn.innerText = `${date} at ${time}`;
-          slotBtn.className = 'slot-button';
-          slotBtn.onclick = () => selectSlot(date, time);
-          container.appendChild(slotBtn);
+          // Safely extract time if full timestamp is given
+          if (time.includes(' ')) {
+            const parts = time.split(' ');
+            time = parts.length > 1 ? parts[1] : parts[0];
+          }
+
+          if (status && status.trim().toLowerCase() !== 'booked') {
+            const slotBtn = document.createElement('button');
+            slotBtn.innerText = `${date} at ${time}`;
+            slotBtn.className = 'slot-button';
+            slotBtn.onclick = () => selectSlot(date, time);
+            container.appendChild(slotBtn);
+          }
         }
+      } catch (error) {
+        console.error("Error loading slots:", error);
+        document.getElementById('slotContainer').innerText = "Failed to load slots.";
       }
     }
 
