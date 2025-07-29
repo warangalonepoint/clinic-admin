@@ -6,141 +6,112 @@
   <title>Book Appointment</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: #111;
+      background-color: #000;
       color: #fff;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 40px 20px;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      text-align: center;
     }
-
     h1 {
-      color: #00f5d4;
-      text-align: center;
+      color: #00ffff;
+      font-size: 28px;
     }
-
     p {
-      color: #ff66c4;
-      text-align: center;
-      margin-bottom: 30px;
+      color: #cc66cc;
+      font-size: 16px;
     }
-
     input, select, button {
       width: 90%;
       max-width: 400px;
       padding: 12px;
       margin: 10px auto;
-      border: none;
-      border-radius: 5px;
+      display: block;
+      border-radius: 8px;
       font-size: 16px;
+      border: none;
     }
-
-    input, select {
-      background: #222;
-      color: #fff;
-    }
-
     button {
-      background: #00f5d4;
+      background-color: #00ffff;
       color: #000;
       font-weight: bold;
       cursor: pointer;
     }
-
-    button:hover {
-      background: #0ff;
-    }
   </style>
 </head>
 <body>
+
   <h1>Book Your Appointment</h1>
-  <p>Select a time slot below and confirm via WhatsApp</p>
+  <p>Select a time slot below and confirm</p>
 
   <input type="text" id="name" placeholder="Enter Your Name" required>
   <input type="text" id="reason" placeholder="Reason for Visit" required>
 
   <select id="dateDropdown">
-    <option value="">Select Date</option>
+    <option selected disabled>Select Date</option>
   </select>
 
   <select id="slotDropdown">
-    <option value="">Select Time Slot</option>
+    <option selected disabled>Select Time Slot</option>
   </select>
 
-  <button onclick="confirmBooking()">Confirm on WhatsApp</button>
+  <button onclick="submitForm()">Confirm Appointment</button>
 
   <script>
-    const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1v0QyTuU2qw0Yxk6GkRdpbzWtoYcKJy2nfVcq294qOaSpyCsntFJ01FKjgBAesic7Cg8cCbEK_lUWdDr/pub?gid=1762577234&single=true&output=csv";
+    const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQyTuU2qw0Ykk6GRdpbzWtoYcKJy2nfVcq294qOaSpyCsnfFJ01fKjgBAesiC7gBcCBEk_lJUWd7/pub?gid=1762577234&single=true&output=csv";
+    let allSlots = [];
 
-    async function loadSlots() {
-      try {
-        const res = await fetch(SHEET_URL);
-        const text = await res.text();
-        const rows = text.trim().split('\n').slice(1).map(r => r.split(','));
+    fetch(sheetURL)
+      .then(response => response.text())
+      .then(data => {
+        const rows = data.trim().split("\\n").slice(1);
+        allSlots = rows.map(row => {
+          const [date, time, status] = row.split(",");
+          return { date, time, status };
+        }).filter(s => s.status.toLowerCase().includes("available"));
 
-        const dateDropdown = document.getElementById('dateDropdown');
-        const slotDropdown = document.getElementById('slotDropdown');
-
-        const available = rows.filter(r => r[2].toLowerCase() === 'available');
-        const grouped = {};
-
-        for (let row of available) {
-          const date = row[0].trim();
-          const time = row[1].trim();
-
-          if (!grouped[date]) grouped[date] = [];
-          grouped[date].push(time);
-        }
-
-        // Populate date dropdown
-        for (let date in grouped) {
-          const option = document.createElement('option');
-          option.value = date;
+        const dates = [...new Set(allSlots.map(s => s.date))];
+        const dateDropdown = document.getElementById("dateDropdown");
+        dates.forEach(date => {
+          const option = document.createElement("option");
           option.textContent = date;
+          option.value = date;
           dateDropdown.appendChild(option);
-        }
-
-        // When a date is selected, populate slots
-        dateDropdown.addEventListener('change', () => {
-          const selectedDate = dateDropdown.value;
-          slotDropdown.innerHTML = '<option value="">Select Time Slot</option>';
-
-          if (grouped[selectedDate]) {
-            grouped[selectedDate].forEach(time => {
-              const option = document.createElement('option');
-              option.value = time;
-              option.textContent = time;
-              slotDropdown.appendChild(option);
-            });
-          }
         });
 
-      } catch (error) {
-        alert("Error loading slots. Please check your internet or sheet publishing.");
+        dateDropdown.addEventListener("change", () => {
+          const selectedDate = dateDropdown.value;
+          const slots = allSlots.filter(s => s.date === selectedDate).map(s => s.time);
+
+          const slotDropdown = document.getElementById("slotDropdown");
+          slotDropdown.innerHTML = "<option disabled selected>Select Time Slot</option>";
+          slots.forEach(time => {
+            const option = document.createElement("option");
+            option.textContent = time;
+            option.value = time;
+            slotDropdown.appendChild(option);
+          });
+        });
+      })
+      .catch(error => {
+        alert("Error loading slots. Please check your internet or Sheet publishing settings.");
         console.error(error);
-      }
-    }
+      });
 
-    function confirmBooking() {
-      const name = document.getElementById('name').value.trim();
-      const reason = document.getElementById('reason').value.trim();
-      const date = document.getElementById('dateDropdown').value;
-      const time = document.getElementById('slotDropdown').value;
+    function submitForm() {
+      const name = document.getElementById("name").value.trim();
+      const reason = document.getElementById("reason").value.trim();
+      const date = document.getElementById("dateDropdown").value;
+      const slot = document.getElementById("slotDropdown").value;
 
-      if (!name || !reason || !date || !time) {
-        alert("Please fill all fields before confirming.");
+      if (!name || !reason || !date || !slot) {
+        alert("Please fill all fields before booking.");
         return;
       }
 
-      const message = `Hello, I would like to book an appointment.\n\n👤 Name: ${name}\n📝 Reason: ${reason}\n📅 Date: ${date}\n⏰ Time: ${time}`;
-      const encoded = encodeURIComponent(message);
-      const phone = "919390664577"; // Update this if needed
-
-      window.open(`https://wa.me/${phone}?text=${encoded}`, "_blank");
+      const confirmURL = `booking-confirm.html?name=${encodeURIComponent(name)}&reason=${encodeURIComponent(reason)}&date=${encodeURIComponent(date)}&slot=${encodeURIComponent(slot)}`;
+      window.location.href = confirmURL;
     }
-
-    loadSlots();
   </script>
+
 </body>
 </html>
