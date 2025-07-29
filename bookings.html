@@ -2,96 +2,99 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Book Appointment</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
       background-color: #111;
+      color: #00ffaa;
       font-family: Arial, sans-serif;
-      color: #0fffc1;
-      margin: 0;
-      padding: 20px;
       text-align: center;
+      padding: 20px;
     }
-
     h1 {
-      color: #00ffc8;
       font-size: 28px;
       margin-bottom: 10px;
+      color: #00ffaa;
     }
-
-    p {
-      color: #66ffe6;
+    h2 {
+      font-size: 16px;
+      color: #00f0cc;
       margin-bottom: 20px;
     }
-
     #slots {
       display: flex;
       flex-direction: column;
-      align-items: center;
-      gap: 15px;
+      gap: 12px;
+      margin-top: 20px;
     }
-
     .slot {
-      background-color: #1e1e1e;
-      padding: 15px 20px;
-      border-radius: 10px;
-      width: 90%;
-      max-width: 400px;
-      box-shadow: 0 0 10px #00ffc8;
+      background: #222;
+      border: 1px solid #333;
+      padding: 12px;
+      border-radius: 8px;
+      color: #fff;
     }
-
     .slot button {
-      margin-top: 10px;
-      padding: 10px 20px;
-      font-size: 15px;
-      background-color: #00ffc8;
-      color: #000;
+      background-color: #00ffaa;
+      color: #111;
       border: none;
-      border-radius: 5px;
+      padding: 8px 16px;
+      margin-top: 6px;
+      border-radius: 6px;
+      font-weight: bold;
       cursor: pointer;
     }
-
-    .slot button:hover {
-      background-color: #00e6b8;
-    }
-
     #noSlots {
-      color: #ff8888;
-      margin-top: 30px;
+      display: none;
+      color: #ff7070;
       font-size: 16px;
+      margin-top: 30px;
     }
   </style>
 </head>
 <body>
   <h1>Book Your Appointment</h1>
-  <p>Select a time slot below and confirm via WhatsApp</p>
+  <h2>Select a time slot below and confirm via WhatsApp</h2>
   <div id="slots"></div>
-  <p id="noSlots" style="display:none;">No available slots right now. Please check back later.</p>
+  <div id="noSlots">No available slots right now. Please check back later.</div>
 
   <script>
     const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQqYTuU2qw0YxkGGKrdpbzWtoYcKJy2nfVcq294qOaSpyCsnfTJO1FKjjgBAesiC7g8cCbEK_UUWDvr/pub?gid=2115782150&single=true&output=csv";
 
-    const today = new Date().toLocaleDateString('en-GB', {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric'
-    });
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
     function formatTimeSlot(slot) {
       return slot.replace(/^0/, '').replace(':00', '') + ' IST';
     }
 
+    function parseDate(dateStr) {
+      const date = new Date(dateStr);
+      if (!isNaN(date)) return new Date(date.setHours(0, 0, 0, 0));
+      const parts = dateStr.split(/[\/\-\s]+/);
+      if (parts.length === 3) {
+        const [d, m, y] = parts;
+        const mm = isNaN(m) ? new Date(`${m} 1, 2000`).getMonth() + 1 : parseInt(m);
+        return new Date(`${y}-${mm}-${d}`);
+      }
+      return null;
+    }
+
     fetch(sheetURL)
       .then(res => res.text())
       .then(csv => {
-        const rows = csv.trim().split('\n').slice(1); // skip headers
-        const availableSlots = rows.map(r => r.split(',')).filter(cols =>
-          cols[0].trim() === today && cols[2].toLowerCase().includes('available')
-        );
-
+        const rows = csv.trim().split('\n').slice(1);
         const slotsDiv = document.getElementById('slots');
         const noSlotsMsg = document.getElementById('noSlots');
+
+        const availableSlots = rows.map(row => row.split(',')).filter(cols => {
+          const rawDate = cols[0]?.trim();
+          const time = cols[1]?.trim();
+          const status = cols[2]?.trim().toLowerCase();
+          const slotDate = parseDate(rawDate);
+          return slotDate && slotDate.getTime() === today.getTime() && status === 'available';
+        });
 
         if (availableSlots.length === 0) {
           noSlotsMsg.style.display = 'block';
@@ -99,23 +102,21 @@
         }
 
         availableSlots.forEach(([date, time, status]) => {
-          const slotDiv = document.createElement('div');
-          slotDiv.className = 'slot';
-
-          const timeFormatted = formatTimeSlot(time.trim());
-
-          slotDiv.innerHTML = `
-            <strong>${date} — ${timeFormatted}</strong><br/>
-            <button onclick="bookSlot('${date}', '${timeFormatted}')">Book on WhatsApp</button>
+          const div = document.createElement('div');
+          div.className = 'slot';
+          const formattedTime = formatTimeSlot(time);
+          div.innerHTML = `
+            <strong>${date} — ${formattedTime}</strong><br/>
+            <button onclick="bookSlot('${date}', '${formattedTime}')">Book on WhatsApp</button>
           `;
-          slotsDiv.appendChild(slotDiv);
+          slotsDiv.appendChild(div);
         });
       });
 
     function bookSlot(date, time) {
       const message = `Hi, I would like to book an appointment on ${date} at ${time}.`;
-      const phoneNumber = "919390664577"; // Your clinic WhatsApp number
-      const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+      const phone = "919390664577";
+      const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
       window.open(url, '_blank');
     }
   </script>
