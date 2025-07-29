@@ -6,30 +6,42 @@
   <title>Book Appointment</title>
   <style>
     body {
-      background: #000;
-      font-family: Arial, sans-serif;
+      background-color: #000;
       color: #fff;
+      font-family: Arial, sans-serif;
       padding: 20px;
     }
 
     h2 {
       color: orange;
       text-align: center;
+      font-size: 24px;
     }
 
     input, select, button {
+      display: block;
       width: 100%;
       padding: 12px;
-      margin: 10px 0;
-      border: none;
-      border-radius: 10px;
+      margin: 12px 0;
       font-size: 16px;
+      border-radius: 8px;
+      border: none;
+    }
+
+    input, select {
+      background-color: #222;
+      color: #fff;
     }
 
     button {
-      background-color: orange;
-      color: #000;
+      background-color: green;
+      color: #fff;
       font-weight: bold;
+    }
+
+    label {
+      margin-top: 10px;
+      display: block;
     }
   </style>
 </head>
@@ -51,56 +63,63 @@
   <button onclick="showConfirmation()">Confirm Booking</button>
 
   <script>
+    function formatDateToCSV(dateStr) {
+      const parts = dateStr.split("-");
+      return `${parts[2]}-${parts[1]}-${parts[0]}`; // from YYYY-MM-DD → DD-MM-YYYY
+    }
+
     async function loadAvailableSlots() {
-      const dateInput = document.getElementById("appointmentDate").value;
-      const dateParts = dateInput.split("-");
-      const formattedDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`; // Convert to DD-MM-YYYY
+      const selectedDate = formatDateToCSV(document.getElementById("appointmentDate").value);
+      const slotDropdown = document.getElementById("appointmentTime");
+      slotDropdown.innerHTML = "<option value=''>Select Time Slot</option>";
 
-      const response = await fetch("https://warangalonepoint.github.io/clinic-admin/Slots.csv");
-      const csvData = await response.text();
+      try {
+        const response = await fetch("https://warangalonepoint.github.io/clinic-admin/Slots.csv");
+        const csvText = await response.text();
 
-      const rows = csvData.split("\n").slice(1); // Skip header
-      const timeDropdown = document.getElementById("appointmentTime");
-      timeDropdown.innerHTML = '<option value="">Select Time Slot</option>';
+        const rows = csvText.split("\n").slice(1); // Skip header
+        const slots = rows
+          .map(row => row.trim().split(","))
+          .filter(row => row[0] === selectedDate && row[2]?.toLowerCase() === "available");
 
-      let found = false;
-
-      rows.forEach(row => {
-        const cols = row.split(",");
-        const date = cols[0]?.trim();
-        const time = cols[1]?.trim();
-        const status = cols[2]?.trim();
-
-        if (date === formattedDate && status?.toLowerCase() === "available") {
-          found = true;
+        if (slots.length === 0) {
           const option = document.createElement("option");
-          option.value = time;
-          option.text = time;
-          timeDropdown.appendChild(option);
+          option.value = "";
+          option.text = "No slots available";
+          slotDropdown.appendChild(option);
+        } else {
+          slots.forEach(row => {
+            const option = document.createElement("option");
+            option.value = row[1];
+            option.text = row[1];
+            slotDropdown.appendChild(option);
+          });
         }
-      });
-
-      if (!found) {
-        const option = document.createElement("option");
-        option.text = "No slots available";
-        option.disabled = true;
-        timeDropdown.appendChild(option);
+      } catch (error) {
+        console.error("Error loading slots:", error);
       }
     }
 
     function showConfirmation() {
-      const name = document.getElementById("patientName").value;
-      const reason = document.getElementById("reason").value;
+      const name = document.getElementById("patientName").value.trim();
+      const reason = document.getElementById("reason").value.trim();
       const date = document.getElementById("appointmentDate").value;
       const time = document.getElementById("appointmentTime").value;
 
       if (!name || !reason || !date || !time) {
-        alert("Please fill all details");
+        alert("Please fill in all fields.");
         return;
       }
 
-      const url = `confirmation.html?name=${encodeURIComponent(name)}&reason=${encodeURIComponent(reason)}&date=${encodeURIComponent(date)}&time=${encodeURIComponent(time)}`;
-      window.location.href = url;
+      // Store data and redirect to confirmation page
+      const query = new URLSearchParams({
+        name,
+        reason,
+        date,
+        time
+      }).toString();
+
+      window.location.href = `confirmation.html?${query}`;
     }
   </script>
 
