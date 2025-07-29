@@ -6,44 +6,30 @@
   <title>Book Appointment</title>
   <style>
     body {
-      background-color: #000;
+      background: #000;
+      font-family: Arial, sans-serif;
       color: #fff;
-      font-family: 'Segoe UI', sans-serif;
-      margin: 0;
       padding: 20px;
     }
 
     h2 {
+      color: orange;
       text-align: center;
-      color: #f77f00;
-      margin-bottom: 30px;
     }
 
     input, select, button {
-      width: 90%;
-      max-width: 400px;
-      margin: 10px auto;
-      display: block;
-      padding: 15px;
-      font-size: 16px;
-      border-radius: 10px;
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
       border: none;
-    }
-
-    select, input {
-      background-color: #eee;
-      color: #000;
+      border-radius: 10px;
+      font-size: 16px;
     }
 
     button {
-      background-color: #f77f00;
-      color: white;
+      background-color: orange;
+      color: #000;
       font-weight: bold;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background-color: #e76f00;
     }
   </style>
 </head>
@@ -65,51 +51,41 @@
   <button onclick="showConfirmation()">Confirm Booking</button>
 
   <script>
-    document.getElementById("appointmentDate").addEventListener("change", loadAvailableSlots);
-    window.onload = function () {
-      const today = new Date().toISOString().split('T')[0];
-      document.getElementById("appointmentDate").value = today;
-      loadAvailableSlots();
-    };
-
     async function loadAvailableSlots() {
-      const selectedRawDate = document.getElementById("appointmentDate").value;
-      const selectedDate = formatDate(selectedRawDate); // DD-MM-YYYY format
+      const dateInput = document.getElementById("appointmentDate").value;
+      const dateParts = dateInput.split("-");
+      const formattedDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`; // Convert to DD-MM-YYYY
+
+      const response = await fetch("https://warangalonepoint.github.io/clinic-admin/Slots.csv");
+      const csvData = await response.text();
+
+      const rows = csvData.split("\n").slice(1); // Skip header
       const timeDropdown = document.getElementById("appointmentTime");
-      timeDropdown.innerHTML = "<option value=''>Select Time Slot</option>";
+      timeDropdown.innerHTML = '<option value="">Select Time Slot</option>';
 
-      const slotsResp = await fetch("https://warangalonepoint.github.io/clinic-admin/Slots.csv");
-      const slotsText = await slotsResp.text();
-      const slotLines = slotsText.split("\n").slice(1).filter(line => line.trim() !== "");
+      let found = false;
 
-      const availableSlots = [];
+      rows.forEach(row => {
+        const cols = row.split(",");
+        const date = cols[0]?.trim();
+        const time = cols[1]?.trim();
+        const status = cols[2]?.trim();
 
-      for (const line of slotLines) {
-        const [date, time, status] = line.split(",").map(x => x.trim());
-        if (date === selectedDate && status === "Available") {
-          availableSlots.push(time);
+        if (date === formattedDate && status?.toLowerCase() === "available") {
+          found = true;
+          const option = document.createElement("option");
+          option.value = time;
+          option.text = time;
+          timeDropdown.appendChild(option);
         }
-      }
+      });
 
-      if (availableSlots.length === 0) {
-        const opt = document.createElement("option");
-        opt.text = "No slots available";
-        opt.disabled = true;
-        timeDropdown.appendChild(opt);
-      } else {
-        availableSlots.forEach(time => {
-          const opt = document.createElement("option");
-          opt.value = time;
-          opt.text = time;
-          timeDropdown.appendChild(opt);
-        });
+      if (!found) {
+        const option = document.createElement("option");
+        option.text = "No slots available";
+        option.disabled = true;
+        timeDropdown.appendChild(option);
       }
-    }
-
-    function formatDate(inputDate) {
-      if (!inputDate) return "";
-      const [yyyy, mm, dd] = inputDate.split("-");
-      return `${dd}-${mm}-${yyyy}`;
     }
 
     function showConfirmation() {
@@ -119,15 +95,12 @@
       const time = document.getElementById("appointmentTime").value;
 
       if (!name || !reason || !date || !time) {
-        alert("Please fill in all details before confirming.");
+        alert("Please fill all details");
         return;
       }
 
-      const formattedDate = formatDate(date);
-      const message = `Hello, I would like to book an appointment:\n\n👤 Name: ${name}\n🗓️ Date: ${formattedDate}\n⏰ Time: ${time}\n📌 Reason: ${reason}`;
-
-      const encodedMessage = encodeURIComponent(message);
-      window.location.href = `https://wa.me/919390664577?text=${encodedMessage}`;
+      const url = `confirmation.html?name=${encodeURIComponent(name)}&reason=${encodeURIComponent(reason)}&date=${encodeURIComponent(date)}&time=${encodeURIComponent(time)}`;
+      window.location.href = url;
     }
   </script>
 
