@@ -1,93 +1,87 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Booking Logs Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Confirm Your Booking</title>
   <style>
-    :root {
-      --bg-color: #000;
-      --text-color: #fff;
-      --highlight: #f0ad4e;
-      --card-bg: #1a1a1a;
-    }
-    body.light-mode {
-      --bg-color: #fff;
-      --text-color: #000;
-      --highlight: #d9534f;
-      --card-bg: #f5f5f5;
-    }
     body {
-      margin: 0;
+      background-color: #000;
+      color: #fff;
       font-family: Arial, sans-serif;
-      background-color: var(--bg-color);
-      color: var(--text-color);
       padding: 20px;
     }
+
     h2 {
-      color: var(--highlight);
-    }
-    .toggle-button {
-      background: var(--highlight);
-      color: var(--bg-color);
-      border: none;
-      padding: 10px 20px;
-      cursor: pointer;
-      border-radius: 5px;
+      text-align: center;
+      color: orange;
+      font-size: 24px;
       margin-bottom: 20px;
     }
-    table {
+
+    .summary {
+      background: #1a1a1a;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 10px #444;
+      margin-bottom: 20px;
+    }
+
+    .summary p {
+      font-size: 18px;
+      margin: 10px 0;
+    }
+
+    button {
       width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-    }
-    th, td {
-      border: 1px solid var(--highlight);
-      padding: 8px;
-      text-align: left;
-    }
-    th {
-      background-color: var(--highlight);
-      color: var(--bg-color);
-    }
-    .export-btn {
-      margin-top: 20px;
-      padding: 10px 20px;
-      background-color: var(--highlight);
-      color: var(--bg-color);
+      background-color: green;
+      color: #fff;
+      font-size: 18px;
+      padding: 14px;
       border: none;
+      border-radius: 8px;
       cursor: pointer;
-      border-radius: 5px;
+    }
+
+    button:hover {
+      background-color: #0f0;
+      color: #000;
     }
   </style>
 </head>
 <body>
-  <button class="toggle-button" onclick="toggleTheme()">Toggle Theme</button>
-  <h2>📊 Appointment Logs</h2>
-  <div id="logTableContainer">Loading logs...</div>
-  <button class="export-btn" onclick="exportCSV()">Export Logs as CSV</button>  <script>
-    const logsUrl = "https://warangalonepoint.github.io/clinic-admin/logs.csv";
 
-    async function loadLogs() {
-      const res = await fetch(logsUrl);
-      const data = await res.text();
-      const rows = data.trim().split("\n").map(row => row.split(","));
+  <h2>✅ Confirm Your Booking</h2>
 
-      let html = '<table><tr>' + rows[0].map(h => `<th>${h}</th>`).join('') + '</tr>';
-      for (let i = 1; i < rows.length; i++) {
-        html += '<tr>' + rows[i].map(d => `<td>${d}</td>`).join('') + '</tr>';
-      }
-      html += '</table>';
-      document.getElementById("logTableContainer").innerHTML = html;
+  <div class="summary">
+    <p><strong>👤 Name:</strong> <span id="confirmName"></span></p>
+    <p><strong>📝 Reason:</strong> <span id="confirmReason"></span></p>
+    <p><strong>📅 Date:</strong> <span id="confirmDate"></span></p>
+    <p><strong>⏰ Time:</strong> <span id="confirmTime"></span></p>
+  </div>
+
+  <button onclick="sendWhatsApp()">Confirm & Send on WhatsApp</button>
+
+  <script>
+    // Get booking details from localStorage
+    const name = localStorage.getItem('patientName') || 'N/A';
+    const reason = localStorage.getItem('reason') || 'N/A';
+    const date = localStorage.getItem('appointmentDate') || 'N/A';
+    const time = localStorage.getItem('appointmentTime') || 'N/A';
+
+    // Fill them into HTML
+    document.getElementById('confirmName').textContent = name;
+    document.getElementById('confirmReason').textContent = reason;
+    document.getElementById('confirmDate').textContent = date;
+    document.getElementById('confirmTime').textContent = time;
+
+    function sendWhatsApp() {
+      const message = `Hello, I would like to book an appointment.\n\n👤 Name: ${name}\n📝 Reason: ${reason}\n📅 Date: ${date}\n⏰ Time: ${time}`;
+      const encoded = encodeURIComponent(message);
+      const whatsappLink = `https://wa.me/919390664577?text=${encoded}`;
+      window.location.href = whatsappLink;
     }
+  </script>
 
-    function toggleTheme() {
-      document.body.classList.toggle("light-mode");
-    }
-
-    function exportCSV() {
-      window.open(logsUrl, '_blank');
-    }
-
-    loadLogs();
-  </script></body>
+</body>
 </html>
