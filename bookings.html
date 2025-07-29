@@ -2,126 +2,115 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Book Appointment</title>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <style>
     body {
-      font-family: 'Roboto', sans-serif;
-      background: #000;
+      background-color: #000;
       color: #fff;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 30px 20px;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      text-align: center;
     }
-
     h1 {
-      color: #00ffd5;
-      text-align: center;
+      color: #00ffff;
+      font-size: 26px;
     }
-
     p {
-      color: #ff6fe3;
-      text-align: center;
-      margin-bottom: 25px;
+      color: #ccc;
+      font-size: 16px;
     }
-
     input, select, button {
-      width: 100%;
+      width: 90%;
       max-width: 400px;
       padding: 12px;
-      margin-bottom: 15px;
+      margin: 10px auto;
+      display: block;
+      border-radius: 6px;
       font-size: 16px;
       border: none;
-      border-radius: 8px;
     }
-
-    input, select {
-      background: #ddd;
-      color: #000;
-    }
-
     button {
-      background-color: #00d6b3;
+      background-color: #00ffff;
       color: #000;
       font-weight: bold;
       cursor: pointer;
     }
-
-    button:hover {
-      background-color: #00b79d;
-    }
   </style>
 </head>
 <body>
-  <h1>Book Your Appointment</h1>
-  <p>Select a time slot below and confirm</p>
 
-  <input type="text" id="name" placeholder="Enter Your Name" />
-  <input type="text" id="reason" placeholder="Reason for Visit" />
+  <h1>Book Your Appointment</h1>
+  <p>Select a time slot and confirm via WhatsApp</p>
+
+  <input type="text" id="name" placeholder="Your Name" required>
+  <input type="text" id="reason" placeholder="Reason for Visit" required>
+
   <select id="dateDropdown">
     <option disabled selected>Select Date</option>
   </select>
+
   <select id="slotDropdown">
     <option disabled selected>Select Time Slot</option>
   </select>
-  <button onclick="submitForm()">Confirm Appointment</button>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+  <button onclick="bookNow()">Confirm on WhatsApp</button>
+
   <script>
-    const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQyTuU2qw0Ykk6GRdpbzWtoYcKJy2nfVcq294qOaSpyCsnfFJ01fKjgBAesiC7gBcCBEk_lJUWd7/pub?gid=1762577234&single=true&output=csv";
+    const csvURL = "https://raw.githubusercontent.com/warangalonepoint/warangalonepoint.github.io/main/Slots.csv";
+
     let allSlots = [];
 
-    Papa.parse(sheetURL, {
-      download: true,
-      header: true,
-      complete: function(results) {
-        allSlots = results.data.filter(s => s.Status.toLowerCase().includes("available"));
+    fetch(csvURL)
+      .then(response => response.text())
+      .then(text => {
+        const lines = text.trim().split('\n').slice(1); // skip header
+        allSlots = lines.map(line => {
+          const [date, time, status] = line.split(',');
+          return { date, time, status };
+        }).filter(slot => slot.status.toLowerCase() === 'available');
 
-        const dates = [...new Set(allSlots.map(s => s.Date))];
-        const dateDropdown = document.getElementById("dateDropdown");
-
-        dates.forEach(date => {
-          const option = document.createElement("option");
-          option.textContent = date;
+        const uniqueDates = [...new Set(allSlots.map(slot => slot.date))];
+        const dateDropdown = document.getElementById('dateDropdown');
+        uniqueDates.forEach(date => {
+          const option = document.createElement('option');
           option.value = date;
+          option.textContent = date;
           dateDropdown.appendChild(option);
         });
 
-        dateDropdown.addEventListener("change", () => {
+        dateDropdown.addEventListener('change', () => {
           const selectedDate = dateDropdown.value;
-          const slots = allSlots.filter(s => s.Date === selectedDate).map(s => s["Time Slot"]);
-
-          const slotDropdown = document.getElementById("slotDropdown");
-          slotDropdown.innerHTML = "<option disabled selected>Select Time Slot</option>";
-          slots.forEach(time => {
-            const option = document.createElement("option");
-            option.textContent = time;
-            option.value = time;
+          const filtered = allSlots.filter(s => s.date === selectedDate);
+          const slotDropdown = document.getElementById('slotDropdown');
+          slotDropdown.innerHTML = '<option disabled selected>Select Time Slot</option>';
+          filtered.forEach(s => {
+            const option = document.createElement('option');
+            option.value = s.time;
+            option.textContent = s.time;
             slotDropdown.appendChild(option);
           });
         });
-      },
-      error: function(err) {
-        alert("Error loading slots. Please check internet or sheet link.");
-        console.error(err);
-      }
-    });
+      })
+      .catch(error => {
+        alert("Couldn't load slots. Please check CSV link.");
+        console.error(error);
+      });
 
-    function submitForm() {
+    function bookNow() {
       const name = document.getElementById("name").value.trim();
       const reason = document.getElementById("reason").value.trim();
       const date = document.getElementById("dateDropdown").value;
-      const slot = document.getElementById("slotDropdown").value;
+      const time = document.getElementById("slotDropdown").value;
 
-      if (!name || !reason || !date || !slot) {
-        alert("Please fill all fields.");
+      if (!name || !reason || !date || !time) {
+        alert("Please complete all fields.");
         return;
       }
 
-      const confirmURL = `booking-confirm.html?name=${encodeURIComponent(name)}&reason=${encodeURIComponent(reason)}&date=${encodeURIComponent(date)}&slot=${encodeURIComponent(slot)}`;
-      window.location.href = confirmURL;
+      const message = `Hi, I am ${name}. I want to book an appointment for ${reason} on ${date} at ${time}.`;
+      const whatsappURL = `https://wa.me/919390664577?text=${encodeURIComponent(message)}`;
+      window.open(whatsappURL, "_blank");
     }
   </script>
 </body>
