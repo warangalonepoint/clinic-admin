@@ -10,110 +10,110 @@
       color: #fff;
       font-family: Arial, sans-serif;
       padding: 20px;
+      text-align: center;
     }
     h1 {
-      text-align: center;
-      color: cyan;
+      color: #00ffff;
+      font-size: 28px;
     }
     p {
-      text-align: center;
-      color: violet;
-      margin-bottom: 30px;
+      color: #cc66cc;
+      font-size: 16px;
     }
     input, select, button {
-      width: 100%;
+      width: 90%;
+      max-width: 400px;
       padding: 12px;
-      margin: 10px 0;
+      margin: 10px auto;
+      display: block;
+      border-radius: 8px;
       font-size: 16px;
-      border-radius: 10px;
       border: none;
     }
     button {
-      background-color: #00ffcc;
+      background-color: #00ffff;
       color: #000;
       font-weight: bold;
       cursor: pointer;
     }
-    button:hover {
-      background-color: #00cc99;
-    }
   </style>
 </head>
 <body>
+
   <h1>Book Your Appointment</h1>
   <p>Select a time slot below and confirm via WhatsApp</p>
 
-  <input type="text" id="name" placeholder="Your Name" />
-  <input type="text" id="reason" placeholder="Reason for Visit" />
-  
-  <select id="dateSelect">
+  <input type="text" id="name" placeholder="Enter Your Name" required>
+  <input type="text" id="reason" placeholder="Reason for Visit" required>
+
+  <select id="dateDropdown">
     <option selected disabled>Select Date</option>
   </select>
-  
-  <select id="timeSelect">
+
+  <select id="slotDropdown">
     <option selected disabled>Select Time Slot</option>
   </select>
 
-  <button onclick="bookNow()">Book via WhatsApp</button>
+  <button onclick="bookSlot()">Confirm on WhatsApp</button>
 
   <script>
     const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQyTuU2qw0Ykk6GRdpbzWtoYcKJy2nfVcq294qOaSpyCsnfFJ01fKjgBAesiC7gBcCBEk_lJUWd7/pub?gid=1762577234&single=true&output=csv";
-    let slotData = [];
+
+    let allSlots = [];
 
     fetch(sheetURL)
-      .then(res => res.text())
+      .then(response => response.text())
       .then(data => {
-        const rows = data.trim().split("\n").slice(1); // Skip header
-        const dates = new Set();
-        const times = [];
+        const rows = data.trim().split("\n").slice(1); // Skip headers
+        allSlots = rows.map(row => {
+          const [date, time, status] = row.split(",");
+          return { date, time, status };
+        }).filter(s => s.status.toLowerCase().includes("available"));
 
-        rows.forEach(row => {
-          const [date, time, status] = row.split(",").map(s => s.trim());
-          if (status === "Available") {
-            dates.add(date);
-            times.push({ date, time });
-          }
+        const dates = [...new Set(allSlots.map(s => s.date))];
+        const dateDropdown = document.getElementById("dateDropdown");
+        dates.forEach(date => {
+          const option = document.createElement("option");
+          option.textContent = date;
+          option.value = date;
+          dateDropdown.appendChild(option);
         });
 
-        const dateSelect = document.getElementById("dateSelect");
-        [...dates].forEach(d => {
-          const opt = document.createElement("option");
-          opt.value = d;
-          opt.textContent = d;
-          dateSelect.appendChild(opt);
-        });
+        dateDropdown.addEventListener("change", () => {
+          const selectedDate = dateDropdown.value;
+          const slots = allSlots.filter(s => s.date === selectedDate).map(s => s.time);
 
-        const timeSelect = document.getElementById("timeSelect");
-        dateSelect.addEventListener("change", () => {
-          const selectedDate = dateSelect.value;
-          timeSelect.innerHTML = '<option selected disabled>Select Time Slot</option>';
-          times.forEach(slot => {
-            if (slot.date === selectedDate) {
-              const opt = document.createElement("option");
-              opt.value = slot.time;
-              opt.textContent = slot.time;
-              timeSelect.appendChild(opt);
-            }
+          const slotDropdown = document.getElementById("slotDropdown");
+          slotDropdown.innerHTML = "<option disabled selected>Select Time Slot</option>";
+          slots.forEach(time => {
+            const option = document.createElement("option");
+            option.textContent = time;
+            option.value = time;
+            slotDropdown.appendChild(option);
           });
         });
+      })
+      .catch(error => {
+        alert("Error loading slots. Please check your internet or sheet publishing.");
+        console.error(error);
       });
 
-    function bookNow() {
+    function bookSlot() {
       const name = document.getElementById("name").value.trim();
       const reason = document.getElementById("reason").value.trim();
-      const date = document.getElementById("dateSelect").value;
-      const time = document.getElementById("timeSelect").value;
+      const date = document.getElementById("dateDropdown").value;
+      const slot = document.getElementById("slotDropdown").value;
 
-      if (!name || !reason || !date || !time) {
-        alert("Please fill in all fields.");
+      if (!name || !reason || !date || !slot) {
+        alert("Please fill all fields before booking.");
         return;
       }
 
-      const msg = `Hi, I am ${name}.\nI would like to book an appointment on ${date} at ${time}.\nReason: ${reason}`;
-      const encodedMsg = encodeURIComponent(msg);
-      const waLink = `https://wa.me/919390664577?text=${encodedMsg}`;
-      window.open(waLink, "_blank");
+      const message = `Hi, I am ${name}. I want to book an appointment for ${reason} on ${date} at ${slot}.`;
+      const whatsappURL = `https://wa.me/919390664577?text=${encodeURIComponent(message)}`;
+      window.open(whatsappURL, "_blank");
     }
   </script>
+
 </body>
 </html>
