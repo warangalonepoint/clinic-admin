@@ -36,6 +36,13 @@
       font-weight: bold;
       cursor: pointer;
     }
+    #debug {
+      margin-top: 20px;
+      font-size: 12px;
+      color: #999;
+      white-space: pre-wrap;
+      text-align: left;
+    }
   </style>
 </head>
 <body>
@@ -56,19 +63,26 @@
 
   <button onclick="bookSlot()">Confirm on WhatsApp</button>
 
+  <div id="debug">Loading...</div>
+
   <script>
     const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQyTuU2qw0Ykk6GRdpbzWtoYcKJy2nfVcq294qOaSpyCsnfFJ01fKjgBAesiC7gBcCBEk_lJUWd7/pub?gid=1762577234&single=true&output=csv";
 
     let allSlots = [];
 
     fetch(sheetURL)
-      .then(response => response.text())
-      .then(data => {
-        const rows = data.trim().split("\n").slice(1); // Skip headers
+      .then(res => res.text())
+      .then(csv => {
+        const debugBox = document.getElementById("debug");
+        debugBox.textContent = "Raw CSV:\n" + csv.substring(0, 300) + "\n\nParsed data:\n";
+
+        const rows = csv.trim().split("\n").slice(1); // Skip headers
         allSlots = rows.map(row => {
-          const [date, time, status] = row.split(",");
+          const [date, time, status] = row.split(",").map(s => s.replace(/"/g, '').trim());
           return { date, time, status };
         }).filter(s => s.status.toLowerCase().includes("available"));
+
+        debugBox.textContent += JSON.stringify(allSlots.slice(0, 5), null, 2); // show preview
 
         const dates = [...new Set(allSlots.map(s => s.date))];
         const dateDropdown = document.getElementById("dateDropdown");
@@ -94,8 +108,8 @@
         });
       })
       .catch(error => {
-        alert("Error loading slots. Please check your internet or sheet publishing.");
-        console.error(error);
+        document.getElementById("debug").textContent = "Fetch failed:\n" + error;
+        console.error("Fetch error", error);
       });
 
     function bookSlot() {
@@ -109,8 +123,8 @@
         return;
       }
 
-      const message = `Hi, I am ${name}. I want to book an appointment for ${reason} on ${date} at ${slot}.`;
-      const whatsappURL = `https://wa.me/919390664577?text=${encodeURIComponent(message)}`;
+      const msg = `Hi, I am ${name}. I want to book an appointment for ${reason} on ${date} at ${slot}.`;
+      const whatsappURL = `https://wa.me/919390664577?text=${encodeURIComponent(msg)}`;
       window.open(whatsappURL, "_blank");
     }
   </script>
