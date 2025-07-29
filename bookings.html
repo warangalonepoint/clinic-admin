@@ -39,52 +39,36 @@
     const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQQyTUu2qw0Yxk6GKRdpbzWtoYckJv2nfVcq294q0aSpyCsnfFJ01fKjigBAesIC7g8cCbEK_lUWdWdr/pub?output=csv';
 
     async function loadSlots() {
-      const response = await fetch(sheetUrl);
-      const data = await response.text();
-      const rows = data.split('\n').slice(1); // skip header
-      const container = document.getElementById('slots');
-      container.innerHTML = '';
+      try {
+        const response = await fetch(sheetUrl);
+        const text = await response.text();
+        const rows = text.trim().split('\n').slice(1); // skip header
+        const container = document.getElementById('slots');
+        container.innerHTML = '';
 
-      const now = new Date();
-      const available = [];
+        let hasSlots = false;
 
-      rows.forEach(row => {
-        const cols = row.split(',');
-        if (cols.length < 3) return;
+        rows.forEach(row => {
+          const [date, time, status] = row.split(',').map(cell => cell.trim());
+          if (status && status.toLowerCase() === 'available') {
+            hasSlots = true;
+            const button = document.createElement('button');
+            button.className = 'slot-button';
+            button.textContent = `${date} – ${time}`;
+            button.onclick = () => {
+              const msg = `Hi, I’d like to book an appointment for ${date} at ${time}. My name is [Your Name], reason: [Brief Note].`;
+              window.open(`https://wa.me/919390664577?text=${encodeURIComponent(msg)}`, '_blank');
+            };
+            container.appendChild(button);
+          }
+        });
 
-        const rawDate = cols[0].trim();
-        const rawTime = cols[1].trim();
-        const status = cols[2].trim().toLowerCase();
-
-        const cleanDate = rawDate.replace(/[^a-zA-Z0-9 ]/g, '');
-        const cleanTime = rawTime.replace(/\./g, '').toUpperCase();
-
-        const combined = `${cleanDate} ${cleanTime}`;
-        const dateTime = new Date(combined);
-
-        console.log("Parsed:", combined, "| Status:", status, "| Date OK:", !isNaN(dateTime));
-
-        if (status === 'available' && !isNaN(dateTime) && dateTime >= now) {
-          available.push({ date: rawDate, time: rawTime });
+        if (!hasSlots) {
+          container.innerHTML = '<p>No available slots right now. Please check back later.</p>';
         }
-      });
-
-      if (available.length === 0) {
-        container.innerHTML = '<p>No available slots right now. Please check back later.</p>';
-        return;
+      } catch (error) {
+        document.getElementById('slots').innerHTML = 'Error loading slots. Please try again.';
       }
-
-      available.forEach(slot => {
-        const button = document.createElement('button');
-        button.className = 'slot-button';
-        button.innerText = `${slot.date} – ${slot.time}`;
-        button.onclick = () => {
-          const msg = `Hi, I’d like to book an appointment for ${slot.date} at ${slot.time}. My name is [Your Name], reason: [Brief Note].`;
-          const encoded = encodeURIComponent(msg);
-          window.open(`https://wa.me/919390664577?text=${encoded}`, '_blank');
-        };
-        container.appendChild(button);
-      });
     }
 
     loadSlots();
