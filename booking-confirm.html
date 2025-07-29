@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Confirm Booking</title>
+  <style>
+    body {
+      background-color: #111;
+      color: white;
+      font-family: Arial, sans-serif;
+      padding: 30px;
+      text-align: center;
+    }
+
+    h1 {
+      color: #00ffaa;
+    }
+
+    .summary {
+      background-color: #222;
+      padding: 20px;
+      border-radius: 10px;
+      display: inline-block;
+      margin-bottom: 30px;
+    }
+
+    .summary p {
+      font-size: 18px;
+      margin: 10px 0;
+    }
+
+    .buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      align-items: center;
+    }
+
+    .buttons a {
+      background: linear-gradient(to right, #00d2ff, #3a7bd5);
+      padding: 12px 25px;
+      border-radius: 5px;
+      text-decoration: none;
+      color: white;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+
+    .buttons a:hover {
+      background: linear-gradient(to right, #3a7bd5, #00d2ff);
+    }
+  </style>
+</head>
+<body>
+  <h1>Confirm Your Appointment</h1>
+  <div class="summary">
+    <p><strong>Name:</strong> <span id="name"></span></p>
+    <p><strong>Reason:</strong> <span id="reason"></span></p>
+    <p><strong>Date:</strong> <span id="date"></span></p>
+    <p><strong>Time Slot:</strong> <span id="slot"></span></p>
+  </div>
+
+  <div class="buttons">
+    <a href="booking.html">🔄 Edit Details</a>
+    <a id="confirmBtn" href="#" target="_blank">✅ Confirm on WhatsApp</a>
+  </div>
+
+  <script>
+    function getParam(param) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(param) || '';
+    }
+
+    const name = getParam('name');
+    const reason = getParam('reason');
+    const date = getParam('date');
+    const slot = getParam('slot');
+
+    document.getElementById('name').textContent = name;
+    document.getElementById('reason').textContent = reason;
+    document.getElementById('date').textContent = date;
+    document.getElementById('slot').textContent = slot;
+
+    const encodedMsg = encodeURIComponent(`Hi, I would like to book an appointment.\n\n👤 Name: ${name}\n📅 Date: ${date}\n⏰ Slot: ${slot}\n📝 Reason: ${reason}`);
+    const whatsappLink = `https://wa.me/919390664577?text=${encodedMsg}`;
+    document.getElementById('confirmBtn').href = whatsappLink;
+  </script>
+</body>
+</html>
