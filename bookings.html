@@ -51,6 +51,89 @@
   <h1>Book Your Appointment</h1>
   <h2>Select a time slot below and confirm via WhatsApp</h2>
 
+  <form id="bookingForm">
+    <input type="text" id="name" placeholder="Your Name" required />
+    <input type="text" id="reason" placeholder="Reason for Visit" required />
+    <select id="slotSelect" required></select>
+    <button type="submit">Book via WhatsApp</button>
+  </form>
+
+  <script>
+    // Force test mode ON — fake available slots
+    const today = new Date().toISOString().split("T")[0];
+    const testSlots = ["17:00", "17:10", "17:20"];
+
+    const slotSelect = document.getElementById("slotSelect");
+
+    slotSelect.innerHTML = testSlots.map(time => 
+      `<option value="${time}">${time}</option>`
+    ).join("");
+
+    document.getElementById("bookingForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const name = document.getElementById("name").value.trim();
+      const reason = document.getElementById("reason").value.trim();
+      const time = document.getElementById("slotSelect").value;
+      const msg = `Hi, I would like to book an appointment for ${today} at ${time}. My name is ${name} and the reason is: ${reason}`;
+      const waURL = `https://wa.me/919390664577?text=${encodeURIComponent(msg)}`;
+      window.open(waURL, '_blank');
+    });
+  </script>
+
+</body>
+</html> html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Book Appointment</title>
+  <style>
+    body {
+      background-color: #000;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      color: #00ffff;
+      text-align: center;
+      font-size: 26px;
+    }
+    h2 {
+      text-align: center;
+      color: #ff69b4;
+      font-size: 18px;
+    }
+    form {
+      max-width: 400px;
+      margin: 20px auto;
+    }
+    input, select, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 5px;
+      border: none;
+      font-size: 16px;
+    }
+    button {
+      background-color: #00ffff;
+      color: #000;
+      cursor: pointer;
+    }
+    .no-slots {
+      text-align: center;
+      color: #ff69b4;
+      margin-top: 30px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Book Your Appointment</h1>
+  <h2>Select a time slot below and confirm via WhatsApp</h2>
+
   <form id="bookingForm" style="display: none;">
     <input type="text" id="name" placeholder="Your Name" required />
     <input type="text" id="reason" placeholder="Reason for Visit" required />
