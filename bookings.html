@@ -2,86 +2,87 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Book Your Appointment</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
-      margin: 0;
       background-color: #111;
+      color: #0fffc0;
       font-family: Arial, sans-serif;
-      color: #0f0;
-      text-align: center;
       padding: 20px;
+      text-align: center;
     }
-
     h1 {
-      font-size: 26px;
+      font-size: 28px;
       margin-bottom: 20px;
-      color: #00ffa0;
     }
-
-    .slot {
-      border: 1px solid #00ffa0;
-      padding: 12px 16px;
-      margin: 10px auto;
+    .slot-btn {
+      display: block;
+      margin: 12px auto;
+      padding: 12px 18px;
+      width: 85%;
+      border: 2px solid #0fffc0;
       border-radius: 10px;
-      width: 80%;
-      max-width: 400px;
-      font-size: 16px;
       background-color: transparent;
-      color: #00ffa0;
+      color: #0fffc0;
+      font-size: 16px;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: 0.3s;
     }
-
-    .slot:hover {
-      background-color: #00ffa0;
-      color: #000;
+    .slot-btn:hover {
+      background-color: #0fffc0;
+      color: #111;
     }
   </style>
 </head>
 <body>
   <h1>Book Your Appointment</h1>
-  <div id="slots-container"></div>
+  <div id="slots"></div>
 
   <script>
-    const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmywA57iTYGoaZD7v79ogDeXMu9sSkYO82ErmAVgcjkmPrUz0ZVHZDo0HHZtPyLg/pub?gid=0&single=true&output=csv";
+    const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQY1u0ZwYxC8dkpzbWtoYkKJv2nYcQ294oQaSpvCsntFJOTfKjjgBAesIC7g8cCbEK_lUWWdr/pub?gid=2115782150&single=true&output=csv";
 
-    function isSlotAvailable(row) {
-      const status = row[2]?.toLowerCase();
-      return status !== 'booked' && status !== 'unavailable';
-    }
+    async function fetchSlots() {
+      try {
+        const response = await fetch(sheetUrl);
+        const data = await response.text();
+        const rows = data.split("\n").slice(1); // skip headers
 
-    function formatSlot(slot) {
-      const timestamp = slot[0];
-      const datePart = timestamp.split(' ')[0];
-      return `${timestamp} at ${datePart}`;
-    }
+        const slotContainer = document.getElementById("slots");
+        slotContainer.innerHTML = "";
 
-    function createSlotButton(label) {
-      const btn = document.createElement("button");
-      btn.className = "slot";
-      btn.innerText = label;
-      btn.onclick = () => alert(`Booking for: ${label}`);
-      return btn;
-    }
+        const today = new Date().toLocaleDateString("en-GB");
 
-    fetch(SHEET_URL)
-      .then(res => res.text())
-      .then(data => {
-        const rows = data.trim().split("\n").map(row => row.split(","));
-        const slotContainer = document.getElementById("slots-container");
-        rows.slice(1).forEach(row => {
-          if (isSlotAvailable(row)) {
-            const formatted = formatSlot(row);
-            slotContainer.appendChild(createSlotButton(formatted));
+        rows.forEach((row) => {
+          const cols = row.split(",");
+          const date = cols[0]?.trim();
+          const time = cols[1]?.trim();
+          const status = cols[2]?.trim();
+
+          if (date && time && status === "Available") {
+            const button = document.createElement("button");
+            button.className = "slot-btn";
+            button.textContent = `${date} — ${time}`;
+            button.onclick = () => {
+              const message = `Hi, I want to book an appointment for ${date} at ${time}.`;
+              const whatsappLink = `https://wa.me/919390664577?text=${encodeURIComponent(message)}`;
+              window.open(whatsappLink, "_blank");
+            };
+            slotContainer.appendChild(button);
           }
         });
-      })
-      .catch(err => {
-        console.error("Error fetching slots:", err);
-        document.getElementById("slots-container").innerText = "Failed to load slots.";
-      });
+
+        if (slotContainer.innerHTML === "") {
+          slotContainer.innerHTML = "<p>No available slots right now. Please check back later.</p>";
+        }
+
+      } catch (error) {
+        console.error("Error loading slots:", error);
+        document.getElementById("slots").innerHTML = "<p>Unable to load slots. Try again later.</p>";
+      }
+    }
+
+    fetchSlots();
   </script>
 </body>
 </html>
