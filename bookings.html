@@ -59,11 +59,11 @@
   <label>📅 Select Date:</label>
   <select id="appointmentDate" required>
     <option value="">-- Choose Date --</option>
-    <option value="29-07-2025">29/07/2025</option>
-    <option value="30-07-2025">30/07/2025</option>
+    <option value="29-07-2025">29-07-2025</option>
+    <option value="30-07-2025">30-07-2025</option>
   </select>
 
-  <label>⏰ Select Time:</label>
+  <label>⏰ Select Time Slot:</label>
   <select id="appointmentTime" required>
     <option value="">-- Select Time Slot --</option>
   </select>
@@ -71,10 +71,10 @@
   <button onclick="confirmBooking()">Confirm & Book on WhatsApp</button>
 
   <script>
-    document.getElementById("appointmentDate").addEventListener("change", loadAvailableSlots);
-    window.onload = loadAvailableSlots;
+    document.getElementById("appointmentDate").addEventListener("change", loadSlots);
+    window.onload = loadSlots;
 
-    async function loadAvailableSlots() {
+    async function loadSlots() {
       const selectedDate = document.getElementById("appointmentDate").value;
       const timeDropdown = document.getElementById("appointmentTime");
       timeDropdown.innerHTML = "<option value=''>-- Select Time Slot --</option>";
@@ -82,31 +82,19 @@
       if (!selectedDate) return;
 
       try {
-        // Load Slots
         const slotsResp = await fetch("https://warangalonepoint.github.io/clinic/Slots.csv");
         const slotsText = await slotsResp.text();
-        const slots = slotsText.trim().split("\n").map(line => line.trim()).filter(line => line);
+        const slotLines = slotsText.trim().split("\n").slice(1); // skip header
 
-        // Load Logs
-        const logsResp = await fetch("https://warangalonepoint.github.io/clinic/Logs.csv");
-        const logsText = await logsResp.text();
-        const logs = logsText.trim().split("\n").slice(1).map(row => row.split(","));
-
-        // Find booked times for that date
-        const booked = logs
-          .filter(entry => entry[2] === selectedDate)
-          .map(entry => entry[3]);
-
-        // Add available times only
-        slots.forEach(time => {
-          if (!booked.includes(time)) {
-            const opt = document.createElement("option");
-            opt.value = time;
-            opt.text = time;
-            timeDropdown.appendChild(opt);
+        slotLines.forEach(line => {
+          const [date, timeSlot, status] = line.trim().split(",");
+          if (date === selectedDate && status.toLowerCase() === "available") {
+            const option = document.createElement("option");
+            option.value = timeSlot;
+            option.textContent = timeSlot;
+            timeDropdown.appendChild(option);
           }
         });
-
       } catch (err) {
         alert("Error loading slots: " + err.message);
       }
@@ -124,9 +112,9 @@
       }
 
       const message = `Hi, I want to book an appointment.\n\nName: ${name}\nReason: ${reason}\nDate: ${date}\nTime: ${time}`;
-      const encodedMessage = encodeURIComponent(message);
-      const whatsappLink = `https://wa.me/919390664577?text=${encodedMessage}`;
-      window.location.href = whatsappLink;
+      const encoded = encodeURIComponent(message);
+      const whatsapp = `https://wa.me/919390664577?text=${encoded}`;
+      window.location.href = whatsapp;
     }
   </script>
 
