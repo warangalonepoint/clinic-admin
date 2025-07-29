@@ -3,159 +3,143 @@
 <head>
   <meta charset="UTF-8" />
   <title>Book Appointment</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <style>
     body {
       background-color: #111;
-      color: #fff;
-      font-family: Arial, sans-serif;
-      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      color: white;
       padding: 20px;
+      text-align: center;
     }
 
     h1 {
-      color: #00ffd5;
-      text-align: center;
+      color: #00ffff;
+      font-size: 24px;
       margin-bottom: 10px;
     }
 
-    h3 {
-      color: #ff1493;
-      text-align: center;
+    h2 {
+      color: hotpink;
+      font-size: 16px;
+      margin-bottom: 20px;
     }
 
-    #slotsContainer {
-      margin-top: 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+    .form-group {
+      margin: 10px auto;
+      max-width: 90%;
     }
 
-    .slot-card {
-      background-color: #222;
-      border: 1px solid #00ffd5;
-      padding: 15px;
-      margin: 10px;
-      width: 90%;
-      max-width: 400px;
-      border-radius: 10px;
-      text-align: center;
-    }
-
-    .slot-card button {
-      background-color: #00ffd5;
-      color: #000;
+    input, select {
+      padding: 10px;
+      border-radius: 6px;
       border: none;
+      width: 100%;
+      margin-bottom: 15px;
+      font-size: 16px;
+    }
+
+    .slot-button {
+      background-color: #00ffff;
+      color: black;
       padding: 10px 15px;
-      margin-top: 10px;
+      margin: 5px;
+      border: none;
       border-radius: 6px;
       cursor: pointer;
+      font-size: 14px;
     }
 
-    .slot-card button:hover {
-      background-color: #00ccaa;
+    .slot-button:hover {
+      background-color: #00cccc;
     }
 
-    .form-section {
-      margin: 20px auto;
-      max-width: 400px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
+    .slots-container {
+      margin-top: 20px;
     }
 
-    input, textarea {
-      padding: 10px;
-      border-radius: 5px;
-      border: none;
-      font-size: 16px;
-      width: 100%;
-    }
-
-    #noSlots {
-      text-align: center;
-      color: #f36;
-      margin-top: 30px;
+    #message {
+      color: hotpink;
+      margin-top: 20px;
     }
   </style>
 </head>
 <body>
   <h1>Book Your Appointment</h1>
-  <h3>Select a time slot below and confirm via WhatsApp</h3>
+  <h2>Select a time slot below and confirm via WhatsApp</h2>
 
-  <div class="form-section">
-    <input type="text" id="name" placeholder="Your Name" required />
-    <textarea id="reason" placeholder="Reason for Visit" rows="2" required></textarea>
+  <div class="form-group">
+    <input type="text" id="name" placeholder="Your Name" required>
+    <input type="text" id="reason" placeholder="Reason for Visit" required>
   </div>
 
-  <div id="slotsContainer"></div>
-  <div id="noSlots" style="display:none;">No available slots right now. Please check back later.</div>
+  <div class="slots-container" id="slotsContainer">
+    <p id="message">Loading available slots...</p>
+  </div>
 
   <script>
-    const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQyTuJ2qw0Yxk6GKRdpbzWtoYcKJy2nfVcq294q0aSpyCsntFJ01fKjjgBAesic7g8cCbEK_lUWVdr/pub?gid=642851090&single=true&output=csv";
+    const sheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQGyTuU2qw0Yxk6GKRdpbzWtoYcKJy2nfVcq294q0aSpyCsnfFJ01FKjIg8AesiCr9gcCbEK_lUWVdr/pub?gid=642851090&single=true&output=csv';
 
     function getTodayDateIST() {
       const now = new Date();
-      const offset = 5.5 * 60; // IST
-      const local = new Date(now.getTime() + offset * 60000);
-      return local.toISOString().split("T")[0];
+      const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+      const istOffset = 330; // in minutes
+      const ist = new Date(utc + (istOffset * 60000));
+      return ist.toISOString().split('T')[0]; // format: YYYY-MM-DD
     }
 
-    function createWhatsAppLink(name, reason, date, time) {
-      const msg = `Hi, I would like to book an appointment:\n\nName: ${name}\nDate: ${date}\nTime: ${time}\nReason: ${reason}`;
-      return `https://wa.me/919390664577?text=${encodeURIComponent(msg)}`;
-    }
-
-    function renderSlots(data) {
-      const today = getTodayDateIST();
-      const slotsDiv = document.getElementById("slotsContainer");
-      const noSlotsDiv = document.getElementById("noSlots");
-      slotsDiv.innerHTML = "";
-      let count = 0;
-
-      data.forEach(row => {
-        const [date, time, status] = row;
-        if (date === today && status.toLowerCase() === "available") {
-          const card = document.createElement("div");
-          card.className = "slot-card";
-          card.innerHTML = `
-            <div><strong>${time}</strong></div>
-            <button onclick="bookSlot('${date}','${time}')">Book</button>
-          `;
-          slotsDiv.appendChild(card);
-          count++;
-        }
-      });
-
-      noSlotsDiv.style.display = count === 0 ? "block" : "none";
-    }
-
-    function bookSlot(date, time) {
-      const name = document.getElementById("name").value.trim();
-      const reason = document.getElementById("reason").value.trim();
-      if (!name || !reason) {
-        alert("Please enter your name and reason before booking.");
-        return;
-      }
-      const link = createWhatsAppLink(name, reason, date, time);
-      window.open(link, "_blank");
-    }
-
-    function loadCSV(url) {
-      fetch(url)
+    function loadSlots() {
+      fetch(sheetURL)
         .then(res => res.text())
-        .then(text => {
-          const rows = text.trim().split("\n").slice(1).map(row => row.split(",").map(col => col.trim()));
-          renderSlots(rows);
+        .then(csv => {
+          const rows = csv.trim().split("\n").map(row => row.split(","));
+          const headers = rows[0];
+          const dateIndex = headers.indexOf("Date");
+          const timeIndex = headers.indexOf("Time Slot");
+          const statusIndex = headers.indexOf("Status");
+
+          const today = getTodayDateIST();
+          const slots = rows.slice(1).filter(row => 
+            row[dateIndex] === today && row[statusIndex].toLowerCase() === "available"
+          );
+
+          const container = document.getElementById("slotsContainer");
+          container.innerHTML = "";
+
+          if (slots.length === 0) {
+            container.innerHTML = `<p id="message">No available slots right now. Please check back later.</p>`;
+            return;
+          }
+
+          slots.forEach(slot => {
+            const time = slot[timeIndex];
+            const btn = document.createElement("button");
+            btn.className = "slot-button";
+            btn.innerText = time;
+            btn.onclick = () => handleBooking(time);
+            container.appendChild(btn);
+          });
         })
-        .catch(err => {
-          document.getElementById("noSlots").innerText = "Failed to load slots.";
-          document.getElementById("noSlots").style.display = "block";
-          console.error("Error loading CSV:", err);
+        .catch(() => {
+          document.getElementById("slotsContainer").innerHTML = `<p id="message">Failed to load slots. Try again later.</p>`;
         });
     }
 
-    loadCSV(sheetURL);
+    function handleBooking(time) {
+      const name = document.getElementById("name").value.trim();
+      const reason = document.getElementById("reason").value.trim();
+
+      if (!name || !reason) {
+        alert("Please enter your name and reason for visit.");
+        return;
+      }
+
+      const message = `Hi, I would like to book an appointment.\nName: ${name}\nReason: ${reason}\nPreferred Time: ${time}`;
+      const encodedMsg = encodeURIComponent(message);
+      window.open(`https://wa.me/919390664577?text=${encodedMsg}`, "_blank");
+    }
+
+    loadSlots();
   </script>
 </body>
 </html>
