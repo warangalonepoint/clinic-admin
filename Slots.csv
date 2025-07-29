@@ -1,6 +1,6 @@
-Date,TimeSlot,Status
-29-07-2025,9:00,Available
-29-07-2025,9:10,Booked
-29-07-2025,9:20,Available
-30-07-2025,9:00,Available
-30-07-2025,9:10,Available
+Date,Time,Status
+Date,Time,Status
+29/07/2025,9:00,Available
+29/07/2025,9:10,Available
+30/07/2025,9:00,Available   ← OK
+30/07/2025,9:00,Available   ← ❌ REMOVE (duplicate)
