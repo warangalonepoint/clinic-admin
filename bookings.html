@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -102,11 +101,14 @@
       container.innerHTML = '';
 
       for (let i = 1; i < rows.length; i++) {
-        const [date, time, status] = rows[i];
+        const [dateRaw, timeRaw, status] = rows[i];
+
+        const date = dateRaw.replace(/"/g, '').trim();
+        const time = timeRaw.replace(/"/g, '').trim();
 
         if (status.trim().toLowerCase() !== 'booked') {
           const slotBtn = document.createElement('button');
-          slotBtn.innerText = `${date} - ${time}`;
+          slotBtn.innerText = `${date} at ${time}`;
           slotBtn.className = 'slot-button';
           slotBtn.onclick = () => selectSlot(date, time);
           container.appendChild(slotBtn);
