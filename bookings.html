@@ -1,126 +1,120 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Book Appointment</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
       background-color: #000;
-      font-family: Arial, sans-serif;
       color: #fff;
+      font-family: Arial, sans-serif;
+      text-align: center;
       padding: 20px;
     }
+
     h2 {
-      color: #00e6e6;
-      text-align: center;
+      color: #00e5ff;
+      margin-bottom: 10px;
     }
-    h4 {
-      text-align: center;
+
+    p {
       color: #ff66cc;
+      margin-bottom: 20px;
     }
-    .form-group {
-      margin-bottom: 15px;
-    }
+
     input, select, button {
-      width: 100%;
-      padding: 14px;
-      font-size: 16px;
+      width: 90%;
+      padding: 12px;
+      margin: 10px 0;
       border-radius: 8px;
       border: none;
-      margin-top: 5px;
+      font-size: 16px;
     }
+
     button {
-      background-color: #00e6e6;
-      color: #000;
+      background-color: #00bfa5;
+      color: white;
       font-weight: bold;
-      cursor: pointer;
-      margin-top: 20px;
+    }
+
+    button:hover {
+      background-color: #008c7a;
     }
   </style>
 </head>
 <body>
   <h2>Book Your Appointment</h2>
-  <h4>Select a time slot below and confirm via WhatsApp</h4>
+  <p>Select a time slot below and confirm via WhatsApp</p>
 
-  <div class="form-group">
-    <input type="text" id="name" placeholder="Your Name" required />
-  </div>
-
-  <div class="form-group">
-    <input type="text" id="reason" placeholder="Reason for Visit" required />
-  </div>
-
-  <div class="form-group">
-    <select id="dateSelect">
-      <option value="">Select Date</option>
-    </select>
-  </div>
-
-  <div class="form-group">
-    <select id="slotSelect">
-      <option value="">Select Time Slot</option>
-    </select>
-  </div>
-
+  <input type="text" id="name" placeholder="Your Name" required>
+  <input type="text" id="reason" placeholder="Reason for Visit" required>
+  <select id="dateDropdown">
+    <option>Select Date</option>
+  </select>
+  <select id="slotDropdown">
+    <option>Select Time Slot</option>
+  </select>
   <button onclick="bookWhatsApp()">Book via WhatsApp</button>
 
   <script>
-    const SHEET_URL = "https://docs.google.com/spreadsheets/d/15by5FqvmSEQc1d106sz-MLJF1nIwbartEfVMMSlKM74/gviz/tq?tqx=out:csv&sheet=Slots";
-
-    let slotsData = [];
+    const sheetUrl = "https://docs.google.com/spreadsheets/d/15by5FqvmSEQc1d106sz-MLJF1nIwbartEfVMMSlKM74/gviz/tq?tqx=out:csv&sheet=Slots";
 
     async function fetchSlots() {
-      const response = await fetch(SHEET_URL);
-      const data = await response.text();
-      const rows = data.trim().split('\n').slice(1); // skip headers
-      slotsData = rows.map(row => {
-        const [date, time, status] = row.split(',');
-        return { date: date.trim(), time: time.trim(), status: status.trim() };
-      });
-      populateDates();
-    }
+      const res = await fetch(sheetUrl);
+      const data = await res.text();
+      const rows = data.split("\n").slice(1); // skip header
+      const today = new Date().toISOString().split("T")[0];
 
-    function populateDates() {
-      const dateSelect = document.getElementById('dateSelect');
-      const uniqueDates = [...new Set(slotsData.map(slot => slot.date))];
-      uniqueDates.forEach(date => {
-        const option = document.createElement('option');
-        const formatted = new Date(date).toDateString();
-        option.value = date;
-        option.textContent = formatted;
-        dateSelect.appendChild(option);
-      });
-    }
+      const dateDropdown = document.getElementById("dateDropdown");
+      const slotDropdown = document.getElementById("slotDropdown");
 
-    document.getElementById('dateSelect').addEventListener('change', function () {
-      const selectedDate = this.value;
-      const slotSelect = document.getElementById('slotSelect');
-      slotSelect.innerHTML = '<option value="">Select Time Slot</option>';
-      const filtered = slotsData.filter(slot => slot.date === selectedDate && slot.status.toLowerCase() === "available");
-      filtered.forEach(slot => {
-        const opt = document.createElement('option');
-        opt.value = slot.time;
-        opt.textContent = slot.time;
-        slotSelect.appendChild(opt);
+      const dateMap = {};
+
+      rows.forEach(row => {
+        const [date, time, status] = row.split(",").map(s => s.trim());
+        if (status === "Available" && date >= today) {
+          if (!dateMap[date]) dateMap[date] = [];
+          dateMap[date].push(time);
+        }
       });
-    });
+
+      Object.keys(dateMap).forEach(date => {
+        const opt = document.createElement("option");
+        opt.value = date;
+        opt.textContent = date;
+        dateDropdown.appendChild(opt);
+      });
+
+      dateDropdown.onchange = () => {
+        slotDropdown.innerHTML = "<option>Select Time Slot</option>";
+        const selectedDate = dateDropdown.value;
+        if (dateMap[selectedDate]) {
+          dateMap[selectedDate].forEach(slot => {
+            const opt = document.createElement("option");
+            opt.value = slot;
+            opt.textContent = slot;
+            slotDropdown.appendChild(opt);
+          });
+        }
+      };
+    }
 
     function bookWhatsApp() {
-      const name = document.getElementById("name").value.trim();
-      const reason = document.getElementById("reason").value.trim();
-      const date = document.getElementById("dateSelect").value;
-      const slot = document.getElementById("slotSelect").value;
+      const name = document.getElementById("name").value;
+      const reason = document.getElementById("reason").value;
+      const date = document.getElementById("dateDropdown").value;
+      const slot = document.getElementById("slotDropdown").value;
 
-      if (!name || !reason || !date || !slot) {
+      if (!name || !reason || date === "Select Date" || slot === "Select Time Slot") {
         alert("Please fill all fields.");
         return;
       }
 
-      const formattedDate = new Date(date).toDateString();
-      const msg = `Appointment Request:\n👤 Name: ${name}\n📅 Date: ${formattedDate}\n⏰ Time: ${slot}\n📝 Reason: ${reason}`;
-      const whatsappLink = `https://wa.me/919390664577?text=${encodeURIComponent(msg)}`;
-      window.open(whatsappLink, "_blank");
+      const message = `Hi, I want to book an appointment:\n\nName: ${name}\nReason: ${reason}\nDate: ${date}\nTime: ${slot}`;
+      const encodedMessage = encodeURIComponent(message);
+      const waUrl = `https://wa.me/919390664577?text=${encodedMessage}`;
+      window.open(waUrl, "_blank");
     }
 
     fetchSlots();
