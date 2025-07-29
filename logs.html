@@ -1,181 +1,33 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Patient Booking Logs</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Appointment Logs</title>
   <style>
     body {
-      background: #000;
+      background-color: #000;
       color: #fff;
       font-family: Arial, sans-serif;
-      padding: 20px;
       margin: 0;
+      padding: 20px;
     }
-    h2 {
+    h1 {
       text-align: center;
       color: #00ff99;
+      margin-bottom: 20px;
     }
-    input, select {
-      width: 100%;
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    input[type="date"], button {
       padding: 10px;
-      margin: 10px 0;
-      border: none;
+      font-size: 16px;
       border-radius: 5px;
+      border: none;
     }
     button {
-      padding: 10px 20px;
-      background: #00cc66;
-      color: #fff;
-      border: none;
-      border-radius: 5px;
-      margin-top: 10px;
-    }
-    table {
-      width: 100%;
-      margin-top: 20px;
-      border-collapse: collapse;
-    }
-    th, td {
-      padding: 8px;
-      text-align: left;
-      border-bottom: 1px solid #333;
-    }
-    .hidden { display: none; }
-  </style>
-</head>
-<body>
-
-<div id="pin-section">
-  <h2>Enter Admin PIN</h2>
-  <input type="password" id="pinInput" placeholder="PIN (e.g. 2525)" />
-  <button onclick="checkPIN()">Unlock</button>
-</div>
-
-<div id="log-section" class="hidden">
-  <h2>📋 Patient Booking Logs</h2>
-
-  <input type="text" id="searchInput" placeholder="Search by name, reason..." onkeyup="filterLogs()" />
-  <select id="dateFilter" onchange="filterLogs()">
-    <option value="">Filter by Date</option>
-  </select>
-  <button onclick="downloadLogs()">📥 Export Logs</button>
-
-  <table>
-    <thead>
-      <tr>
-        <th>Date</th>
-        <th>Time</th>
-        <th>Name</th>
-        <th>Reason</th>
-      </tr>
-    </thead>
-    <tbody id="logsTable"></tbody>
-  </table>
-
-  <input type="password" id="newPin" placeholder="Enter New PIN (4-digit)" />
-  <button onclick="resetPIN()">Reset PIN</button>
-</div>
-
-<script>
-const correctPIN = localStorage.getItem("adminPIN") || "2525";
-let logs = [];
-let filteredLogs = [];
-
-async function checkPIN() {
-  const enteredPIN = document.getElementById("pinInput").value;
-  if (enteredPIN === correctPIN) {
-    document.getElementById("pin-section").classList.add("hidden");
-    document.getElementById("log-section").classList.remove("hidden");
-    fetchLogs();
-  } else {
-    alert("Incorrect PIN");
-  }
-}
-
-function resetPIN() {
-  const newPin = document.getElementById("newPin").value;
-  if (/^\d{4}$/.test(newPin)) {
-    localStorage.setItem("adminPIN", newPin);
-    alert("PIN reset successfully");
-  } else {
-    alert("Enter a valid 4-digit PIN");
-  }
-}
-
-async function fetchLogs() {
-  const res = await fetch("https://warangalonepoint.github.io/clinic-admin/logs.csv");
-  const data = await res.text();
-  const rows = data.trim().split("\n").slice(1); // skip header
-
-  logs = rows.map(row => {
-    const [Date, Time, Name, Reason] = row.split(",");
-    return { Date, Time, Name, Reason };
-  });
-
-  populateDateFilter();
-  filteredLogs = logs;
-  renderLogs();
-}
-
-function renderLogs() {
-  const table = document.getElementById("logsTable");
-  table.innerHTML = "";
-  filteredLogs.forEach(log => {
-    const row = `<tr>
-      <td>${log.Date}</td>
-      <td>${log.Time}</td>
-      <td>${log.Name}</td>
-      <td>${log.Reason}</td>
-    </tr>`;
-    table.innerHTML += row;
-  });
-}
-
-function filterLogs() {
-  const keyword = document.getElementById("searchInput").value.toLowerCase();
-  const date = document.getElementById("dateFilter").value;
-
-  filteredLogs = logs.filter(log => {
-    const matchKeyword =
-      log.Name.toLowerCase().includes(keyword) ||
-      log.Reason.toLowerCase().includes(keyword);
-    const matchDate = !date || log.Date === date;
-    return matchKeyword && matchDate;
-  });
-
-  renderLogs();
-}
-
-function populateDateFilter() {
-  const uniqueDates = [...new Set(logs.map(log => log.Date))];
-  const select = document.getElementById("dateFilter");
-  select.innerHTML = `<option value="">Filter by Date</option>`;
-  uniqueDates.forEach(date => {
-    const option = document.createElement("option");
-    option.value = date;
-    option.textContent = date;
-    select.appendChild(option);
-  });
-}
-
-function downloadLogs() {
-  let csvContent = "data:text/csv;charset=utf-8,";
-  csvContent += "Date,Time,Name,Reason\n";
-  filteredLogs.forEach(log => {
-    csvContent += `${log.Date},${log.Time},${log.Name},${log.Reason}\n`;
-  });
-
-  const encodedUri = encodeURI(csvContent);
-  const link = document.createElement("a");
-  const timestamp = new Date().toISOString().split("T")[0];
-  link.setAttribute("href", encodedUri);
-  link.setAttribute("download", `Logs_${timestamp}.csv`);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-}
-</script>
-
-</body>
-</html>
+      background-color: #00ff99;
+      color: #000
