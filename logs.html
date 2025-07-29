@@ -2,130 +2,175 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <title>Daily Booking Logs</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Clinic Logs Dashboard (Admin)</title>
   <style>
-    body { background: #000; color: #fff; font-family: Arial, sans-serif; padding: 20px; margin: 0; }
-    h2 { text-align: center; color: #00ff99; margin-bottom: 20px; }
-    .container { max-width: 700px; margin: auto; }
-    input, select, button {
-      width: 100%; padding: 10px; font-size: 16px; margin: 10px 0;
-      border: none; border-radius: 6px;
+    body {
+      background-color: #000;
+      color: white;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      margin: 0;
     }
-    input[type="password"] { background: #111; color: #fff; border: 1px solid #333; }
-    input[type="text"] { background: #111; color: #fff; border: 1px solid #333; }
-    select { background: #111; color: #fff; border: 1px solid #333; }
-    button { background: #00ff99; color: #000; font-weight: bold; cursor: pointer; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { padding: 8px; text-align: left; border-bottom: 1px solid #444; }
-    .hidden { display: none; }
+
+    h2 {
+      text-align: center;
+      font-size: 24px;
+      color: #00ff99;
+    }
+
+    .center {
+      text-align: center;
+    }
+
+    input, select {
+      padding: 10px;
+      margin: 10px auto;
+      display: block;
+      width: 90%;
+      max-width: 400px;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+    }
+
+    table {
+      margin-top: 20px;
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 10px;
+      text-align: center;
+      border-bottom: 1px solid #444;
+    }
+
+    th {
+      color: #00ff99;
+    }
+
+    button {
+      background-color: #00ff99;
+      color: black;
+      border: none;
+      padding: 12px 20px;
+      font-size: 16px;
+      margin: 10px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    #pinScreen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 30vh;
+    }
+
+    #logScreen {
+      display: none;
+    }
+
+    .emoji {
+      font-size: 22px;
+      margin-right: 6px;
+    }
+
   </style>
 </head>
 <body>
-  <div class="container">
-    <div id="pinScreen">
-      <h2>🔐 Enter Admin PIN</h2>
-      <input type="password" id="pinInput" placeholder="PIN (e.g. 2525)" />
-      <button onclick="checkPIN()">Unlock</button>
-    </div>
 
-    <div id="logsScreen" class="hidden">
-      <h2>📋 Daily Booking Logs</h2>
+<div id="pinScreen">
+  <h2>Enter Admin PIN</h2>
+  <input type="password" id="pinInput" placeholder="PIN (e.g. 2525)" />
+  <button onclick="checkPIN()">Unlock</button>
+</div>
 
-      <input type="text" id="searchInput" placeholder="Search name, date, reason..." onkeyup="filterLogs()">
-      <select id="dateFilter" onchange="applyDateFilter()">
-        <option value="all">📆 Show All</option>
-        <option value="today">📅 Today</option>
-        <option value="yesterday">📂 Yesterday</option>
-      </select>
-      <button onclick="downloadCSV()">⬇️ Export CSV</button>
+<div id="logScreen">
+  <h2><span class="emoji">📋</span>Daily Booking Logs</h2>
+  
+  <input type="text" id="searchInput" placeholder="Search name, date, or reason" onkeyup="filterLogs()" />
+  
+  <select id="dateFilter" onchange="filterLogs()">
+    <option value="">Filter by Date</option>
+    <option value="29-07-2025">29-07-2025</option>
+    <option value="30-07-2025">30-07-2025</option>
+  </select>
 
-      <table>
-        <thead><tr><th>Date</th><th>Time</th><th>Name</th><th>Reason</th></tr></thead>
-        <tbody id="logBody"></tbody>
-      </table>
-
-      <h3 style="margin-top:30px">🔁 Reset Admin PIN</h3>
-      <input type="password" id="newPinInput" placeholder="New PIN (e.g. 4444)" />
-      <button onclick="resetPIN()">Set New PIN</button>
-    </div>
+  <div class="center">
+    <button onclick="exportCSV()">⬇️ Export CSV</button>
+    <button onclick="resetPIN()">🔁 Reset PIN</button>
   </div>
 
-  <script>
-    let currentPIN = localStorage.getItem("adminPIN") || "2525";
-    const csvUrl = "https://raw.githubusercontent.com/warangalonepoint/clinic-admin/main/logs.csv";
+  <table id="logsTable">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Time</th>
+        <th>Name</th>
+        <th>Reason</th>
+      </tr>
+    </thead>
+    <tbody id="logsBody">
+    </tbody>
+  </table>
+</div>
 
-    function checkPIN() {
-      const entered = document.getElementById("pinInput").value;
-      if (entered === currentPIN) {
-        document.getElementById("pinScreen").classList.add("hidden");
-        document.getElementById("logsScreen").classList.remove("hidden");
-        loadLogs();
-      } else {
-        alert("Incorrect PIN. Try again.");
-      }
+<script>
+  const CORRECT_PIN = "2525";
+
+  function checkPIN() {
+    const pin = document.getElementById("pinInput").value;
+    if (pin === CORRECT_PIN) {
+      document.getElementById("pinScreen").style.display = "none";
+      document.getElementById("logScreen").style.display = "block";
+      loadLogs();
+    } else {
+      alert("Wrong PIN");
     }
+  }
 
-    function resetPIN() {
-      const newPin = document.getElementById("newPinInput").value;
-      if (newPin.length < 4) {
-        alert("PIN must be at least 4 digits");
-        return;
-      }
-      localStorage.setItem("adminPIN", newPin);
-      currentPIN = newPin;
-      alert("✅ New PIN set successfully.");
-    }
+  function resetPIN() {
+    location.reload();
+  }
 
-    let fullLogs = [];
+  function loadLogs() {
+    fetch("logs.csv")
+      .then(res => res.text())
+      .then(csv => {
+        const rows = csv.trim().split("\n").slice(1);
+        const body = document.getElementById("logsBody");
+        body.innerHTML = "";
 
-    function loadLogs() {
-      fetch(csvUrl)
-        .then(res => res.text())
-        .then(data => {
-          fullLogs = data.trim().split("\n").map(r => r.split(","));
-          showLogs(fullLogs);
-        })
-        .catch(() => {
-          document.getElementById("logBody").innerHTML = "<tr><td colspan='4' style='color:red'>⚠️ Failed to load booking data.</td></tr>";
+        rows.forEach(row => {
+          const [date, time, name, reason] = row.split(",");
+          const tr = document.createElement("tr");
+          tr.innerHTML = `<td>${date}</td><td>${time}</td><td>${name}</td><td>${reason}</td>`;
+          body.appendChild(tr);
         });
-    }
-
-    function showLogs(logs) {
-      const body = document.getElementById("logBody");
-      body.innerHTML = "";
-      logs.forEach(([date, time, name, reason]) => {
-        body.innerHTML += `<tr><td>${date}</td><td>${time}</td><td>${name}</td><td>${reason}</td></tr>`;
       });
-    }
+  }
 
-    function filterLogs() {
-      const keyword = document.getElementById("searchInput").value.toLowerCase();
-      const filtered = fullLogs.filter(row => row.join(" ").toLowerCase().includes(keyword));
-      showLogs(filtered);
-    }
+  function filterLogs() {
+    const input = document.getElementById("searchInput").value.toLowerCase();
+    const dateFilter = document.getElementById("dateFilter").value;
+    const rows = document.querySelectorAll("#logsTable tbody tr");
 
-    function applyDateFilter() {
-      const filter = document.getElementById("dateFilter").value;
-      const today = new Date().toISOString().slice(0, 10).split("-").reverse().join("-");
-      const yest = new Date(Date.now() - 86400000).toISOString().slice(0, 10).split("-").reverse().join("-");
-      let filtered = fullLogs;
+    rows.forEach(row => {
+      const text = row.textContent.toLowerCase();
+      const date = row.children[0].textContent.trim();
+      const matchSearch = text.includes(input);
+      const matchDate = !dateFilter || date === dateFilter;
 
-      if (filter === "today") filtered = fullLogs.filter(([d]) => d === today);
-      else if (filter === "yesterday") filtered = fullLogs.filter(([d]) => d === yest);
+      row.style.display = matchSearch && matchDate ? "" : "none";
+    });
+  }
 
-      showLogs(filtered);
-    }
+  function exportCSV() {
+    window.location.href = "logs.csv";
+  }
+</script>
 
-    function downloadCSV() {
-      const csvContent = fullLogs.map(r => r.join(",")).join("\n");
-      const blob = new Blob([csvContent], { type: "text/csv" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "logs.csv";
-      a.click();
-    }
-  </script>
 </body>
 </html>
