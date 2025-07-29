@@ -85,7 +85,7 @@
       const name = prompt("Enter your name:");
       const reason = prompt("Reason for visit:");
       const message = `Hi, I want to book an appointment on ${selectedDate} at ${selectedTime}.\nName: ${name}\nReason: ${reason}`;
-      const phoneNumber = '919390664577'; // Replace with clinic number
+      const phoneNumber = '919390664577'; // Replace with your clinic number
       const encodedMessage = encodeURIComponent(message);
       window.open(`https://wa.me/${phoneNumber}?text=${encodedMessage}`, '_blank');
     };
@@ -96,7 +96,7 @@
       try {
         const response = await fetch(sheetUrl);
         const csvText = await response.text();
-        const rows = csvText.trim().split('\n').map(row => row.split(','));
+        const rows = csvText.trim().split('\\n').map(row => row.split(','));
 
         const container = document.getElementById('slotContainer');
         container.innerHTML = '';
@@ -107,17 +107,15 @@
           let date = dateRaw.replace(/"/g, '').trim();
           let time = timeRaw.replace(/"/g, '').trim();
 
-          // Safely extract time if full timestamp is given
-          if (time.includes(' ')) {
-            const parts = time.split(' ');
-            time = parts.length > 1 ? parts[1] : parts[0];
-          }
+          // Extract only HH:MM from timestamp string
+          const cleanTimeMatch = time.match(/\\d{2}:\\d{2}/g);
+          const cleanTime = cleanTimeMatch ? cleanTimeMatch[0] : time;
 
           if (status && status.trim().toLowerCase() !== 'booked') {
             const slotBtn = document.createElement('button');
-            slotBtn.innerText = `${date} at ${time}`;
+            slotBtn.innerText = `${date} at ${cleanTime}`;
             slotBtn.className = 'slot-button';
-            slotBtn.onclick = () => selectSlot(date, time);
+            slotBtn.onclick = () => selectSlot(date, cleanTime);
             container.appendChild(slotBtn);
           }
         }
