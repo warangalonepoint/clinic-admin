@@ -1,115 +1,120 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
   <title>Clinic Booking</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <style>
     body {
-      background: #000;
-      color: #fff;
+      background-color: #121212;
+      color: white;
       font-family: Arial, sans-serif;
       padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #00ffaa;
+    }
+
+    #slotContainer {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    .slot-button {
+      background-color: #1e1e1e;
+      color: #00ffaa;
+      padding: 10px 15px;
+      border: 1px solid #00ffaa;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .slot-button:hover {
+      background-color: #00ffaa;
+      color: black;
+    }
+
+    #selectedSlot {
+      text-align: center;
+      margin-top: 30px;
+      font-size: 18px;
+    }
+
+    #whatsappButton {
+      display: block;
+      margin: 20px auto;
+      padding: 10px 20px;
+      font-size: 18px;
+      background-color: #25D366;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
       text-align: center;
     }
-    h1 {
-      color: #00ffc8;
-    }
-    select, input, button {
-      font-size: 16px;
-      margin: 10px;
-      padding: 10px;
-      width: 80%;
-      max-width: 400px;
-    }
-    .status {
-      margin-top: 10px;
-      font-weight: bold;
-    }
-    .status.success {
-      color: #00ff80;
-    }
-    .status.error {
-      color: #ff4d4d;
+
+    #whatsappButton:hover {
+      background-color: #128C7E;
     }
   </style>
 </head>
 <body>
   <h1>Book Your Appointment</h1>
-
-  <select id="slotSelect">
-    <option disabled selected>Loading available slots...</option>
-  </select><br>
-
-  <input type="text" id="patientName" placeholder="Your Name" required><br>
-  <input type="text" id="reason" placeholder="Reason for Visit (optional)"><br>
-
-  <button onclick="checkAndBook()">Confirm & Book</button>
-
-  <div class="status" id="statusMsg"></div>
+  <div id="slotContainer">Loading slots...</div>
+  <div id="selectedSlot"></div>
+  <button id="whatsappButton" style="display: none;">Book via WhatsApp</button>
 
   <script>
-    const sheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQQyTuU2qw0Yxk6GKRdpbzWtoYcKJy2nfVcq294q0aSpyCsntFJ01FKjigBAesiC7g8cCbEK_lUWVdr/pub?gid=0&single=true&output=csv';
-    let slots = [];
+    let selectedDate = '';
+    let selectedTime = '';
 
-    async function loadSlots() {
-      const res = await fetch(sheetURL);
-      const text = await res.text();
-      const rows = text.trim().split('\n').slice(1).map(row => row.split(','));
-
-      slots = rows.filter(r => r[2]?.toLowerCase() === 'available');
-
-      const slotSelect = document.getElementById('slotSelect');
-      slotSelect.innerHTML = '';
-
-      if (slots.length === 0) {
-        slotSelect.innerHTML = '<option>No available slots</option>';
-        return;
-      }
-
-      slots.forEach(([date, time]) => {
-        const option = document.createElement('option');
-        option.value = `${date} ${time}`;
-        option.textContent = `${date} - ${time}`;
-        slotSelect.appendChild(option);
-      });
+    function selectSlot(date, time) {
+      selectedDate = date;
+      selectedTime = time;
+      document.getElementById('selectedSlot').innerText = `Selected Slot: ${date} at ${time}`;
+      document.getElementById('whatsappButton').style.display = 'block';
     }
 
-    async function checkAndBook() {
-      const name = document.getElementById('patientName').value.trim();
-      const reason = document.getElementById('reason').value.trim();
-      const slotVal = document.getElementById('slotSelect').value;
-      const statusMsg = document.getElementById('statusMsg');
-      statusMsg.textContent = '';
-      statusMsg.className = 'status';
+    document.getElementById('whatsappButton').onclick = function() {
+      const name = prompt("Enter your name:");
+      const reason = prompt("Reason for visit:");
+      const message = `Hi, I want to book an appointment on ${selectedDate} at ${selectedTime}.\nName: ${name}\nReason: ${reason}`;
+      const phoneNumber = '919390664577'; // Replace with clinic number
+      const encodedMessage = encodeURIComponent(message);
+      window.open(`https://wa.me/${phoneNumber}?text=${encodedMessage}`, '_blank');
+    };
 
-      if (!slotVal || !name) {
-        statusMsg.textContent = 'Please fill all required fields.';
-        statusMsg.classList.add('error');
-        return;
+    async function loadAvailableSlots() {
+      const sheetUrl = 'https://docs.google.com/spreadsheets/d/1Sby5FqvmSEGQcId106sz-MLJF1nlwarbfEVMMSIKM74/gviz/tq?tqx=out:csv&sheet=AvailableSlots';
+
+      const response = await fetch(sheetUrl);
+      const csvText = await response.text();
+      const rows = csvText.trim().split('\n').map(row => row.split(','));
+
+      const container = document.getElementById('slotContainer');
+      container.innerHTML = '';
+
+      for (let i = 1; i < rows.length; i++) {
+        const [date, time, status] = rows[i];
+
+        if (status.trim().toLowerCase() !== 'booked') {
+          const slotBtn = document.createElement('button');
+          slotBtn.innerText = `${date} - ${time}`;
+          slotBtn.className = 'slot-button';
+          slotBtn.onclick = () => selectSlot(date, time);
+          container.appendChild(slotBtn);
+        }
       }
-
-      const [selectedDate, selectedTime] = slotVal.split(' - ');
-      await loadSlots();
-      const isStillAvailable = slots.some(([date, time]) =>
-        `${date} ${time}` === slotVal && time
-      );
-
-      if (!isStillAvailable) {
-        statusMsg.textContent = 'Slot no longer available. Please refresh.';
-        statusMsg.classList.add('error');
-        return;
-      }
-
-      statusMsg.textContent = 'Slot confirmed. Redirecting...';
-      statusMsg.classList.add('success');
-
-      const message = `Hello, I would like to book an appointment.\n\n📅 Date: ${selectedDate}\n⏰ Time: ${selectedTime}\n👤 Name: ${name}\n📝 Reason: ${reason || 'Not specified'}`;
-      const encoded = encodeURIComponent(message);
-      window.location.href = `https://wa.me/919390664577?text=${encoded}`;
     }
 
-    loadSlots();
+    window.onload = loadAvailableSlots;
   </script>
 </body>
 </html>
