@@ -1,140 +1,135 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Book Your Appointment</title>
+  <meta charset="UTF-8">
+  <title>Book Appointment</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
       background-color: #000;
-      font-family: 'Segoe UI', sans-serif;
-      margin: 0;
-      padding: 20px;
+      font-family: Arial, sans-serif;
       color: white;
+      padding: 20px;
     }
-
-    h1 {
-      color: #00f5ff;
-      text-align: center;
-      font-size: 26px;
-      margin-bottom: 5px;
-    }
-
     h2 {
-      color: #ff66cc;
+      color: cyan;
       text-align: center;
+    }
+    p {
+      text-align: center;
+      color: hotpink;
       font-size: 18px;
-      margin-top: 0;
-      margin-bottom: 25px;
     }
-
-    form {
-      max-width: 400px;
-      margin: 0 auto;
-    }
-
     input, select, button {
       width: 100%;
       padding: 14px;
-      margin: 12px 0;
+      margin: 10px 0;
       font-size: 16px;
       border-radius: 6px;
       border: none;
     }
-
-    input, select {
-      background: white;
-      color: black;
-    }
-
     button {
-      background: cyan;
+      background-color: aqua;
       color: black;
       font-weight: bold;
       cursor: pointer;
     }
-
-    button:hover {
-      background: #00e1e1;
+    select:disabled {
+      background-color: #ccc;
+      color: #666;
     }
   </style>
 </head>
 <body>
-  <h1>Book Your Appointment</h1>
-  <h2>Select a time slot below and confirm via WhatsApp</h2>
 
-  <form id="bookingForm">
-    <input type="text" id="name" placeholder="Your Name" required />
-    <input type="text" id="reason" placeholder="Reason for Visit" required />
+  <h2>Book Your Appointment</h2>
+  <p>Select a time slot below and confirm via WhatsApp</p>
 
-    <select id="date" required>
-      <option value="" disabled selected>Select Date</option>
-      <option value="2025-07-29">Today (29 July)</option>
-      <option value="2025-07-30">Tomorrow (30 July)</option>
-    </select>
+  <input type="text" id="name" placeholder="Your Name" />
+  <input type="text" id="reason" placeholder="Reason for Visit" />
 
-    <select id="slot" required>
-      <option value="" disabled selected>Select Time Slot</option>
-    </select>
+  <select id="dateSelect">
+    <option value="">Select Date</option>
+  </select>
 
-    <button type="button" id="bookBtn">Book via WhatsApp</button>
-  </form>
+  <select id="slotSelect" disabled>
+    <option>Select Time Slot</option>
+  </select>
+
+  <button onclick="bookNow()">Book via WhatsApp</button>
 
   <script>
-    const sheetUrl = 'https://docs.google.com/spreadsheets/d/1jG38gTpE2YbubT5JcIAiklB_Ua0utCZW/gviz/tq?tqx=out:json&sheet=Slots';
-    const dropdown = document.getElementById('slot');
-    const dateSelect = document.getElementById('date');
-    const bookBtn = document.getElementById('bookBtn');
+    const sheetURL = 'https://docs.google.com/spreadsheets/d/1jG38gTpE2YbubT5JcIAiklB_Ua0utCZW/gviz/tq?tqx=out:json&sheet=Slots';
 
-    let slotData = [];
+    let allSlots = [];
 
-    async function fetchSlots() {
-      const res = await fetch(sheetUrl);
-      const text = await res.text();
-      const json = JSON.parse(text.substr(47).slice(0, -2));
-      const rows = json.table.rows;
+    fetch(sheetURL)
+      .then(res => res.text())
+      .then(text => {
+        const json = JSON.parse(text.substring(47).slice(0, -2));
+        const rows = json.table.rows;
+        allSlots = rows.map(r => ({
+          date: r.c[0]?.v,
+          time: r.c[1]?.v,
+          status: r.c[2]?.v
+        })).filter(r => r.status === 'Available');
 
-      slotData = rows.map(row => ({
-        date: row.c[0]?.v,
-        time: row.c[1]?.v,
-        status: row.c[2]?.v
-      }));
+        const uniqueDates = [...new Set(allSlots.map(s => s.date))];
+        const dateSelect = document.getElementById('dateSelect');
 
-      updateDropdown();
-    }
-
-    function updateDropdown() {
-      const selectedDate = dateSelect.value;
-      dropdown.innerHTML = '<option disabled selected>Select Time Slot</option>';
-
-      slotData
-        .filter(slot => slot.date === selectedDate && slot.status === 'Available')
-        .forEach(slot => {
-          const option = document.createElement('option');
-          option.value = slot.time;
-          option.textContent = slot.time;
-          dropdown.appendChild(option);
+        uniqueDates.forEach(date => {
+          const opt = document.createElement('option');
+          const formatted = new Date(date).toLocaleDateString('en-IN', {
+            day: '2-digit', month: 'short', year: 'numeric'
+          });
+          opt.value = date;
+          opt.textContent = formatted;
+          dateSelect.appendChild(opt);
         });
-    }
 
-    dateSelect.addEventListener('change', updateDropdown);
-    fetchSlots();
+        dateSelect.addEventListener('change', populateSlots);
+      });
 
-    bookBtn.addEventListener('click', () => {
-      const name = document.getElementById('name').value.trim();
-      const reason = document.getElementById('reason').value.trim();
-      const time = dropdown.value;
-      const date = dateSelect.value;
-
-      if (!name || !reason || !time || !date) {
-        alert('Please fill all fields');
+    function populateSlots() {
+      const date = document.getElementById('dateSelect').value;
+      const slotSelect = document.getElementById('slotSelect');
+      slotSelect.innerHTML = '<option>Select Time Slot</option>';
+      if (!date) {
+        slotSelect.disabled = true;
         return;
       }
 
-      const message = `Hello, I would like to book an appointment:\nName: ${name}\nReason: ${reason}\nPreferred Date: ${date}\nPreferred Time: ${time}`;
-      const whatsappURL = `https://wa.me/919390664577?text=${encodeURIComponent(message)}`;
-      window.open(whatsappURL, '_blank');
-    });
+      const slots = allSlots.filter(s => s.date === date).map(s => s.time);
+      slots.forEach(slot => {
+        const opt = document.createElement('option');
+        opt.value = slot;
+        opt.textContent = slot;
+        slotSelect.appendChild(opt);
+      });
+
+      slotSelect.disabled = slots.length === 0;
+    }
+
+    function bookNow() {
+      const name = document.getElementById('name').value.trim();
+      const reason = document.getElementById('reason').value.trim();
+      const date = document.getElementById('dateSelect').value;
+      const slot = document.getElementById('slotSelect').value;
+
+      if (!name || !reason || !date || !slot) {
+        alert('Please fill all fields before booking.');
+        return;
+      }
+
+      const dateFormatted = new Date(date).toLocaleDateString('en-IN', {
+        day: '2-digit', month: 'short', year: 'numeric'
+      });
+
+      const msg = `Hi, I am ${name}. I would like to book an appointment on ${dateFormatted} at ${slot} for ${reason}.`;
+      const whatsappLink = `https://wa.me/919390664577?text=${encodeURIComponent(msg)}`;
+      window.open(whatsappLink, '_blank');
+    }
   </script>
+
 </body>
 </html>
