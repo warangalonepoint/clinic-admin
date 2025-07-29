@@ -7,82 +7,76 @@
   <style>
     body {
       background-color: #111;
-      color: #0fffc0;
+      color: #00ffcc;
       font-family: Arial, sans-serif;
-      padding: 20px;
       text-align: center;
+      padding: 20px;
     }
     h1 {
-      font-size: 28px;
-      margin-bottom: 20px;
+      margin-bottom: 10px;
     }
-    .slot-btn {
-      display: block;
-      margin: 12px auto;
-      padding: 12px 18px;
-      width: 85%;
-      border: 2px solid #0fffc0;
-      border-radius: 10px;
-      background-color: transparent;
-      color: #0fffc0;
-      font-size: 16px;
+    .slot-button {
+      background-color: #222;
+      border: 1px solid #00ffcc;
+      color: #00ffcc;
+      padding: 10px 15px;
+      margin: 10px 5px;
+      border-radius: 8px;
       cursor: pointer;
-      transition: 0.3s;
+      display: inline-block;
     }
-    .slot-btn:hover {
-      background-color: #0fffc0;
+    .slot-button:hover {
+      background-color: #00ffcc;
       color: #111;
     }
   </style>
 </head>
 <body>
   <h1>Book Your Appointment</h1>
-  <div id="slots"></div>
+  <div id="slots">Loading slots...</div>
 
   <script>
-    const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQY1u0ZwYxC8dkpzbWtoYkKJv2nYcQ294oQaSpvCsntFJOTfKjjgBAesIC7g8cCbEK_lUWWdr/pub?gid=2115782150&single=true&output=csv";
+    const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQQyTUu2qw0Yxk6GKRdpbzWtoYckJv2nfVcq294q0aSpyCsnfFJ01fKjigBAesIC7g8cCbEK_lUWdWdr/pub?output=csv';
+    
+    async function loadSlots() {
+      const response = await fetch(sheetUrl);
+      const data = await response.text();
+      const rows = data.split('\n').slice(1); // skip header row
+      const container = document.getElementById('slots');
+      container.innerHTML = '';
 
-    async function fetchSlots() {
-      try {
-        const response = await fetch(sheetUrl);
-        const data = await response.text();
-        const rows = data.split("\n").slice(1); // skip headers
+      const now = new Date();
+      const validSlots = rows.filter(row => {
+        const cols = row.split(',');
+        const dateStr = cols[0].trim(); // format: 27 July 2025
+        const status = cols[2]?.trim().toLowerCase();
+        const dateTime = new Date(dateStr + ' ' + cols[1]?.trim());
 
-        const slotContainer = document.getElementById("slots");
-        slotContainer.innerHTML = "";
+        return status === 'available' && !isNaN(dateTime) && dateTime >= now;
+      });
 
-        const today = new Date().toLocaleDateString("en-GB");
-
-        rows.forEach((row) => {
-          const cols = row.split(",");
-          const date = cols[0]?.trim();
-          const time = cols[1]?.trim();
-          const status = cols[2]?.trim();
-
-          if (date && time && status === "Available") {
-            const button = document.createElement("button");
-            button.className = "slot-btn";
-            button.textContent = `${date} — ${time}`;
-            button.onclick = () => {
-              const message = `Hi, I want to book an appointment for ${date} at ${time}.`;
-              const whatsappLink = `https://wa.me/919390664577?text=${encodeURIComponent(message)}`;
-              window.open(whatsappLink, "_blank");
-            };
-            slotContainer.appendChild(button);
-          }
-        });
-
-        if (slotContainer.innerHTML === "") {
-          slotContainer.innerHTML = "<p>No available slots right now. Please check back later.</p>";
-        }
-
-      } catch (error) {
-        console.error("Error loading slots:", error);
-        document.getElementById("slots").innerHTML = "<p>Unable to load slots. Try again later.</p>";
+      if (validSlots.length === 0) {
+        container.innerHTML = '<p>No available slots right now. Please check back later.</p>';
+        return;
       }
+
+      validSlots.forEach(row => {
+        const cols = row.split(',');
+        const date = cols[0]?.trim();
+        const time = cols[1]?.trim();
+        const button = document.createElement('button');
+        button.className = 'slot-button';
+        button.innerText = `${date} – ${time}`;
+        button.onclick = () => {
+          const msg = `Hi, I’d like to book an appointment for ${date} at ${time}. My name is [Your Name], reason: [Brief Note].`;
+          const encodedMsg = encodeURIComponent(msg);
+          window.open(`https://wa.me/919390664577?text=${encodedMsg}`, '_blank');
+        };
+        container.appendChild(button);
+      });
     }
 
-    fetchSlots();
+    loadSlots();
   </script>
 </body>
 </html>
