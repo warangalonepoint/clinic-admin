@@ -2,113 +2,157 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Book Appointment</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <style>
     body {
       background-color: #000;
+      font-family: 'Segoe UI', sans-serif;
       color: #fff;
-      font-family: Arial, sans-serif;
       padding: 20px;
     }
     h2 {
       text-align: center;
-      color: orange;
-    }
-    input, select, button {
-      display: block;
-      width: 100%;
-      padding: 12px;
-      margin: 15px 0;
-      border: none;
-      border-radius: 5px;
-      font-size: 16px;
-    }
-    button {
-      background-color: orange;
-      color: #000;
-      font-weight: bold;
-      cursor: pointer;
+      color: #f39c12;
     }
     label {
-      margin-top: 10px;
       display: block;
+      margin: 15px 0 5px;
       font-weight: bold;
+    }
+    input, select {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: none;
+      margin-bottom: 10px;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      font-size: 18px;
+      font-weight: bold;
+      background-color: #f39c12;
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #e67e22;
     }
   </style>
 </head>
 <body>
+
   <h2>📅 Book Your Appointment</h2>
 
-  <input type="text" id="patientName" placeholder="Enter Your Name" />
-  <input type="text" id="reason" placeholder="Reason for Visit" />
+  <label for="name">Enter Your Name</label>
+  <input type="text" id="name" placeholder="Your Name" required>
 
-  <label>Select Date</label>
-  <input type="date" id="appointmentDate" onchange="loadAvailableSlots()" />
+  <label for="reason">Reason for Visit</label>
+  <input type="text" id="reason" placeholder="e.g. Fever, Consultation" required>
 
-  <label>Select Time Slot</label>
-  <select id="appointmentTime">
+  <label for="date">Select Date</label>
+  <select id="date"></select>
+
+  <label for="time">Select Time Slot</label>
+  <select id="time">
     <option value="">Select Time Slot</option>
   </select>
 
-  <button onclick="showConfirmation()">Confirm Booking</button>
+  <button onclick="goToConfirmation()">Confirm Booking</button>
 
   <script>
-    const sheetURL = "https://warangalonepoint.github.io/clinic-admin/Slots.csv";
+    let availableSlots = [];
+    let bookedSlots = [];
 
-    async function loadAvailableSlots() {
-      const dateInput = document.getElementById("appointmentDate").value;
-      const formattedDate = formatDate(dateInput);
-      const dropdown = document.getElementById("appointmentTime");
-      dropdown.innerHTML = '<option value="">Select Time Slot</option>';
+    async function loadCSV(url) {
+      const res = await fetch(url);
+      const text = await res.text();
+      return text.trim().split("\n").slice(1).map(row => {
+        const [Date, Time, Status] = row.split(",");
+        return { Date, Time, Status };
+      });
+    }
 
-      try {
-        const response = await fetch(sheetURL);
-        const csvText = await response.text();
-        const rows = csvText.split("\n").slice(1);
-        const slots = rows
-          .map(row => row.replace(/\r/g, "").split(","))
-          .filter(row => row[0] === formattedDate && row[2]?.toLowerCase() === "available");
+    async function loadLogs(url) {
+      const res = await fetch(url);
+      const text = await res.text();
+      return text.trim().split("\n").slice(1).map(row => {
+        const [Date, Time, Name, Reason] = row.split(",");
+        return { Date, Time };
+      });
+    }
 
-        if (slots.length === 0) {
-          const opt = document.createElement("option");
-          opt.value = "";
-          opt.text = "No slots available";
-          dropdown.appendChild(opt);
-        } else {
-          slots.forEach(slot => {
-            const opt = document.createElement("option");
-            opt.value = slot[1];
-            opt.text = slot[1];
-            dropdown.appendChild(opt);
-          });
-        }
-      } catch (error) {
-        alert("Error loading slots. Please try again.");
-        console.error(error);
+    function uniqueDates(slots) {
+      return [...new Set(slots.map(slot => slot.Date))];
+    }
+
+    function filterSlotsByDate(date) {
+      const filtered = availableSlots.filter(
+        s => s.Date === date && s.Status.toLowerCase() === "available"
+      );
+      const open = filtered.filter(slot => {
+        return !bookedSlots.some(log => log.Date === slot.Date && log.Time === slot.Time);
+      });
+      return open;
+    }
+
+    function updateTimeOptions(date) {
+      const timeDropdown = document.getElementById("time");
+      timeDropdown.innerHTML = '';
+      const options = filterSlotsByDate(date);
+
+      if (options.length === 0) {
+        timeDropdown.innerHTML = '<option>No slots available</option>';
+        return;
       }
+
+      options.forEach(slot => {
+        const opt = document.createElement("option");
+        opt.value = slot.Time;
+        opt.textContent = slot.Time;
+        timeDropdown.appendChild(opt);
+      });
     }
 
-    function formatDate(inputDate) {
-      const parts = inputDate.split("-");
-      return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    async function init() {
+      availableSlots = await loadCSV("https://warangalonepoint.github.io/clinic-admin/Slots.csv");
+      bookedSlots = await loadLogs("https://warangalonepoint.github.io/clinic-admin/logs.csv");
+
+      const dateDropdown = document.getElementById("date");
+      const dates = uniqueDates(availableSlots);
+      dates.forEach(d => {
+        const opt = document.createElement("option");
+        opt.value = d;
+        opt.textContent = d;
+        dateDropdown.appendChild(opt);
+      });
+
+      dateDropdown.addEventListener("change", () => {
+        updateTimeOptions(dateDropdown.value);
+      });
     }
 
-    function showConfirmation() {
-      const name = document.getElementById("patientName").value.trim();
+    function goToConfirmation() {
+      const name = document.getElementById("name").value.trim();
       const reason = document.getElementById("reason").value.trim();
-      const date = document.getElementById("appointmentDate").value;
-      const time = document.getElementById("appointmentTime").value;
+      const date = document.getElementById("date").value;
+      const time = document.getElementById("time").value;
 
       if (!name || !reason || !date || !time) {
         alert("Please fill all fields.");
         return;
       }
 
-      const formattedDate = formatDate(date);
-      const query = `?name=${encodeURIComponent(name)}&reason=${encodeURIComponent(reason)}&date=${formattedDate}&time=${encodeURIComponent(time)}`;
-      window.location.href = `confirmation.html${query}`;
+      const url = `confirmation.html?name=${encodeURIComponent(name)}&date=${encodeURIComponent(date)}&time=${encodeURIComponent(time)}&reason=${encodeURIComponent(reason)}`;
+      window.location.href = url;
     }
+
+    init();
   </script>
+
 </body>
 </html>
