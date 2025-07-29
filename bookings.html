@@ -61,11 +61,8 @@
 
   <script>
     function formatDateToDDMMYYYY(input) {
-      const date = new Date(input);
-      const dd = String(date.getDate()).padStart(2, '0');
-      const mm = String(date.getMonth() + 1).padStart(2, '0');
-      const yyyy = date.getFullYear();
-      return `${dd}-${mm}-${yyyy}`;
+      const parts = input.split("-");
+      return `${parts[2]}-${parts[1]}-${parts[0]}`; // from YYYY-MM-DD to DD-MM-YYYY
     }
 
     async function loadAvailableSlots() {
@@ -83,12 +80,12 @@
       const added = new Set();
       lines.forEach(line => {
         const [date, time, status] = line.split(",");
-        if (date === selectedDate && status.trim().toLowerCase() === "available" && !added.has(time)) {
+        if (date.trim() === selectedDate && status.trim().toLowerCase() === "available" && !added.has(time.trim())) {
           const opt = document.createElement("option");
-          opt.value = time;
-          opt.text = time;
+          opt.value = time.trim();
+          opt.text = time.trim();
           dropdown.appendChild(opt);
-          added.add(time);
+          added.add(time.trim());
         }
       });
     }
