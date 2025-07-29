@@ -1,78 +1,93 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Confirm Your Booking</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Booking Logs Dashboard</title>
   <style>
+    :root {
+      --bg-color: #000;
+      --text-color: #fff;
+      --highlight: #f0ad4e;
+      --card-bg: #1a1a1a;
+    }
+    body.light-mode {
+      --bg-color: #fff;
+      --text-color: #000;
+      --highlight: #d9534f;
+      --card-bg: #f5f5f5;
+    }
     body {
-      background-color: #000;
-      font-family: 'Segoe UI', sans-serif;
-      color: #fff;
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
       padding: 20px;
-      text-align: center;
     }
     h2 {
-      color: #f39c12;
-      font-size: 24px;
-      margin-bottom: 20px;
+      color: var(--highlight);
     }
-    .info-box {
-      background: #1a1a1a;
-      padding: 15px;
-      border-radius: 12px;
-      margin-bottom: 20px;
-    }
-    .info-box p {
-      font-size: 16px;
-      margin: 8px 0;
-    }
-    .btn {
-      background-color: #f39c12;
-      color: #000;
-      padding: 12px 25px;
-      font-weight: bold;
+    .toggle-button {
+      background: var(--highlight);
+      color: var(--bg-color);
       border: none;
-      border-radius: 8px;
-      font-size: 16px;
+      padding: 10px 20px;
       cursor: pointer;
+      border-radius: 5px;
+      margin-bottom: 20px;
     }
-    .btn:hover {
-      background-color: #d35400;
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid var(--highlight);
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: var(--highlight);
+      color: var(--bg-color);
+    }
+    .export-btn {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background-color: var(--highlight);
+      color: var(--bg-color);
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
     }
   </style>
 </head>
 <body>
+  <button class="toggle-button" onclick="toggleTheme()">Toggle Theme</button>
+  <h2>📊 Appointment Logs</h2>
+  <div id="logTableContainer">Loading logs...</div>
+  <button class="export-btn" onclick="exportCSV()">Export Logs as CSV</button>  <script>
+    const logsUrl = "https://warangalonepoint.github.io/clinic-admin/logs.csv";
 
-  <h2>📋 Confirm Your Booking</h2>
+    async function loadLogs() {
+      const res = await fetch(logsUrl);
+      const data = await res.text();
+      const rows = data.trim().split("\n").map(row => row.split(","));
 
-  <div class="info-box">
-    <p><strong>👤 Name:</strong> <span id="displayName"></span></p>
-    <p><strong>📆 Date:</strong> <span id="displayDate"></span></p>
-    <p><strong>⏰ Time:</strong> <span id="displayTime"></span></p>
-    <p><strong>💬 Reason:</strong> <span id="displayReason"></span></p>
-  </div>
-
-  <button class="btn" onclick="confirmAndRedirect()">Book via WhatsApp</button>
-
-  <script>
-    const params = new URLSearchParams(window.location.search);
-    const name = decodeURIComponent(params.get('name') || '');
-    const date = decodeURIComponent(params.get('date') || '');
-    const time = decodeURIComponent(params.get('time') || '');
-    const reason = decodeURIComponent(params.get('reason') || '');
-
-    document.getElementById('displayName').textContent = name;
-    document.getElementById('displayDate').textContent = date;
-    document.getElementById('displayTime').textContent = time;
-    document.getElementById('displayReason').textContent = reason;
-
-    function confirmAndRedirect() {
-      const message = `Hello, I am ${name}. I would like to book an appointment on ${date} at ${time}.\nReason: ${reason}`;
-      const whatsappLink = `https://wa.me/919390664577?text=${encodeURIComponent(message)}`;
-      window.location.href = whatsappLink;
+      let html = '<table><tr>' + rows[0].map(h => `<th>${h}</th>`).join('') + '</tr>';
+      for (let i = 1; i < rows.length; i++) {
+        html += '<tr>' + rows[i].map(d => `<td>${d}</td>`).join('') + '</tr>';
+      }
+      html += '</table>';
+      document.getElementById("logTableContainer").innerHTML = html;
     }
-  </script>
 
-</body>
+    function toggleTheme() {
+      document.body.classList.toggle("light-mode");
+    }
+
+    function exportCSV() {
+      window.open(logsUrl, '_blank');
+    }
+
+    loadLogs();
+  </script></body>
 </html>
