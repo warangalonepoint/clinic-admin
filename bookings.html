@@ -7,93 +7,129 @@
   <style>
     body {
       background-color: #000;
-      color: #00e6ac;
       font-family: Arial, sans-serif;
+      color: #fff;
       padding: 20px;
+      margin: 0;
     }
 
     h2 {
+      color: #00e6e6;
       text-align: center;
-      color: #00e6ac;
-      margin-bottom: 30px;
+      margin-bottom: 20px;
     }
 
     input, select, button {
       width: 100%;
       padding: 12px;
       margin: 10px 0;
+      font-size: 16px;
       border-radius: 8px;
       border: none;
-      font-size: 16px;
+    }
+
+    input, select {
+      background-color: #ddd;
     }
 
     button {
-      background-color: #00e6ac;
-      color: #000;
+      background-color: #28a745;
+      color: white;
       font-weight: bold;
       cursor: pointer;
     }
 
-    #confirmationBox {
-      display: none;
-      background-color: #111;
-      padding: 15px;
-      margin-top: 20px;
-      border-radius: 8px;
-      border: 1px solid #00e6ac;
+    button:hover {
+      background-color: #218838;
     }
+
+    .confirm-box {
+      background: #111;
+      border: 1px solid #444;
+      padding: 20px;
+      border-radius: 12px;
+      margin-top: 20px;
+      display: none;
+    }
+
+    .confirm-box p {
+      margin: 10px 0;
+    }
+
+    .confirm-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .confirm-buttons button {
+      flex: 1;
+    }
+
   </style>
 </head>
 <body>
-
   <h2>📅 Book Your Appointment</h2>
 
-  <input type="text" id="patientName" placeholder="Enter Your Name" />
-  <input type="text" id="reason" placeholder="Reason for Visit" />
+  <input type="text" id="patientName" placeholder="Enter Your Name" required />
+  <input type="text" id="reason" placeholder="Reason for Visit" required />
 
-  <label style="color: #fff;">Select Date</label>
-  <input type="date" id="appointmentDate" onchange="loadAvailableSlots()" />
+  <label for="appointmentDate">📅 Select Date:</label>
+  <input type="date" id="appointmentDate" onchange="loadAvailableSlots()" required />
 
-  <label style="color: #fff;">Select Time Slot</label>
-  <select id="appointmentTime">
-    <option value="">Select Time Slot</option>
+  <label for="appointmentTime">⏰ Select Time Slot:</label>
+  <select id="appointmentTime" required>
+    <option value="">-- Select Time Slot --</option>
   </select>
 
   <button onclick="showConfirmation()">Confirm Booking</button>
 
-  <div id="confirmationBox">
-    <p><strong>Name:</strong> <span id="confName"></span></p>
-    <p><strong>Reason:</strong> <span id="confReason"></span></p>
-    <p><strong>Date:</strong> <span id="confDate"></span></p>
-    <p><strong>Time:</strong> <span id="confTime"></span></p>
-    <button onclick="submitToWhatsApp()">Send via WhatsApp</button>
+  <div id="confirmationBox" class="confirm-box">
+    <h3>✅ Confirm Your Booking</h3>
+    <p><strong>Name:</strong> <span id="confirmName"></span></p>
+    <p><strong>Reason:</strong> <span id="confirmReason"></span></p>
+    <p><strong>Date:</strong> <span id="confirmDate"></span></p>
+    <p><strong>Time:</strong> <span id="confirmTime"></span></p>
+    <div class="confirm-buttons">
+      <button onclick="proceedToWhatsApp()">✅ Confirm & WhatsApp</button>
+      <button onclick="cancelConfirmation()">❌ Cancel</button>
+    </div>
   </div>
 
   <script>
     async function loadAvailableSlots() {
-      const selectedDate = document.getElementById("appointmentDate").value;
+      const date = document.getElementById("appointmentDate").value;
       const timeDropdown = document.getElementById("appointmentTime");
-      timeDropdown.innerHTML = '<option value="">Select Time Slot</option>';
-      if (!selectedDate) return;
+      timeDropdown.innerHTML = `<option value="">-- Select Time Slot --</option>`;
 
-      const slotsResp = await fetch("https://warangalonepoint.github.io/clinic-admin/Slots.csv");
-      const slotsText = await slotsResp.text();
-      const slotLines = slotsText.split("\n").slice(1); // skip header
+      if (!date) return;
 
-      const logsResp = await fetch("https://warangalonepoint.github.io/clinic-admin/logs.csv");
-      const logsText = logsResp.text();
-      const bookedLogs = (await logsText).split("\n").slice(1).map(r => r.split(","));
-      const bookedTimes = bookedLogs.filter(e => e[2] === selectedDate).map(e => e[3]);
+      try {
+        const slotsResp = await fetch("https://warangalonepoint.github.io/clinic-admin/Slots.csv");
+        const slotsText = await slotsResp.text();
+        const slotLines = slotsText.trim().split("\n").slice(1); // Skip header
 
-      slotLines.forEach(line => {
-        const [date, time, status] = line.trim().split(",");
-        if (date === selectedDate && status === "Available" && !bookedTimes.includes(time)) {
-          const option = document.createElement("option");
-          option.value = time;
-          option.textContent = time;
-          timeDropdown.appendChild(option);
-        }
-      });
+        const logsResp = await fetch("https://warangalonepoint.github.io/clinic-admin/logs.csv");
+        const logsText = await logsResp.text();
+        const booked = logsText.trim().split("\n").slice(1).map(row => row.split(","));
+
+        const bookedMap = booked
+          .filter(row => row[2] === date)
+          .map(row => row[3]);
+
+        slotLines.forEach(line => {
+          const [slotDate, time, status] = line.split(",");
+          if (slotDate === date && status.toLowerCase() === "available" && !bookedMap.includes(time)) {
+            const opt = document.createElement("option");
+            opt.value = time;
+            opt.text = time;
+            timeDropdown.appendChild(opt);
+          }
+        });
+
+      } catch (err) {
+        alert("Error loading slots. Please try again later.");
+      }
     }
 
     function showConfirmation() {
@@ -103,34 +139,41 @@
       const time = document.getElementById("appointmentTime").value;
 
       if (!name || !reason || !date || !time) {
-        alert("Please fill all fields.");
+        alert("Please fill in all fields.");
         return;
       }
 
-      document.getElementById("confName").textContent = name;
-      document.getElementById("confReason").textContent = reason;
-      document.getElementById("confDate").textContent = date;
-      document.getElementById("confTime").textContent = time;
+      document.getElementById("confirmName").innerText = name;
+      document.getElementById("confirmReason").innerText = reason;
+      document.getElementById("confirmDate").innerText = date;
+      document.getElementById("confirmTime").innerText = time;
       document.getElementById("confirmationBox").style.display = "block";
     }
 
-    function submitToWhatsApp() {
+    function cancelConfirmation() {
+      document.getElementById("confirmationBox").style.display = "none";
+    }
+
+    function proceedToWhatsApp() {
       const name = document.getElementById("patientName").value.trim();
       const reason = document.getElementById("reason").value.trim();
       const date = document.getElementById("appointmentDate").value;
       const time = document.getElementById("appointmentTime").value;
 
-      const message = `Appointment Booking Request:%0A👤 Name: ${name}%0A📅 Date: ${date}%0A⏰ Time: ${time}%0A📝 Reason: ${reason}`;
-      const whatsappURL = `https://wa.me/919390664577?text=${message}`;
-      window.open(whatsappURL, "_blank");
+      const message = `Hi, I would like to book an appointment:\n\nName: ${name}\nReason: ${reason}\nDate: ${date}\nTime: ${time}`;
+      const encodedMessage = encodeURIComponent(message);
+      const whatsappURL = `https://wa.me/919390664577?text=${encodedMessage}`;
+      window.location.href = whatsappURL;
     }
 
     window.onload = () => {
-      const today = new Date().toISOString().split("T")[0];
-      document.getElementById("appointmentDate").value = today;
+      const today = new Date();
+      const dd = String(today.getDate()).padStart(2, '0');
+      const mm = String(today.getMonth() + 1).padStart(2, '0');
+      const yyyy = today.getFullYear();
+      document.getElementById("appointmentDate").value = `${yyyy}-${mm}-${dd}`;
       loadAvailableSlots();
     };
   </script>
-
 </body>
 </html>
