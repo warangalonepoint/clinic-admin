@@ -53,11 +53,15 @@
 
   <script>
     async function loadAvailableSlots() {
-      const date = document.getElementById("appointmentDate").value;
+      const dateInput = document.getElementById("appointmentDate").value;
       const timeDropdown = document.getElementById("appointmentTime");
       timeDropdown.innerHTML = `<option value="">-- Select Time Slot --</option>`;
 
-      if (!date) return;
+      if (!dateInput) return;
+
+      // Convert YYYY-MM-DD to DD-MM-YYYY
+      const parts = dateInput.split("-");
+      const formattedDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
 
       try {
         const slotsResp = await fetch("https://warangalonepoint.github.io/clinic-admin/Slots.csv");
@@ -67,14 +71,13 @@
         const logsResp = await fetch("https://warangalonepoint.github.io/clinic-admin/logs.csv");
         const logsText = await logsResp.text();
         const booked = logsText.trim().split("\n").slice(1).map(row => row.split(","));
-
-        const bookedMap = booked
-          .filter(row => row[2] === date)
+        const bookedTimes = booked
+          .filter(row => row[2] === formattedDate)
           .map(row => row[3]);
 
         slotLines.forEach(line => {
           const [slotDate, time, status] = line.split(",");
-          if (slotDate === date && status.toLowerCase() === "available" && !bookedMap.includes(time)) {
+          if (slotDate === formattedDate && status.toLowerCase() === "available" && !bookedTimes.includes(time)) {
             const opt = document.createElement("option");
             opt.value = time;
             opt.text = time;
@@ -90,15 +93,18 @@
     function bookWhatsApp() {
       const name = document.getElementById("patientName").value.trim();
       const reason = document.getElementById("reason").value.trim();
-      const date = document.getElementById("appointmentDate").value;
+      const rawDate = document.getElementById("appointmentDate").value;
       const time = document.getElementById("appointmentTime").value;
 
-      if (!name || !reason || !date || !time) {
+      if (!name || !reason || !rawDate || !time) {
         alert("Please fill all fields before booking.");
         return;
       }
 
-      const message = `Hi, I want to book an appointment:\n\n👤 Name: ${name}\n📝 Reason: ${reason}\n📅 Date: ${date}\n⏰ Time: ${time}`;
+      const dateParts = rawDate.split("-");
+      const formatted = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+
+      const message = `Hi, I want to book an appointment:\n\n👤 Name: ${name}\n📝 Reason: ${reason}\n📅 Date: ${formatted}\n⏰ Time: ${time}`;
       const encodedMsg = encodeURIComponent(message);
       const whatsappURL = `https://wa.me/919390664577?text=${encodedMsg}`;
       window.open(whatsappURL, "_blank");
