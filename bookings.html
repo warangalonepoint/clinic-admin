@@ -2,113 +2,132 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Book Your Appointment</title>
+  <title>Book Appointment</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <style>
     body {
-      background-color: #000;
-      color: #fff;
-      font-family: Arial, sans-serif;
+      background-color: black;
+      font-family: sans-serif;
+      color: white;
       padding: 20px;
     }
+
     h2 {
-      text-align: center;
-      color: #00ffaa;
-      margin-bottom: 20px;
+      color: #00e699;
     }
+
     input, select, button {
       width: 100%;
       padding: 12px;
-      margin-bottom: 15px;
+      margin: 10px 0;
       border-radius: 8px;
       border: none;
       font-size: 16px;
     }
-    select, input {
-      background: #444;
-      color: #fff;
-    }
+
     button {
-      background-color: #00ffaa;
-      color: #000;
+      background-color: #00e699;
+      color: black;
       font-weight: bold;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #00ddaa;
     }
   </style>
 </head>
 <body>
+
   <h2>📅 Book Your Appointment</h2>
-  <input type="text" id="name" placeholder="Enter Your Name" required />
-  <input type="text" id="reason" placeholder="Reason for Visit" required />
-  <label>Select Date</label>
-  <select id="dateDropdown">
-    <option value="">-- Select Date --</option>
+  
+  <input type="text" id="name" placeholder="Enter Your Name" />
+  <input type="text" id="reason" placeholder="Reason for Visit" />
+
+  <label for="date">Select Date</label>
+  <select id="date"></select>
+
+  <label for="slot">Select Time Slot</label>
+  <select id="slot">
+    <option>-- Select Time Slot --</option>
   </select>
-  <label>Select Time Slot</label>
-  <select id="slotDropdown">
-    <option value="">-- Select Time Slot --</option>
-  </select>
+
   <button onclick="confirmBooking()">Book on WhatsApp</button>
 
   <script>
-    const sheetUrl = 'https://warangalonepoint.github.io/clinic-admin/Slots.csv';
-    let slotsData = [];
+    const SLOTS_URL = 'https://warangalonepoint.github.io/clinic-admin/Slots.csv';
+    const LOGS_URL = 'https://warangalonepoint.github.io/clinic-admin/logs.csv';
 
-    fetch(sheetUrl)
-      .then(response => response.text())
-      .then(data => {
-        slotsData = data.trim().split('\n').slice(1).map(row => {
-          const [date, time, status] = row.split(',');
-          return { date: date.trim(), time: time.trim(), status: status.trim() };
-        });
+    let allSlots = [];
+    let bookedSlots = [];
 
-        // Populate unique dates in dropdown
-        const dateDropdown = document.getElementById('dateDropdown');
-        const uniqueDates = [...new Set(slotsData.map(s => s.date))];
-        uniqueDates.forEach(date => {
-          const option = document.createElement('option');
-          option.value = date;
-          option.textContent = date;
-          dateDropdown.appendChild(option);
-        });
+    async function loadData() {
+      const [slotsText, logsText] = await Promise.all([
+        fetch(SLOTS_URL).then(res => res.text()),
+        fetch(LOGS_URL).then(res => res.text())
+      ]);
+
+      allSlots = parseCSV(slotsText);
+      bookedSlots = parseCSV(logsText);
+
+      const dates = [...new Set(allSlots.map(row => row.Date))];
+      const dateSelect = document.getElementById("date");
+      dates.forEach(date => {
+        const opt = document.createElement("option");
+        opt.value = date;
+        opt.textContent = date;
+        dateSelect.appendChild(opt);
       });
 
-    document.getElementById('dateDropdown').addEventListener('change', function () {
-      const selectedDate = this.value;
-      const slotDropdown = document.getElementById('slotDropdown');
+      dateSelect.addEventListener("change", updateSlots);
+    }
 
-      // Clear previous slots
-      slotDropdown.innerHTML = '<option value="">-- Select Time Slot --</option>';
+    function updateSlots() {
+      const selectedDate = document.getElementById("date").value;
+      const slotSelect = document.getElementById("slot");
+      slotSelect.innerHTML = '<option>-- Select Time Slot --</option>';
 
-      if (selectedDate) {
-        const filteredSlots = slotsData.filter(slot => slot.date === selectedDate && slot.status.toLowerCase() === 'available');
-        filteredSlots.forEach(slot => {
-          const option = document.createElement('option');
-          option.value = slot.time;
-          option.textContent = slot.time;
-          slotDropdown.appendChild(option);
-        });
-      }
-    });
+      const available = allSlots.filter(
+        row => row.Date === selectedDate && row.Status.toLowerCase() === "available"
+      );
+
+      const booked = bookedSlots
+        .filter(row => row.Date === selectedDate)
+        .map(row => row.Time);
+
+      const filtered = available.filter(slot => !booked.includes(slot.Time));
+
+      filtered.forEach(slot => {
+        const opt = document.createElement("option");
+        opt.value = slot.Time;
+        opt.textContent = slot.Time;
+        slotSelect.appendChild(opt);
+      });
+    }
 
     function confirmBooking() {
-      const name = document.getElementById('name').value.trim();
-      const reason = document.getElementById('reason').value.trim();
-      const date = document.getElementById('dateDropdown').value;
-      const time = document.getElementById('slotDropdown').value;
+      const name = document.getElementById("name").value.trim();
+      const reason = document.getElementById("reason").value.trim();
+      const date = document.getElementById("date").value;
+      const slot = document.getElementById("slot").value;
 
-      if (!name || !reason || !date || !time) {
-        alert("Please fill in all fields.");
+      if (!name || !reason || !date || slot.includes("Select")) {
+        alert("Please fill all fields properly.");
         return;
       }
 
-      const msg = `Hello, I would like to book an appointment.\n\nName: ${name}\nReason: ${reason}\nDate: ${date}\nTime: ${time}`;
-      const whatsappLink = `https://wa.me/919390664577?text=${encodeURIComponent(msg)}`;
-      window.open(whatsappLink, '_blank');
+      const msg = `Hi, I would like to book an appointment.\n\nName: ${name}\nReason: ${reason}\nDate: ${date}\nTime: ${slot}`;
+      const url = `https://wa.me/919390664577?text=${encodeURIComponent(msg)}`;
+      window.location.href = url;
     }
+
+    function parseCSV(text) {
+      const [header, ...rows] = text.trim().split("\n");
+      const keys = header.split(",");
+      return rows.map(row => {
+        const values = row.split(",");
+        const obj = {};
+        keys.forEach((key, i) => obj[key.trim()] = values[i]?.trim());
+        return obj;
+      });
+    }
+
+    loadData();
   </script>
 </body>
 </html>
