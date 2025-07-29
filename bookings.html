@@ -3,42 +3,32 @@
 <head>
   <meta charset="UTF-8" />
   <title>Book Appointment</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
-      background: #000;
+      background-color: #000;
       color: #fff;
       font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0 20px;
       text-align: center;
+      padding: 20px;
     }
     h1 {
-      color: #00ffff;
-      margin-top: 30px;
+      color: cyan;
     }
     h2 {
-      color: #ff66cc;
-      font-weight: normal;
+      color: hotpink;
     }
     input, select, button {
       display: block;
-      margin: 15px auto;
-      padding: 12px;
       width: 90%;
-      max-width: 400px;
-      border-radius: 5px;
-      border: none;
+      margin: 10px auto;
+      padding: 10px;
       font-size: 16px;
     }
     button {
-      background: #00ffff;
-      color: #000;
+      background-color: cyan;
+      color: black;
       font-weight: bold;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #00cccc;
     }
   </style>
 </head>
@@ -49,75 +39,36 @@
 
   <input type="text" id="name" placeholder="Your Name" />
   <input type="text" id="reason" placeholder="Reason for Visit" />
-  <select id="slotSelect">
-    <option value="">Loading slots...</option>
-  </select>
-  <button onclick="bookViaWhatsApp()">Book via WhatsApp</button>
+  <select id="slots"></select>
+  <button onclick="bookWhatsApp()">Book via WhatsApp</button>
 
   <script>
-    const TEST_MODE = true; // Set false to use real Sheet data
+    const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQqyTuU2qw0Yxk6GKRdpbzWtoYcKJy2nfVcq294qOaSpyCsnfJO1FkJgB8AesIC7g8cCbEK_lUWdr/pub?gid=642851090&single=true&output=csv";
 
-    const testSlots = [
-      "17:00", "17:10", "17:20", "17:30", "17:40", "17:50", "18:00"
-    ];
-
-    async function loadSlots() {
-      const slotSelect = document.getElementById("slotSelect");
-      slotSelect.innerHTML = "";
-
-      if (TEST_MODE) {
-        testSlots.forEach(slot => {
-          const option = document.createElement("option");
-          option.value = slot;
-          option.textContent = slot;
-          slotSelect.appendChild(option);
-        });
-      } else {
-        try {
-          const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT1vw0tpUBxxxxxx/pub?output=csv"; // Replace with your actual Slots CSV
-          const res = await fetch(sheetUrl);
-          const data = await res.text();
-          const rows = data.split("\n").slice(1);
-          const today = new Date().toISOString().slice(0, 10);
-
-          const available = rows
-            .map(row => row.split(","))
-            .filter(([date, time, status]) => date === today && status?.toLowerCase().includes("available"));
-
-          if (available.length === 0) {
-            slotSelect.innerHTML = "<option>No available slots right now</option>";
-            return;
-          }
-
-          available.forEach(([date, time]) => {
+    fetch(sheetURL)
+      .then(response => response.text())
+      .then(data => {
+        const rows = data.trim().split("\n").slice(1);
+        const slotSelect = document.getElementById("slots");
+        rows.forEach(row => {
+          const [date, time, status] = row.split(",");
+          if (status && status.trim().toLowerCase() === "available") {
             const option = document.createElement("option");
-            option.value = time;
-            option.textContent = time;
+            option.value = time.trim();
+            option.textContent = time.trim();
             slotSelect.appendChild(option);
-          });
+          }
+        });
+      });
 
-        } catch (err) {
-          slotSelect.innerHTML = "<option>Error loading slots</option>";
-        }
-      }
-    }
-
-    function bookViaWhatsApp() {
+    function bookWhatsApp() {
       const name = document.getElementById("name").value.trim();
       const reason = document.getElementById("reason").value.trim();
-      const slot = document.getElementById("slotSelect").value;
-
-      if (!name || !reason || !slot) {
-        alert("Please fill all details and select a time slot.");
-        return;
-      }
-
-      const message = `Hello, I would like to book an appointment:\nName: ${name}\nReason: ${reason}\nPreferred Time: ${slot}`;
-      const whatsappURL = `https://wa.me/919390664577?text=${encodeURIComponent(message)}`;
-      window.open(whatsappURL, "_blank");
+      const time = document.getElementById("slots").value;
+      const message = `Hello, I would like to book an appointment:\nName: ${name}\nReason: ${reason}\nPreferred Time: ${time}`;
+      const whatsappLink = `https://wa.me/919390664577?text=${encodeURIComponent(message)}`;
+      window.open(whatsappLink, "_blank");
     }
-
-    loadSlots();
   </script>
 
 </body>
