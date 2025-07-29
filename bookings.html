@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Book Your Appointment</title>
+  <title>Book Appointment</title>
   <style>
     body {
       background-color: #000;
@@ -11,106 +11,109 @@
       font-family: Arial, sans-serif;
       padding: 20px;
     }
-    h2 {
+    h1 {
       text-align: center;
       color: cyan;
     }
     p {
       text-align: center;
       color: violet;
-    }
-    form {
-      max-width: 400px;
-      margin: auto;
+      margin-bottom: 30px;
     }
     input, select, button {
       width: 100%;
       padding: 12px;
       margin: 10px 0;
       font-size: 16px;
+      border-radius: 10px;
       border: none;
-      border-radius: 8px;
     }
     button {
-      background-color: #0f0;
+      background-color: #00ffcc;
       color: #000;
       font-weight: bold;
       cursor: pointer;
     }
+    button:hover {
+      background-color: #00cc99;
+    }
   </style>
 </head>
 <body>
-  <h2>Book Your Appointment</h2>
+  <h1>Book Your Appointment</h1>
   <p>Select a time slot below and confirm via WhatsApp</p>
-  <form id="bookingForm">
-    <input type="text" id="name" placeholder="Enter Your Name" required />
-    <input type="text" id="reason" placeholder="Reason for Visit" required />
-    <select id="dateSelect" required>
-      <option value="">Select Date</option>
-    </select>
-    <select id="slotSelect" required>
-      <option value="">Select Time Slot</option>
-    </select>
-    <button type="submit">Book via WhatsApp</button>
-  </form>
+
+  <input type="text" id="name" placeholder="Your Name" />
+  <input type="text" id="reason" placeholder="Reason for Visit" />
+  
+  <select id="dateSelect">
+    <option selected disabled>Select Date</option>
+  </select>
+  
+  <select id="timeSelect">
+    <option selected disabled>Select Time Slot</option>
+  </select>
+
+  <button onclick="bookNow()">Book via WhatsApp</button>
 
   <script>
-    const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vOQyTuU2qw0Yxk6GKRdpbzWtoYcKJy2nfVcq294q0aSpyCsntFJ01fKjjgBAesic7G8cCbEk_lUWvdr/pub?gid=1762577234&single=true&output=csv";
+    const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQyTuU2qw0Ykk6GRdpbzWtoYcKJy2nfVcq294qOaSpyCsnfFJ01fKjgBAesiC7gBcCBEk_lJUWd7/pub?gid=1762577234&single=true&output=csv";
+    let slotData = [];
 
-    const dateSelect = document.getElementById("dateSelect");
-    const slotSelect = document.getElementById("slotSelect");
+    fetch(sheetURL)
+      .then(res => res.text())
+      .then(data => {
+        const rows = data.trim().split("\n").slice(1); // Skip header
+        const dates = new Set();
+        const times = [];
 
-    const loadSlots = async () => {
-      const res = await fetch(sheetUrl);
-      const data = await res.text();
-      const rows = data.trim().split("\n").slice(1); // Skip header
+        rows.forEach(row => {
+          const [date, time, status] = row.split(",").map(s => s.trim());
+          if (status === "Available") {
+            dates.add(date);
+            times.push({ date, time });
+          }
+        });
 
-      const slotsByDate = {};
+        const dateSelect = document.getElementById("dateSelect");
+        [...dates].forEach(d => {
+          const opt = document.createElement("option");
+          opt.value = d;
+          opt.textContent = d;
+          dateSelect.appendChild(opt);
+        });
 
-      rows.forEach(row => {
-        const [date, time, status] = row.split(",");
-        if (status.trim().toLowerCase() === "available") {
-          if (!slotsByDate[date]) slotsByDate[date] = [];
-          slotsByDate[date].push(time);
-        }
-      });
-
-      // Populate dates
-      Object.keys(slotsByDate).forEach(date => {
-        const opt = document.createElement("option");
-        opt.value = date;
-        opt.textContent = date;
-        dateSelect.appendChild(opt);
-      });
-
-      // On date change, populate time slots
-      dateSelect.addEventListener("change", () => {
-        slotSelect.innerHTML = `<option value="">Select Time Slot</option>`;
-        const selectedDate = dateSelect.value;
-        if (slotsByDate[selectedDate]) {
-          slotsByDate[selectedDate].forEach(time => {
-            const opt = document.createElement("option");
-            opt.value = time;
-            opt.textContent = time;
-            slotSelect.appendChild(opt);
+        const timeSelect = document.getElementById("timeSelect");
+        dateSelect.addEventListener("change", () => {
+          const selectedDate = dateSelect.value;
+          timeSelect.innerHTML = '<option selected disabled>Select Time Slot</option>';
+          times.forEach(slot => {
+            if (slot.date === selectedDate) {
+              const opt = document.createElement("option");
+              opt.value = slot.time;
+              opt.textContent = slot.time;
+              timeSelect.appendChild(opt);
+            }
           });
-        }
+        });
       });
-    };
 
-    document.getElementById("bookingForm").addEventListener("submit", function(e) {
-      e.preventDefault();
+    function bookNow() {
       const name = document.getElementById("name").value.trim();
       const reason = document.getElementById("reason").value.trim();
-      const date = dateSelect.value;
-      const slot = slotSelect.value;
-      const message = `Hi, I am ${name}. I want to book an appointment on ${date} at ${slot} for ${reason}.`;
+      const date = document.getElementById("dateSelect").value;
+      const time = document.getElementById("timeSelect").value;
 
-      const whatsappUrl = `https://wa.me/919390664577?text=${encodeURIComponent(message)}`;
-      window.open(whatsappUrl, "_blank");
-    });
+      if (!name || !reason || !date || !time) {
+        alert("Please fill in all fields.");
+        return;
+      }
 
-    loadSlots();
+      const msg = `Hi, I am ${name}.\nI would like to book an appointment on ${date} at ${time}.\nReason: ${reason}`;
+      const encodedMsg = encodeURIComponent(msg);
+      const waLink = `https://wa.me/919390664577?text=${encodedMsg}`;
+      window.open(waLink, "_blank");
+    }
   </script>
 </body>
 </html>
