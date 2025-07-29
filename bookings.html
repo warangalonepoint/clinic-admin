@@ -2,42 +2,48 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Book Appointment</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
       background-color: #000;
-      font-family: Arial, sans-serif;
       color: #fff;
+      font-family: Arial, sans-serif;
       padding: 20px;
     }
+
     h2 {
-      color: #00ffaa;
       text-align: center;
+      color: #00ffcc;
     }
+
     input, select, button {
       width: 100%;
       padding: 12px;
-      margin: 10px 0;
-      border: none;
-      border-radius: 5px;
+      margin: 12px 0;
       font-size: 16px;
-    }
-    button {
-      background-color: #00ffaa;
-      color: #000;
-      font-weight: bold;
-    }
-    #confirmation {
-      display: none;
-      background-color: #111;
-      padding: 20px;
-      margin-top: 20px;
       border-radius: 8px;
+      border: none;
+    }
+
+    button {
+      background-color: #00cc88;
+      color: #fff;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #00aa77;
+    }
+
+    label {
+      color: #ccc;
     }
   </style>
 </head>
 <body>
+
   <h2>📅 Book Your Appointment</h2>
 
   <input type="text" id="patientName" placeholder="Enter Your Name" />
@@ -53,77 +59,62 @@
 
   <button onclick="showConfirmation()">Confirm Booking</button>
 
-  <div id="confirmation">
-    <p>✅ <strong>Confirm your booking:</strong></p>
-    <p><span id="confName"></span></p>
-    <p><span id="confDate"></span></p>
-    <p><span id="confTime"></span></p>
-    <p><span id="confReason"></span></p>
-    <button onclick="finalBooking()">Book via WhatsApp</button>
-  </div>
-
   <script>
-    document.addEventListener("DOMContentLoaded", loadAvailableSlots);
-    document.getElementById("appointmentDate").addEventListener("change", loadAvailableSlots);
-
-    function formatDateToDDMMYYYY(dateStr) {
-      const [year, month, day] = dateStr.split("-");
-      return `${day}-${month}-${year}`;
+    function formatDateToDDMMYYYY(input) {
+      const date = new Date(input);
+      const dd = String(date.getDate()).padStart(2, '0');
+      const mm = String(date.getMonth() + 1).padStart(2, '0');
+      const yyyy = date.getFullYear();
+      return `${dd}-${mm}-${yyyy}`;
     }
 
     async function loadAvailableSlots() {
-      const selected = document.getElementById("appointmentDate").value;
-      if (!selected) return;
+      const selectedDateRaw = document.getElementById("appointmentDate").value;
+      if (!selectedDateRaw) return;
 
-      const selectedDate = formatDateToDDMMYYYY(selected);
-      const timeDropdown = document.getElementById("appointmentTime");
-      timeDropdown.innerHTML = '<option value="">-- Select Time Slot --</option>';
+      const selectedDate = formatDateToDDMMYYYY(selectedDateRaw);
+      const dropdown = document.getElementById("appointmentTime");
+      dropdown.innerHTML = '<option value="">-- Select Time Slot --</option>';
 
-      const slotRes = await fetch("https://warangalonepoint.github.io/clinic-admin/Slots.csv");
-      const slotText = await slotRes.text();
-      const slotLines = slotText.split("\n").slice(1); // Skip header
+      const resp = await fetch("https://warangalonepoint.github.io/clinic-admin/Slots.csv");
+      const text = await resp.text();
+      const lines = text.trim().split("\n").slice(1); // skip header
 
-      const availableSlots = slotLines
-        .map(line => line.trim().split(","))
-        .filter(([date, time, status]) => date === selectedDate && status === "Available");
-
-      availableSlots.forEach(([date, time]) => {
-        const opt = document.createElement("option");
-        opt.value = time;
-        opt.text = time;
-        timeDropdown.appendChild(opt);
+      const added = new Set();
+      lines.forEach(line => {
+        const [date, time, status] = line.split(",");
+        if (date === selectedDate && status.trim().toLowerCase() === "available" && !added.has(time)) {
+          const opt = document.createElement("option");
+          opt.value = time;
+          opt.text = time;
+          dropdown.appendChild(opt);
+          added.add(time);
+        }
       });
     }
 
     function showConfirmation() {
-      const name = document.getElementById("patientName").value.trim();
-      const reason = document.getElementById("reason").value.trim();
+      const name = document.getElementById("patientName").value;
+      const reason = document.getElementById("reason").value;
       const date = document.getElementById("appointmentDate").value;
       const time = document.getElementById("appointmentTime").value;
 
       if (!name || !reason || !date || !time) {
-        alert("Please fill all fields.");
+        alert("Please fill all fields before confirming.");
         return;
       }
 
-      document.getElementById("confName").textContent = `👤 Name: ${name}`;
-      document.getElementById("confReason").textContent = `📋 Reason: ${reason}`;
-      document.getElementById("confDate").textContent = `📅 Date: ${formatDateToDDMMYYYY(date)}`;
-      document.getElementById("confTime").textContent = `⏰ Time: ${time}`;
-      document.getElementById("confirmation").style.display = "block";
-    }
-
-    function finalBooking() {
-      const name = document.getElementById("patientName").value.trim();
-      const reason = document.getElementById("reason").value.trim();
-      const date = document.getElementById("appointmentDate").value;
-      const time = document.getElementById("appointmentTime").value;
       const formattedDate = formatDateToDDMMYYYY(date);
-
-      const message = `Hello, I would like to book an appointment.\n\n👤 Name: ${name}\n📋 Reason: ${reason}\n📅 Date: ${formattedDate}\n⏰ Time: ${time}`;
-      const encoded = encodeURIComponent(message);
-      window.location.href = `https://wa.me/919390664577?text=${encoded}`;
+      const msg = `Hi, I would like to book an appointment.\n\nName: ${name}\nReason: ${reason}\nDate: ${formattedDate}\nTime: ${time}`;
+      const encodedMsg = encodeURIComponent(msg);
+      window.location.href = `https://wa.me/919390664577?text=${encodedMsg}`;
     }
+
+    window.onload = () => {
+      const today = new Date().toISOString().split("T")[0];
+      document.getElementById("appointmentDate").setAttribute("min", today);
+    };
   </script>
+
 </body>
 </html>
