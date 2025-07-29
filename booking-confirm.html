@@ -1,90 +1,123 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Confirm Booking</title>
+  <meta charset="UTF-8">
+  <title>Book Appointment</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
-      background-color: #111;
-      color: white;
+      background-color: #000;
+      color: #fff;
       font-family: Arial, sans-serif;
-      padding: 30px;
-      text-align: center;
-    }
-
-    h1 {
-      color: #00ffaa;
-    }
-
-    .summary {
-      background-color: #222;
       padding: 20px;
-      border-radius: 10px;
-      display: inline-block;
-      margin-bottom: 30px;
     }
-
-    .summary p {
+    h2 {
+      text-align: center;
+      color: #00e699;
+    }
+    label {
+      display: block;
+      margin-top: 15px;
+    }
+    select, input {
+      width: 100%;
+      padding: 12px;
+      margin-top: 5px;
+      font-size: 16px;
+    }
+    button {
+      margin-top: 20px;
+      width: 100%;
+      padding: 14px;
       font-size: 18px;
-      margin: 10px 0;
-    }
-
-    .buttons {
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-      align-items: center;
-    }
-
-    .buttons a {
-      background: linear-gradient(to right, #00d2ff, #3a7bd5);
-      padding: 12px 25px;
-      border-radius: 5px;
-      text-decoration: none;
-      color: white;
+      background-color: #00e699;
+      border: none;
+      color: #000;
       font-weight: bold;
-      transition: background 0.3s;
-    }
-
-    .buttons a:hover {
-      background: linear-gradient(to right, #3a7bd5, #00d2ff);
     }
   </style>
 </head>
 <body>
-  <h1>Confirm Your Appointment</h1>
-  <div class="summary">
-    <p><strong>Name:</strong> <span id="name"></span></p>
-    <p><strong>Reason:</strong> <span id="reason"></span></p>
-    <p><strong>Date:</strong> <span id="date"></span></p>
-    <p><strong>Time Slot:</strong> <span id="slot"></span></p>
-  </div>
+  <h2>Book Your Appointment</h2>
+  <p style="text-align:center; color:#d27cfb;">Choose your preferred date and available slot</p>
 
-  <div class="buttons">
-    <a href="booking.html">🔄 Edit Details</a>
-    <a id="confirmBtn" href="#" target="_blank">✅ Confirm on WhatsApp</a>
-  </div>
+  <input type="text" id="name" placeholder="Enter Your Name" required />
+  <input type="text" id="reason" placeholder="Reason for Visit" required />
+
+  <label for="dateSelect">Select Date</label>
+  <select id="dateSelect"></select>
+
+  <label for="timeSelect">Select Time Slot</label>
+  <select id="timeSelect"></select>
+
+  <button onclick="confirmBooking()">Confirm Booking</button>
 
   <script>
-    function getParam(param) {
-      const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get(param) || '';
+    const SHEET_URL = "https://raw.githubusercontent.com/warangalonepoint/clinic-admin/main/Slots.csv";
+
+    const dateSelect = document.getElementById("dateSelect");
+    const timeSelect = document.getElementById("timeSelect");
+
+    let allSlots = {};
+
+    async function fetchSlots() {
+      try {
+        const res = await fetch(SHEET_URL);
+        const csv = await res.text();
+        const lines = csv.trim().split("\n").slice(1);
+        allSlots = {};
+
+        for (const line of lines) {
+          const [date, timeSlot, status] = line.split(",");
+          if (status.trim().toLowerCase() !== "available") continue;
+          if (!allSlots[date]) allSlots[date] = [];
+          allSlots[date].push(timeSlot);
+        }
+
+        // Populate date dropdown
+        Object.keys(allSlots).forEach(date => {
+          const opt = document.createElement("option");
+          opt.value = date;
+          opt.textContent = date;
+          dateSelect.appendChild(opt);
+        });
+
+        dateSelect.addEventListener("change", updateTimeSlots);
+        updateTimeSlots();
+      } catch (e) {
+        alert("Failed to load slot data. Check CSV format or internet.");
+      }
     }
 
-    const name = getParam('name');
-    const reason = getParam('reason');
-    const date = getParam('date');
-    const slot = getParam('slot');
+    function updateTimeSlots() {
+      const date = dateSelect.value;
+      const times = allSlots[date] || [];
+      timeSelect.innerHTML = "";
+      times.forEach(slot => {
+        const opt = document.createElement("option");
+        opt.value = slot;
+        opt.textContent = slot;
+        timeSelect.appendChild(opt);
+      });
+    }
 
-    document.getElementById('name').textContent = name;
-    document.getElementById('reason').textContent = reason;
-    document.getElementById('date').textContent = date;
-    document.getElementById('slot').textContent = slot;
+    function confirmBooking() {
+      const name = document.getElementById("name").value.trim();
+      const reason = document.getElementById("reason").value.trim();
+      const date = dateSelect.value;
+      const time = timeSelect.value;
 
-    const encodedMsg = encodeURIComponent(`Hi, I would like to book an appointment.\n\n👤 Name: ${name}\n📅 Date: ${date}\n⏰ Slot: ${slot}\n📝 Reason: ${reason}`);
-    const whatsappLink = `https://wa.me/919390664577?text=${encodedMsg}`;
-    document.getElementById('confirmBtn').href = whatsappLink;
+      if (!name || !reason || !date || !time) {
+        alert("All fields are required.");
+        return;
+      }
+
+      const msg = `Hi, I want to book an appointment:\n👤 Name: ${name}\n📅 Date: ${date}\n⏰ Time: ${time}\n📝 Reason: ${reason}`;
+      const waLink = `https://wa.me/919390664577?text=${encodeURIComponent(msg)}`;
+      window.location.href = waLink;
+    }
+
+    fetchSlots();
   </script>
 </body>
 </html>
