@@ -2,175 +2,180 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Daily Booking Logs</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Clinic Logs Dashboard (PIN Protected)</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#00ff99" />
   <style>
     body {
-      background-color: #000;
-      color: white;
       font-family: Arial, sans-serif;
-      padding: 20px;
+      background-color: #111;
+      color: #fff;
       margin: 0;
+      padding: 20px;
     }
-
     h2 {
       text-align: center;
-      font-size: 24px;
       color: #00ff99;
     }
-
-    .center {
-      text-align: center;
-    }
-
-    input, select {
-      padding: 10px;
-      margin: 10px auto;
-      display: block;
-      width: 90%;
-      max-width: 400px;
-      font-size: 16px;
-      border: none;
-      border-radius: 6px;
-    }
-
-    table {
-      margin-top: 20px;
-      width: 100%;
-      border-collapse: collapse;
-    }
-
-    th, td {
-      padding: 10px;
-      text-align: center;
-      border-bottom: 1px solid #444;
-    }
-
-    th {
-      color: #00ff99;
-    }
-
-    button {
-      background-color: #00ff99;
-      color: black;
-      border: none;
-      padding: 12px 20px;
-      font-size: 16px;
-      margin: 10px;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-
-    #pinScreen {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin-top: 30vh;
-    }
-
-    #logScreen {
+    .screen {
+      max-width: 600px;
+      margin: auto;
       display: none;
     }
-
-    .emoji {
-      font-size: 22px;
-      margin-right: 6px;
+    input, select {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      margin: 10px 0;
     }
-
+    button {
+      padding: 10px 15px;
+      font-size: 16px;
+      background-color: #00ff99;
+      color: #000;
+      border: none;
+      margin-top: 10px;
+      cursor: pointer;
+    }
+    table {
+      width: 100%;
+      margin-top: 20px;
+      border-collapse: collapse;
+      font-size: 15px;
+    }
+    th, td {
+      padding: 8px;
+      border-bottom: 1px solid #444;
+      text-align: left;
+    }
   </style>
 </head>
 <body>
 
-<div id="pinScreen">
-  <h2>Enter Admin PIN</h2>
-  <input type="password" id="pinInput" placeholder="PIN (e.g. 2525)" />
+<div class="screen" id="pinScreen">
+  <h2>Enter PIN to View Logs</h2>
+  <input type="password" id="pinInput" placeholder="Enter Admin PIN (e.g. 2525)" />
   <button onclick="checkPIN()">Unlock</button>
 </div>
 
-<div id="logScreen">
-  <h2><span class="emoji">📋</span>Daily Booking Logs</h2>
-  
-  <input type="text" id="searchInput" placeholder="Search name, date, or reason" onkeyup="filterLogs()" />
-  
-  <select id="dateFilter" onchange="filterLogs()">
+<div class="screen" id="logsScreen">
+  <h2>📋 Patient Booking Logs</h2>
+
+  <input type="text" id="searchInput" placeholder="Search by name, reason..." onkeyup="filterLogs()" />
+  <select id="dateFilter" onchange="filterByDate()">
     <option value="">Filter by Date</option>
-    <option value="29-07-2025">29-07-2025</option>
-    <option value="30-07-2025">30-07-2025</option>
   </select>
 
-  <div class="center">
-    <button onclick="exportCSV()">⬇️ Export CSV</button>
-    <button onclick="resetPIN()">🔁 Reset PIN</button>
-  </div>
+  <button onclick="exportLogs()">📤 Export Logs</button>
 
   <table id="logsTable">
     <thead>
-      <tr>
-        <th>Date</th>
-        <th>Time</th>
-        <th>Name</th>
-        <th>Reason</th>
-      </tr>
+      <tr><th>Date</th><th>Time</th><th>Name</th><th>Reason</th></tr>
     </thead>
-    <tbody id="logsBody">
-    </tbody>
+    <tbody id="logBody"></tbody>
   </table>
+
+  <hr style="margin: 30px 0; border: 1px dashed #555;">
+  <h3>Reset PIN (Admin Only)</h3>
+  <input type="password" id="newPIN" placeholder="Enter New PIN (4-digit)" />
+  <button onclick="resetPIN()">Reset PIN</button>
 </div>
 
 <script>
-  const CORRECT_PIN = "2525";
+  const csvUrl = "https://raw.githubusercontent.com/warangalonepoint/clinic-admin/main/Logs.csv";
+  let currentPIN = localStorage.getItem("adminPIN") || "2525";
+  let allLogs = [];
+
+  const pinScreen = document.getElementById("pinScreen");
+  const logsScreen = document.getElementById("logsScreen");
 
   function checkPIN() {
-    const pin = document.getElementById("pinInput").value;
-    if (pin === CORRECT_PIN) {
-      document.getElementById("pinScreen").style.display = "none";
-      document.getElementById("logScreen").style.display = "block";
+    const input = document.getElementById("pinInput").value.trim();
+    if (input === currentPIN) {
+      pinScreen.style.display = "none";
+      logsScreen.style.display = "block";
       loadLogs();
     } else {
-      alert("Wrong PIN");
+      alert("❌ Incorrect PIN");
     }
   }
 
   function resetPIN() {
-    location.reload();
+    const newPin = document.getElementById("newPIN").value.trim();
+    if (newPin.length === 4 && /^\d+$/.test(newPin)) {
+      localStorage.setItem("adminPIN", newPin);
+      currentPIN = newPin;
+      alert("✅ PIN successfully updated");
+    } else {
+      alert("PIN must be 4 digits");
+    }
   }
 
   function loadLogs() {
-    fetch("logs.csv")
+    fetch(csvUrl)
       .then(res => res.text())
-      .then(csv => {
-        const rows = csv.trim().split("\n").slice(1);
-        const body = document.getElementById("logsBody");
-        body.innerHTML = "";
+      .then(data => {
+        const rows = data.trim().split("\n").map(r => r.split(","));
+        allLogs = rows.filter(row => row.length >= 4); // date, time, name, reason
 
-        rows.forEach(row => {
-          const [date, time, name, reason] = row.split(",");
-          const tr = document.createElement("tr");
-          tr.innerHTML = `<td>${date}</td><td>${time}</td><td>${name}</td><td>${reason}</td>`;
-          body.appendChild(tr);
+        const logBody = document.getElementById("logBody");
+        logBody.innerHTML = "";
+        allLogs.forEach(([date, time, name, reason]) => {
+          logBody.innerHTML += `<tr><td>${date}</td><td>${time}</td><td>${name}</td><td>${reason}</td></tr>`;
+        });
+
+        const uniqueDates = [...new Set(allLogs.map(r => r[0]))];
+        const dateFilter = document.getElementById("dateFilter");
+        dateFilter.innerHTML = `<option value="">Filter by Date</option>`;
+        uniqueDates.forEach(date => {
+          const opt = document.createElement("option");
+          opt.value = date;
+          opt.textContent = date;
+          dateFilter.appendChild(opt);
         });
       });
   }
 
   function filterLogs() {
-    const input = document.getElementById("searchInput").value.toLowerCase();
-    const dateFilter = document.getElementById("dateFilter").value;
+    const keyword = document.getElementById("searchInput").value.toLowerCase();
     const rows = document.querySelectorAll("#logsTable tbody tr");
-
     rows.forEach(row => {
-      const text = row.textContent.toLowerCase();
-      const date = row.children[0].textContent.trim();
-      const matchSearch = text.includes(input);
-      const matchDate = !dateFilter || date === dateFilter;
-
-      row.style.display = matchSearch && matchDate ? "" : "none";
+      const content = row.textContent.toLowerCase();
+      row.style.display = content.includes(keyword) ? "" : "none";
     });
   }
 
-  function exportCSV() {
-    window.location.href = "logs.csv";
+  function filterByDate() {
+    const selected = document.getElementById("dateFilter").value;
+    const rows = document.querySelectorAll("#logsTable tbody tr");
+    rows.forEach(row => {
+      const rowDate = row.cells[0].textContent;
+      row.style.display = selected === "" || rowDate === selected ? "" : "none";
+    });
   }
-</script>
 
+  function exportLogs() {
+    const csvContent = "data:text/csv;charset=utf-8," +
+      allLogs.map(r => r.join(",")).join("\n");
+    const encoded = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encoded);
+    link.setAttribute("download", "Exported_Logs.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  // Register PWA Service Worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('service-worker.js')
+      .then(reg => console.log("✅ Service Worker Registered", reg))
+      .catch(err => console.error("❌ SW Error:", err));
+  }
+
+  // Show PIN screen by default
+  pinScreen.style.display = "block";
+</script>
 </body>
 </html>
