@@ -2,75 +2,86 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Book Appointment</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
   <style>
     body {
-      background-color: #000;
+      font-family: 'Roboto', sans-serif;
+      background: #000;
       color: #fff;
-      font-family: Arial, sans-serif;
-      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 30px 20px;
+    }
+
+    h1 {
+      color: #00ffd5;
       text-align: center;
     }
-    h1 {
-      color: #00ffff;
-      font-size: 28px;
-    }
+
     p {
-      color: #cc66cc;
-      font-size: 16px;
+      color: #ff6fe3;
+      text-align: center;
+      margin-bottom: 25px;
     }
+
     input, select, button {
-      width: 90%;
+      width: 100%;
       max-width: 400px;
       padding: 12px;
-      margin: 10px auto;
-      display: block;
-      border-radius: 8px;
+      margin-bottom: 15px;
       font-size: 16px;
       border: none;
+      border-radius: 8px;
     }
+
+    input, select {
+      background: #ddd;
+      color: #000;
+    }
+
     button {
-      background-color: #00ffff;
+      background-color: #00d6b3;
       color: #000;
       font-weight: bold;
       cursor: pointer;
     }
+
+    button:hover {
+      background-color: #00b79d;
+    }
   </style>
 </head>
 <body>
-
   <h1>Book Your Appointment</h1>
   <p>Select a time slot below and confirm</p>
 
-  <input type="text" id="name" placeholder="Enter Your Name" required>
-  <input type="text" id="reason" placeholder="Reason for Visit" required>
-
+  <input type="text" id="name" placeholder="Enter Your Name" />
+  <input type="text" id="reason" placeholder="Reason for Visit" />
   <select id="dateDropdown">
-    <option selected disabled>Select Date</option>
+    <option disabled selected>Select Date</option>
   </select>
-
   <select id="slotDropdown">
-    <option selected disabled>Select Time Slot</option>
+    <option disabled selected>Select Time Slot</option>
   </select>
-
   <button onclick="submitForm()">Confirm Appointment</button>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
   <script>
     const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQyTuU2qw0Ykk6GRdpbzWtoYcKJy2nfVcq294qOaSpyCsnfFJ01fKjgBAesiC7gBcCBEk_lJUWd7/pub?gid=1762577234&single=true&output=csv";
     let allSlots = [];
 
-    fetch(sheetURL)
-      .then(response => response.text())
-      .then(data => {
-        const rows = data.trim().split("\\n").slice(1);
-        allSlots = rows.map(row => {
-          const [date, time, status] = row.split(",");
-          return { date, time, status };
-        }).filter(s => s.status.toLowerCase().includes("available"));
+    Papa.parse(sheetURL, {
+      download: true,
+      header: true,
+      complete: function(results) {
+        allSlots = results.data.filter(s => s.Status.toLowerCase().includes("available"));
 
-        const dates = [...new Set(allSlots.map(s => s.date))];
+        const dates = [...new Set(allSlots.map(s => s.Date))];
         const dateDropdown = document.getElementById("dateDropdown");
+
         dates.forEach(date => {
           const option = document.createElement("option");
           option.textContent = date;
@@ -80,7 +91,7 @@
 
         dateDropdown.addEventListener("change", () => {
           const selectedDate = dateDropdown.value;
-          const slots = allSlots.filter(s => s.date === selectedDate).map(s => s.time);
+          const slots = allSlots.filter(s => s.Date === selectedDate).map(s => s["Time Slot"]);
 
           const slotDropdown = document.getElementById("slotDropdown");
           slotDropdown.innerHTML = "<option disabled selected>Select Time Slot</option>";
@@ -91,11 +102,12 @@
             slotDropdown.appendChild(option);
           });
         });
-      })
-      .catch(error => {
-        alert("Error loading slots. Please check your internet or Sheet publishing settings.");
-        console.error(error);
-      });
+      },
+      error: function(err) {
+        alert("Error loading slots. Please check internet or sheet link.");
+        console.error(err);
+      }
+    });
 
     function submitForm() {
       const name = document.getElementById("name").value.trim();
@@ -104,7 +116,7 @@
       const slot = document.getElementById("slotDropdown").value;
 
       if (!name || !reason || !date || !slot) {
-        alert("Please fill all fields before booking.");
+        alert("Please fill all fields.");
         return;
       }
 
@@ -112,6 +124,5 @@
       window.location.href = confirmURL;
     }
   </script>
-
 </body>
 </html>
