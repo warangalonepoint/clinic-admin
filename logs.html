@@ -1,97 +1,153 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Booking Logs</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Clinic Logs Dashboard</title>
   <style>
     body {
-      background-color: #000;
-      color: #00ffd5;
       font-family: Arial, sans-serif;
-      text-align: center;
+      background-color: #000;
+      color: #fff;
+      margin: 0;
       padding: 20px;
     }
-
-    h1 {
-      margin-bottom: 20px;
+    h2 {
+      text-align: center;
+      color: #00ff99;
     }
-
+    .pin-screen, .logs-screen {
+      max-width: 700px;
+      margin: auto;
+      display: none;
+    }
+    input[type="password"], input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      margin-top: 20px;
+      border-radius: 6px;
+      border: none;
+    }
+    button {
+      padding: 12px 20px;
+      font-size: 16px;
+      margin-top: 20px;
+      background: #00ff99;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
     table {
       width: 100%;
+      margin-top: 20px;
       border-collapse: collapse;
-      margin-bottom: 20px;
     }
-
     th, td {
-      border: 1px solid #00ffd5;
       padding: 10px;
+      border-bottom: 1px solid #444;
+      text-align: left;
     }
-
-    th {
-      background-color: #111;
+    .search-box {
+      margin-top: 20px;
     }
-
-    td {
-      color: white;
-    }
-
-    button {
-      padding: 10px 20px;
-      background-color: #00ffd5;
-      color: black;
-      font-weight: bold;
-      border: none;
-      border-radius: 8px;
+    .error {
+      color: red;
+      text-align: center;
+      margin-top: 20px;
     }
   </style>
 </head>
 <body>
-  <h1>Daily Booking Logs</h1>
-  <div id="log-table">
-    <p>Loading...</p>
+  <div class="pin-screen" id="pinScreen">
+    <h2>Enter Admin PIN</h2>
+    <input type="password" id="pinInput" placeholder="PIN (e.g. 2525)" />
+    <button onclick="checkPIN()">Unlock</button>
   </div>
-  <button onclick="downloadCSV()">Export to CSV</button>
+
+  <div class="logs-screen" id="logsScreen">
+    <h2>📋 Daily Booking Logs</h2>
+    <input type="text" id="searchInput" class="search-box" onkeyup="filterLogs()" placeholder="Search name, date, or reason">
+    <button onclick="exportToCSV()">⬇️ Export CSV</button>
+    <div class="error" id="errorMsg"></div>
+    <table id="logsTable">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Time</th>
+          <th>Name</th>
+          <th>Reason</th>
+        </tr>
+      </thead>
+      <tbody id="logBody"></tbody>
+    </table>
+  </div>
 
   <script>
-    const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQyTuU2qw0Yxk6GKRdpbzWtoYcKJy2nfVcq294q0aSpyCsntFJ01FKjigBAesiC7g8cCbEK_lUWVdr/pub?gid=2115782150&single=true&output=csv";
+    const PIN = "2525"; // Change PIN here if needed
+    const pinScreen = document.getElementById("pinScreen");
+    const logsScreen = document.getElementById("logsScreen");
+    const errorMsg = document.getElementById("errorMsg");
+    const csvUrl = "https://warangalonepoint.github.io/clinic-admin/logs.csv";
 
-    async function loadData() {
-      try {
-        const response = await fetch(sheetURL);
-        const data = await response.text();
-        const rows = data.split("\n").slice(1).filter(row => row.trim() !== "");
-
-        let table = `<table><tr>
-                      <th>Date</th>
-                      <th>Time Slot</th>
-                      <th>Patient Name</th>
-                      <th>Reason</th>
-                    </tr>`;
-
-        rows.forEach(row => {
-          const columns = row.split(",");
-          table += `<tr>
-                      <td>${columns[1]}</td>
-                      <td>${columns[2]}</td>
-                      <td>${columns[3]}</td>
-                      <td>${columns[4]}</td>
-                    </tr>`;
-        });
-
-        table += `</table>`;
-        document.getElementById("log-table").innerHTML = table;
-
-      } catch (error) {
-        document.getElementById("log-table").innerHTML = "<p style='color:red'>Failed to load booking data.</p>";
+    function checkPIN() {
+      const entered = document.getElementById("pinInput").value;
+      if (entered === PIN) {
+        pinScreen.style.display = "none";
+        logsScreen.style.display = "block";
+        loadLogs();
+      } else {
+        alert("Incorrect PIN. Try again.");
       }
     }
 
-    function downloadCSV() {
-      window.open(sheetURL, '_blank');
+    function loadLogs() {
+      fetch(csvUrl)
+        .then(res => {
+          if (!res.ok) throw new Error("CSV not found");
+          return res.text();
+        })
+        .then(data => {
+          const rows = data.trim().split("\n").map(row => row.split(","));
+          const body = document.getElementById("logBody");
+          body.innerHTML = "";
+          rows.forEach(([date, time, name, reason]) => {
+            const row = `<tr><td>${date}</td><td>${time}</td><td>${name}</td><td>${reason}</td></tr>`;
+            body.innerHTML += row;
+          });
+        })
+        .catch(() => {
+          errorMsg.textContent = "❌ Failed to load booking data.";
+        });
     }
 
-    loadData();
+    function filterLogs() {
+      const input = document.getElementById("searchInput").value.toLowerCase();
+      const rows = document.querySelectorAll("#logsTable tbody tr");
+      rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        row.style.display = text.includes(input) ? "" : "none";
+      });
+    }
+
+    function exportToCSV() {
+      const rows = [["Date", "Time", "Name", "Reason"]];
+      document.querySelectorAll("#logsTable tbody tr").forEach(row => {
+        const cols = Array.from(row.children).map(td => td.innerText);
+        rows.push(cols);
+      });
+      const csvContent = rows.map(e => e.join(",")).join("\n");
+      const blob = new Blob([csvContent], { type: "text/csv" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "ClinicLogs.csv";
+      link.click();
+    }
+
+    pinScreen.style.display = "block"; // Show PIN screen on load
   </script>
 </body>
 </html>
