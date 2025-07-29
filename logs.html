@@ -3,179 +3,179 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Clinic Logs Dashboard (PIN Protected)</title>
-  <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#00ff99" />
+  <title>Patient Booking Logs</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background-color: #111;
+      background: #000;
       color: #fff;
-      margin: 0;
+      font-family: Arial, sans-serif;
       padding: 20px;
+      margin: 0;
     }
     h2 {
       text-align: center;
       color: #00ff99;
     }
-    .screen {
-      max-width: 600px;
-      margin: auto;
-      display: none;
-    }
     input, select {
       width: 100%;
       padding: 10px;
-      font-size: 16px;
       margin: 10px 0;
+      border: none;
+      border-radius: 5px;
     }
     button {
-      padding: 10px 15px;
-      font-size: 16px;
-      background-color: #00ff99;
-      color: #000;
+      padding: 10px 20px;
+      background: #00cc66;
+      color: #fff;
       border: none;
+      border-radius: 5px;
       margin-top: 10px;
-      cursor: pointer;
     }
     table {
       width: 100%;
       margin-top: 20px;
       border-collapse: collapse;
-      font-size: 15px;
     }
     th, td {
       padding: 8px;
-      border-bottom: 1px solid #444;
       text-align: left;
+      border-bottom: 1px solid #333;
     }
+    .hidden { display: none; }
   </style>
 </head>
 <body>
 
-<div class="screen" id="pinScreen">
-  <h2>Enter PIN to View Logs</h2>
-  <input type="password" id="pinInput" placeholder="Enter Admin PIN (e.g. 2525)" />
+<div id="pin-section">
+  <h2>Enter Admin PIN</h2>
+  <input type="password" id="pinInput" placeholder="PIN (e.g. 2525)" />
   <button onclick="checkPIN()">Unlock</button>
 </div>
 
-<div class="screen" id="logsScreen">
+<div id="log-section" class="hidden">
   <h2>📋 Patient Booking Logs</h2>
 
   <input type="text" id="searchInput" placeholder="Search by name, reason..." onkeyup="filterLogs()" />
-  <select id="dateFilter" onchange="filterByDate()">
+  <select id="dateFilter" onchange="filterLogs()">
     <option value="">Filter by Date</option>
   </select>
+  <button onclick="downloadLogs()">📥 Export Logs</button>
 
-  <button onclick="exportLogs()">📤 Export Logs</button>
-
-  <table id="logsTable">
+  <table>
     <thead>
-      <tr><th>Date</th><th>Time</th><th>Name</th><th>Reason</th></tr>
+      <tr>
+        <th>Date</th>
+        <th>Time</th>
+        <th>Name</th>
+        <th>Reason</th>
+      </tr>
     </thead>
-    <tbody id="logBody"></tbody>
+    <tbody id="logsTable"></tbody>
   </table>
 
-  <hr style="margin: 30px 0; border: 1px dashed #555;">
-  <h3>Reset PIN (Admin Only)</h3>
-  <input type="password" id="newPIN" placeholder="Enter New PIN (4-digit)" />
+  <input type="password" id="newPin" placeholder="Enter New PIN (4-digit)" />
   <button onclick="resetPIN()">Reset PIN</button>
 </div>
 
 <script>
-  const csvUrl = "https://raw.githubusercontent.com/warangalonepoint/clinic-admin/main/Logs.csv";
-  let currentPIN = localStorage.getItem("adminPIN") || "2525";
-  let allLogs = [];
+const correctPIN = localStorage.getItem("adminPIN") || "2525";
+let logs = [];
+let filteredLogs = [];
 
-  const pinScreen = document.getElementById("pinScreen");
-  const logsScreen = document.getElementById("logsScreen");
-
-  function checkPIN() {
-    const input = document.getElementById("pinInput").value.trim();
-    if (input === currentPIN) {
-      pinScreen.style.display = "none";
-      logsScreen.style.display = "block";
-      loadLogs();
-    } else {
-      alert("❌ Incorrect PIN");
-    }
+async function checkPIN() {
+  const enteredPIN = document.getElementById("pinInput").value;
+  if (enteredPIN === correctPIN) {
+    document.getElementById("pin-section").classList.add("hidden");
+    document.getElementById("log-section").classList.remove("hidden");
+    fetchLogs();
+  } else {
+    alert("Incorrect PIN");
   }
+}
 
-  function resetPIN() {
-    const newPin = document.getElementById("newPIN").value.trim();
-    if (newPin.length === 4 && /^\d+$/.test(newPin)) {
-      localStorage.setItem("adminPIN", newPin);
-      currentPIN = newPin;
-      alert("✅ PIN successfully updated");
-    } else {
-      alert("PIN must be 4 digits");
-    }
+function resetPIN() {
+  const newPin = document.getElementById("newPin").value;
+  if (/^\d{4}$/.test(newPin)) {
+    localStorage.setItem("adminPIN", newPin);
+    alert("PIN reset successfully");
+  } else {
+    alert("Enter a valid 4-digit PIN");
   }
+}
 
-  function loadLogs() {
-    fetch(csvUrl)
-      .then(res => res.text())
-      .then(data => {
-        const rows = data.trim().split("\n").map(r => r.split(","));
-        allLogs = rows.filter(row => row.length >= 4); // date, time, name, reason
+async function fetchLogs() {
+  const res = await fetch("https://warangalonepoint.github.io/clinic-admin/logs.csv");
+  const data = await res.text();
+  const rows = data.trim().split("\n").slice(1); // skip header
 
-        const logBody = document.getElementById("logBody");
-        logBody.innerHTML = "";
-        allLogs.forEach(([date, time, name, reason]) => {
-          logBody.innerHTML += `<tr><td>${date}</td><td>${time}</td><td>${name}</td><td>${reason}</td></tr>`;
-        });
+  logs = rows.map(row => {
+    const [Date, Time, Name, Reason] = row.split(",");
+    return { Date, Time, Name, Reason };
+  });
 
-        const uniqueDates = [...new Set(allLogs.map(r => r[0]))];
-        const dateFilter = document.getElementById("dateFilter");
-        dateFilter.innerHTML = `<option value="">Filter by Date</option>`;
-        uniqueDates.forEach(date => {
-          const opt = document.createElement("option");
-          opt.value = date;
-          opt.textContent = date;
-          dateFilter.appendChild(opt);
-        });
-      });
-  }
+  populateDateFilter();
+  filteredLogs = logs;
+  renderLogs();
+}
 
-  function filterLogs() {
-    const keyword = document.getElementById("searchInput").value.toLowerCase();
-    const rows = document.querySelectorAll("#logsTable tbody tr");
-    rows.forEach(row => {
-      const content = row.textContent.toLowerCase();
-      row.style.display = content.includes(keyword) ? "" : "none";
-    });
-  }
+function renderLogs() {
+  const table = document.getElementById("logsTable");
+  table.innerHTML = "";
+  filteredLogs.forEach(log => {
+    const row = `<tr>
+      <td>${log.Date}</td>
+      <td>${log.Time}</td>
+      <td>${log.Name}</td>
+      <td>${log.Reason}</td>
+    </tr>`;
+    table.innerHTML += row;
+  });
+}
 
-  function filterByDate() {
-    const selected = document.getElementById("dateFilter").value;
-    const rows = document.querySelectorAll("#logsTable tbody tr");
-    rows.forEach(row => {
-      const rowDate = row.cells[0].textContent;
-      row.style.display = selected === "" || rowDate === selected ? "" : "none";
-    });
-  }
+function filterLogs() {
+  const keyword = document.getElementById("searchInput").value.toLowerCase();
+  const date = document.getElementById("dateFilter").value;
 
-  function exportLogs() {
-    const csvContent = "data:text/csv;charset=utf-8," +
-      allLogs.map(r => r.join(",")).join("\n");
-    const encoded = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encoded);
-    link.setAttribute("download", "Exported_Logs.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }
+  filteredLogs = logs.filter(log => {
+    const matchKeyword =
+      log.Name.toLowerCase().includes(keyword) ||
+      log.Reason.toLowerCase().includes(keyword);
+    const matchDate = !date || log.Date === date;
+    return matchKeyword && matchDate;
+  });
 
-  // Register PWA Service Worker
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('service-worker.js')
-      .then(reg => console.log("✅ Service Worker Registered", reg))
-      .catch(err => console.error("❌ SW Error:", err));
-  }
+  renderLogs();
+}
 
-  // Show PIN screen by default
-  pinScreen.style.display = "block";
+function populateDateFilter() {
+  const uniqueDates = [...new Set(logs.map(log => log.Date))];
+  const select = document.getElementById("dateFilter");
+  select.innerHTML = `<option value="">Filter by Date</option>`;
+  uniqueDates.forEach(date => {
+    const option = document.createElement("option");
+    option.value = date;
+    option.textContent = date;
+    select.appendChild(option);
+  });
+}
+
+function downloadLogs() {
+  let csvContent = "data:text/csv;charset=utf-8,";
+  csvContent += "Date,Time,Name,Reason\n";
+  filteredLogs.forEach(log => {
+    csvContent += `${log.Date},${log.Time},${log.Name},${log.Reason}\n`;
+  });
+
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement("a");
+  const timestamp = new Date().toISOString().split("T")[0];
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", `Logs_${timestamp}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
 </script>
+
 </body>
 </html>
