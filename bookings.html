@@ -95,7 +95,7 @@
 
       const response = await fetch(sheetUrl);
       const csvText = await response.text();
-      const rows = csvText.trim().split('\n').map(row => row.split(','));
+      const rows = csvText.trim().split('\\n').map(row => row.split(','));
 
       const container = document.getElementById('slotContainer');
       container.innerHTML = '';
@@ -104,7 +104,8 @@
         const [dateRaw, timeRaw, status] = rows[i];
 
         const date = dateRaw.replace(/"/g, '').trim();
-        const time = timeRaw.replace(/"/g, '').trim();
+        const fullTime = timeRaw.replace(/"/g, '').trim();
+        const time = fullTime.includes(' ') ? fullTime.split(' ')[1] : fullTime;
 
         if (status.trim().toLowerCase() !== 'booked') {
           const slotBtn = document.createElement('button');
