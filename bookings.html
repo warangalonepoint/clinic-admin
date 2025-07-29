@@ -6,43 +6,53 @@
   <title>Book Appointment</title>
   <style>
     body {
-      background-color: #111;
-      font-family: Arial, sans-serif;
+      background-color: #000;
       color: #fff;
-      text-align: center;
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
       padding: 20px;
+    }
+
+    h2 {
+      text-align: center;
+      color: #f77f00;
+      margin-bottom: 30px;
     }
 
     input, select, button {
-      margin: 10px;
-      padding: 12px;
-      font-size: 16px;
       width: 90%;
       max-width: 400px;
-      border-radius: 8px;
+      margin: 10px auto;
+      display: block;
+      padding: 15px;
+      font-size: 16px;
+      border-radius: 10px;
       border: none;
     }
 
+    select, input {
+      background-color: #eee;
+      color: #000;
+    }
+
     button {
-      background-color: #28a745;
+      background-color: #f77f00;
       color: white;
+      font-weight: bold;
       cursor: pointer;
     }
 
-    #confirmation {
-      margin-top: 20px;
-      background-color: #222;
-      padding: 20px;
-      border-radius: 10px;
-      display: none;
+    button:hover {
+      background-color: #e76f00;
     }
   </style>
 </head>
 <body>
+
   <h2>📅 Book Your Appointment</h2>
 
-  <input type="text" id="patientName" placeholder="Enter Your Name" required />
-  <input type="text" id="reason" placeholder="Reason for Visit" required />
+  <input type="text" id="patientName" placeholder="Enter Your Name" />
+  <input type="text" id="reason" placeholder="Reason for Visit" />
 
   <label>Select Date</label>
   <input type="date" id="appointmentDate" onchange="loadAvailableSlots()" />
@@ -54,68 +64,72 @@
 
   <button onclick="showConfirmation()">Confirm Booking</button>
 
-  <div id="confirmation"></div>
-
   <script>
+    document.getElementById("appointmentDate").addEventListener("change", loadAvailableSlots);
+    window.onload = function () {
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById("appointmentDate").value = today;
+      loadAvailableSlots();
+    };
+
     async function loadAvailableSlots() {
-      const selectedDate = document.getElementById("appointmentDate").value;
+      const selectedRawDate = document.getElementById("appointmentDate").value;
+      const selectedDate = formatDate(selectedRawDate); // DD-MM-YYYY format
       const timeDropdown = document.getElementById("appointmentTime");
       timeDropdown.innerHTML = "<option value=''>Select Time Slot</option>";
 
-      if (!selectedDate) return;
-
       const slotsResp = await fetch("https://warangalonepoint.github.io/clinic-admin/Slots.csv");
       const slotsText = await slotsResp.text();
-      const slotsLines = slotsText.trim().split("\n").slice(1); // skip header
+      const slotLines = slotsText.split("\n").slice(1).filter(line => line.trim() !== "");
 
-      const logsResp = await fetch("https://warangalonepoint.github.io/clinic-admin/logs.csv");
-      const logsText = await logsResp.text();
-      const logsLines = logsText.trim().split("\n").slice(1);
+      const availableSlots = [];
 
-      const bookedTimes = logsLines
-        .map(line => line.split(","))
-        .filter(entry => entry[0] === selectedDate)
-        .map(entry => entry[1]);
+      for (const line of slotLines) {
+        const [date, time, status] = line.split(",").map(x => x.trim());
+        if (date === selectedDate && status === "Available") {
+          availableSlots.push(time);
+        }
+      }
 
-      const availableSlots = slotsLines
-        .map(line => line.split(","))
-        .filter(entry => entry[0] === selectedDate && entry[2].toLowerCase() === "available" && !bookedTimes.includes(entry[1]))
-        .map(entry => entry[1]);
+      if (availableSlots.length === 0) {
+        const opt = document.createElement("option");
+        opt.text = "No slots available";
+        opt.disabled = true;
+        timeDropdown.appendChild(opt);
+      } else {
+        availableSlots.forEach(time => {
+          const opt = document.createElement("option");
+          opt.value = time;
+          opt.text = time;
+          timeDropdown.appendChild(opt);
+        });
+      }
+    }
 
-      availableSlots.forEach(slot => {
-        const option = document.createElement("option");
-        option.value = slot;
-        option.textContent = slot;
-        timeDropdown.appendChild(option);
-      });
+    function formatDate(inputDate) {
+      if (!inputDate) return "";
+      const [yyyy, mm, dd] = inputDate.split("-");
+      return `${dd}-${mm}-${yyyy}`;
     }
 
     function showConfirmation() {
-      const name = document.getElementById("patientName").value.trim();
-      const reason = document.getElementById("reason").value.trim();
+      const name = document.getElementById("patientName").value;
+      const reason = document.getElementById("reason").value;
       const date = document.getElementById("appointmentDate").value;
       const time = document.getElementById("appointmentTime").value;
 
       if (!name || !reason || !date || !time) {
-        alert("Please fill all fields");
+        alert("Please fill in all details before confirming.");
         return;
       }
 
-      const msg = `New Appointment Request 👨‍⚕️\n\n📅 Date: ${date}\n⏰ Time: ${time}\n🧑 Name: ${name}\n📝 Reason: ${reason}`;
-      const whatsappURL = `https://wa.me/919390664577?text=${encodeURIComponent(msg)}`;
+      const formattedDate = formatDate(date);
+      const message = `Hello, I would like to book an appointment:\n\n👤 Name: ${name}\n🗓️ Date: ${formattedDate}\n⏰ Time: ${time}\n📌 Reason: ${reason}`;
 
-      document.getElementById("confirmation").style.display = "block";
-      document.getElementById("confirmation").innerHTML = `
-        <h3>Confirm Booking</h3>
-        <p><strong>Name:</strong> ${name}</p>
-        <p><strong>Date:</strong> ${date}</p>
-        <p><strong>Time:</strong> ${time}</p>
-        <p><strong>Reason:</strong> ${reason}</p>
-        <a href="${whatsappURL}" target="_blank">
-          <button>✅ Confirm on WhatsApp</button>
-        </a>
-      `;
+      const encodedMessage = encodeURIComponent(message);
+      window.location.href = `https://wa.me/919390664577?text=${encodedMessage}`;
     }
   </script>
+
 </body>
 </html>
