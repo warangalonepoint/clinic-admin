@@ -1,123 +1,151 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Book Appointment</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <title>Booking Confirmation</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
       background-color: #000;
       color: #fff;
       font-family: Arial, sans-serif;
+      text-align: center;
       padding: 20px;
     }
+
     h2 {
-      text-align: center;
-      color: #00e699;
+      color: #00ff88;
     }
-    label {
+
+    label, select, input {
       display: block;
-      margin-top: 15px;
-    }
-    select, input {
-      width: 100%;
-      padding: 12px;
-      margin-top: 5px;
-      font-size: 16px;
-    }
-    button {
-      margin-top: 20px;
-      width: 100%;
-      padding: 14px;
+      margin: 15px auto;
       font-size: 18px;
-      background-color: #00e699;
+      width: 90%;
+      max-width: 400px;
+      padding: 10px;
+      border-radius: 6px;
       border: none;
-      color: #000;
-      font-weight: bold;
+    }
+
+    button {
+      padding: 12px 24px;
+      background-color: #00cc99;
+      border: none;
+      border-radius: 6px;
+      font-size: 18px;
+      margin-top: 20px;
+      cursor: pointer;
+    }
+
+    .confirm-box {
+      margin-top: 20px;
+      border: 1px solid #fff;
+      padding: 15px;
+      border-radius: 8px;
+    }
+
+    .hidden {
+      display: none;
     }
   </style>
 </head>
 <body>
   <h2>Book Your Appointment</h2>
-  <p style="text-align:center; color:#d27cfb;">Choose your preferred date and available slot</p>
+  <p>Choose your preferred date and available slot</p>
 
-  <input type="text" id="name" placeholder="Enter Your Name" required />
-  <input type="text" id="reason" placeholder="Reason for Visit" required />
+  <input type="text" id="name" placeholder="Enter Your Name" />
+  <input type="text" id="reason" placeholder="Reason for Visit" />
+  <select id="dateDropdown">
+    <option value="">Select Date</option>
+  </select>
+  <select id="slotDropdown">
+    <option value="">Select Time Slot</option>
+  </select>
 
-  <label for="dateSelect">Select Date</label>
-  <select id="dateSelect"></select>
+  <button onclick="showConfirmation()">Confirm Booking</button>
 
-  <label for="timeSelect">Select Time Slot</label>
-  <select id="timeSelect"></select>
-
-  <button onclick="confirmBooking()">Confirm Booking</button>
+  <div class="confirm-box hidden" id="confirmBox">
+    <h3>Confirm Your Appointment</h3>
+    <p><strong>Name:</strong> <span id="cName"></span></p>
+    <p><strong>Reason:</strong> <span id="cReason"></span></p>
+    <p><strong>Date:</strong> <span id="cDate"></span></p>
+    <p><strong>Time:</strong> <span id="cSlot"></span></p>
+    <button onclick="finalSubmit()">Confirm & Open WhatsApp</button>
+  </div>
 
   <script>
-    const SHEET_URL = "https://raw.githubusercontent.com/warangalonepoint/clinic-admin/main/Slots.csv";
+    const csvUrl = 'https://raw.githubusercontent.com/warangalonepoint/clinic-admin/main/Slots.csv';
+    let slotData = [];
 
-    const dateSelect = document.getElementById("dateSelect");
-    const timeSelect = document.getElementById("timeSelect");
-
-    let allSlots = {};
-
-    async function fetchSlots() {
+    async function loadSlots() {
       try {
-        const res = await fetch(SHEET_URL);
-        const csv = await res.text();
-        const lines = csv.trim().split("\n").slice(1);
-        allSlots = {};
+        const res = await fetch(csvUrl);
+        const text = await res.text();
+        const rows = text.trim().split('\n').slice(1);
+        const data = rows.map(row => {
+          const [date, slot, status] = row.split(',');
+          return { date, slot, status };
+        }).filter(r => r.status.trim().toLowerCase() === 'available');
 
-        for (const line of lines) {
-          const [date, timeSlot, status] = line.split(",");
-          if (status.trim().toLowerCase() !== "available") continue;
-          if (!allSlots[date]) allSlots[date] = [];
-          allSlots[date].push(timeSlot);
-        }
+        slotData = data;
 
-        // Populate date dropdown
-        Object.keys(allSlots).forEach(date => {
-          const opt = document.createElement("option");
-          opt.value = date;
-          opt.textContent = date;
-          dateSelect.appendChild(opt);
+        const dateDropdown = document.getElementById('dateDropdown');
+        const uniqueDates = [...new Set(data.map(r => r.date))];
+        uniqueDates.forEach(d => {
+          const opt = document.createElement('option');
+          opt.value = d;
+          opt.textContent = d;
+          dateDropdown.appendChild(opt);
         });
 
-        dateSelect.addEventListener("change", updateTimeSlots);
-        updateTimeSlots();
+        dateDropdown.addEventListener('change', () => {
+          const selectedDate = dateDropdown.value;
+          const slotDropdown = document.getElementById('slotDropdown');
+          slotDropdown.innerHTML = '<option value="">Select Time Slot</option>';
+          const filteredSlots = data.filter(r => r.date === selectedDate);
+          filteredSlots.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.slot;
+            opt.textContent = s.slot;
+            slotDropdown.appendChild(opt);
+          });
+        });
       } catch (e) {
-        alert("Failed to load slot data. Check CSV format or internet.");
+        alert('Error loading slots. Please check CSV link.');
       }
     }
 
-    function updateTimeSlots() {
-      const date = dateSelect.value;
-      const times = allSlots[date] || [];
-      timeSelect.innerHTML = "";
-      times.forEach(slot => {
-        const opt = document.createElement("option");
-        opt.value = slot;
-        opt.textContent = slot;
-        timeSelect.appendChild(opt);
-      });
-    }
+    function showConfirmation() {
+      const name = document.getElementById('name').value.trim();
+      const reason = document.getElementById('reason').value.trim();
+      const date = document.getElementById('dateDropdown').value;
+      const slot = document.getElementById('slotDropdown').value;
 
-    function confirmBooking() {
-      const name = document.getElementById("name").value.trim();
-      const reason = document.getElementById("reason").value.trim();
-      const date = dateSelect.value;
-      const time = timeSelect.value;
-
-      if (!name || !reason || !date || !time) {
-        alert("All fields are required.");
+      if (!name || !reason || !date || !slot) {
+        alert('Please fill in all fields.');
         return;
       }
 
-      const msg = `Hi, I want to book an appointment:\n👤 Name: ${name}\n📅 Date: ${date}\n⏰ Time: ${time}\n📝 Reason: ${reason}`;
-      const waLink = `https://wa.me/919390664577?text=${encodeURIComponent(msg)}`;
-      window.location.href = waLink;
+      document.getElementById('cName').textContent = name;
+      document.getElementById('cReason').textContent = reason;
+      document.getElementById('cDate').textContent = date;
+      document.getElementById('cSlot').textContent = slot;
+      document.getElementById('confirmBox').classList.remove('hidden');
     }
 
-    fetchSlots();
+    function finalSubmit() {
+      const name = document.getElementById('name').value.trim();
+      const reason = document.getElementById('reason').value.trim();
+      const date = document.getElementById('dateDropdown').value;
+      const slot = document.getElementById('slotDropdown').value;
+
+      const message = `Hello, I want to book an appointment.\n\nName: ${name}\nReason: ${reason}\nDate: ${date}\nTime: ${slot}`;
+      const whatsappUrl = `https://wa.me/919390664577?text=${encodeURIComponent(message)}`;
+      window.location.href = whatsappUrl;
+    }
+
+    loadSlots();
   </script>
 </body>
 </html>
