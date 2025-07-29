@@ -10,108 +10,119 @@
       color: #fff;
       font-family: Arial, sans-serif;
       padding: 20px;
+    }
+    h2 {
       text-align: center;
+      color: #00e676;
     }
-    h1 {
-      color: #00ffff;
-      font-size: 26px;
-    }
-    p {
-      color: #ccc;
-      font-size: 16px;
+    label {
+      margin-top: 10px;
+      display: block;
     }
     input, select, button {
-      width: 90%;
-      max-width: 400px;
-      padding: 12px;
-      margin: 10px auto;
-      display: block;
-      border-radius: 6px;
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
       font-size: 16px;
-      border: none;
     }
     button {
-      background-color: #00ffff;
+      background-color: #00e676;
       color: #000;
       font-weight: bold;
-      cursor: pointer;
+      border: none;
+      margin-top: 20px;
     }
   </style>
 </head>
 <body>
+  <h2>Book Your Appointment</h2>
+  <p style="text-align:center; color:#b39ddb;">Choose your preferred date and available slot</p>
 
-  <h1>Book Your Appointment</h1>
-  <p>Select a time slot and confirm via WhatsApp</p>
+  <label for="name">Enter Your Name</label>
+  <input type="text" id="name" placeholder="Enter Your Name" required>
 
-  <input type="text" id="name" placeholder="Your Name" required>
+  <label for="reason">Reason for Visit</label>
   <input type="text" id="reason" placeholder="Reason for Visit" required>
 
-  <select id="dateDropdown">
-    <option disabled selected>Select Date</option>
-  </select>
+  <label for="date">Select Date</label>
+  <select id="date" onchange="populateSlots()"></select>
 
-  <select id="slotDropdown">
-    <option disabled selected>Select Time Slot</option>
-  </select>
+  <label for="slot">Select Time Slot</label>
+  <select id="slot"></select>
 
-  <button onclick="bookNow()">Confirm on WhatsApp</button>
+  <button onclick="confirmBooking()">Confirm Booking</button>
 
   <script>
-    const csvURL = "https://raw.githubusercontent.com/warangalonepoint/warangalonepoint.github.io/main/Slots.csv";
+    const slotsURL = "https://warangalonepoint.github.io/clinic-admin/Slots.csv";
+    const logsURL = "https://warangalonepoint.github.io/clinic-admin/Logs.csv";
 
     let allSlots = [];
+    let booked = [];
 
-    fetch(csvURL)
-      .then(response => response.text())
-      .then(text => {
-        const lines = text.trim().split('\n').slice(1); // skip header
-        allSlots = lines.map(line => {
-          const [date, time, status] = line.split(',');
-          return { date, time, status };
-        }).filter(slot => slot.status.toLowerCase() === 'available');
+    async function fetchCSV(url) {
+      const res = await fetch(url);
+      const text = await res.text();
+      return text.split('\n').slice(1).map(line => line.trim().split(','));
+    }
 
-        const uniqueDates = [...new Set(allSlots.map(slot => slot.date))];
-        const dateDropdown = document.getElementById('dateDropdown');
-        uniqueDates.forEach(date => {
-          const option = document.createElement('option');
-          option.value = date;
-          option.textContent = date;
-          dateDropdown.appendChild(option);
-        });
+    function getUniqueDates(data) {
+      const dates = [...new Set(data.map(row => row[0]))];
+      return dates.filter(date => date); // remove blanks
+    }
 
-        dateDropdown.addEventListener('change', () => {
-          const selectedDate = dateDropdown.value;
-          const filtered = allSlots.filter(s => s.date === selectedDate);
-          const slotDropdown = document.getElementById('slotDropdown');
-          slotDropdown.innerHTML = '<option disabled selected>Select Time Slot</option>';
-          filtered.forEach(s => {
-            const option = document.createElement('option');
-            option.value = s.time;
-            option.textContent = s.time;
-            slotDropdown.appendChild(option);
-          });
-        });
-      })
-      .catch(error => {
-        alert("Couldn't load slots. Please check CSV link.");
-        console.error(error);
+    function populateDates() {
+      const dateSelect = document.getElementById('date');
+      dateSelect.innerHTML = "";
+      const dates = getUniqueDates(allSlots);
+      dates.forEach(d => {
+        const opt = document.createElement("option");
+        opt.value = d;
+        opt.textContent = d;
+        dateSelect.appendChild(opt);
       });
+      populateSlots(); // auto populate for first date
+    }
 
-    function bookNow() {
+    function populateSlots() {
+      const selectedDate = document.getElementById("date").value;
+      const slotSelect = document.getElementById("slot");
+      slotSelect.innerHTML = "";
+
+      const validSlots = allSlots
+        .filter(row => row[0] === selectedDate)
+        .map(row => row[1])
+        .filter(slot => {
+          return !booked.some(b => b[0] === selectedDate && b[1] === slot);
+        });
+
+      validSlots.forEach(slot => {
+        const opt = document.createElement("option");
+        opt.value = slot;
+        opt.textContent = slot;
+        slotSelect.appendChild(opt);
+      });
+    }
+
+    function confirmBooking() {
       const name = document.getElementById("name").value.trim();
       const reason = document.getElementById("reason").value.trim();
-      const date = document.getElementById("dateDropdown").value;
-      const time = document.getElementById("slotDropdown").value;
-
-      if (!name || !reason || !date || !time) {
-        alert("Please complete all fields.");
+      const date = document.getElementById("date").value;
+      const slot = document.getElementById("slot").value;
+      if (!name || !reason || !slot) {
+        alert("Please fill all fields");
         return;
       }
-
-      const message = `Hi, I am ${name}. I want to book an appointment for ${reason} on ${date} at ${time}.`;
+      const message = `Hi, I would like to book an appointment:\n\n👤 Name: ${name}\n📅 Date: ${date}\n⏰ Time: ${slot}\n📝 Reason: ${reason}`;
       const whatsappURL = `https://wa.me/919390664577?text=${encodeURIComponent(message)}`;
-      window.open(whatsappURL, "_blank");
+      window.location.href = whatsappURL;
     }
+
+    async function init() {
+      [allSlots, booked] = await Promise.all([fetchCSV(slotsURL), fetchCSV(logsURL)]);
+      populateDates();
+    }
+
+    init();
   </script>
 </body>
 </html>
