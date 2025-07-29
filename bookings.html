@@ -1,131 +1,87 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Clinic Booking</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8" />
+  <title>Book Your Appointment</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
-      background-color: #121212;
-      color: white;
+      margin: 0;
+      background-color: #111;
       font-family: Arial, sans-serif;
+      color: #0f0;
+      text-align: center;
       padding: 20px;
     }
 
     h1 {
-      text-align: center;
-      color: #00ffaa;
+      font-size: 26px;
+      margin-bottom: 20px;
+      color: #00ffa0;
     }
 
-    #slotContainer {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      justify-content: center;
-      margin-top: 20px;
-    }
-
-    .slot-button {
-      background-color: #1e1e1e;
-      color: #00ffaa;
-      padding: 10px 15px;
-      border: 1px solid #00ffaa;
-      border-radius: 8px;
-      cursor: pointer;
+    .slot {
+      border: 1px solid #00ffa0;
+      padding: 12px 16px;
+      margin: 10px auto;
+      border-radius: 10px;
+      width: 80%;
+      max-width: 400px;
       font-size: 16px;
-    }
-
-    .slot-button:hover {
-      background-color: #00ffaa;
-      color: black;
-    }
-
-    #selectedSlot {
-      text-align: center;
-      margin-top: 30px;
-      font-size: 18px;
-    }
-
-    #whatsappButton {
-      display: block;
-      margin: 20px auto;
-      padding: 10px 20px;
-      font-size: 18px;
-      background-color: #25D366;
-      color: white;
-      border: none;
-      border-radius: 5px;
+      background-color: transparent;
+      color: #00ffa0;
       cursor: pointer;
-      text-align: center;
+      transition: all 0.2s ease;
     }
 
-    #whatsappButton:hover {
-      background-color: #128C7E;
+    .slot:hover {
+      background-color: #00ffa0;
+      color: #000;
     }
   </style>
 </head>
 <body>
   <h1>Book Your Appointment</h1>
-  <div id="slotContainer">Loading slots...</div>
-  <div id="selectedSlot"></div>
-  <button id="whatsappButton" style="display: none;">Book via WhatsApp</button>
+  <div id="slots-container"></div>
 
   <script>
-    let selectedDate = '';
-    let selectedTime = '';
+    const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmywA57iTYGoaZD7v79ogDeXMu9sSkYO82ErmAVgcjkmPrUz0ZVHZDo0HHZtPyLg/pub?gid=0&single=true&output=csv";
 
-    function selectSlot(date, time) {
-      selectedDate = date;
-      selectedTime = time;
-      document.getElementById('selectedSlot').innerText = `Selected Slot: ${date} at ${time}`;
-      document.getElementById('whatsappButton').style.display = 'block';
+    function isSlotAvailable(row) {
+      const status = row[2]?.toLowerCase();
+      return status !== 'booked' && status !== 'unavailable';
     }
 
-    document.getElementById('whatsappButton').onclick = function() {
-      const name = prompt("Enter your name:");
-      const reason = prompt("Reason for visit:");
-      const message = `Hi, I want to book an appointment on ${selectedDate} at ${selectedTime}.\nName: ${name}\nReason: ${reason}`;
-      const phoneNumber = '919390664577'; // Replace with your clinic number
-      const encodedMessage = encodeURIComponent(message);
-      window.open(`https://wa.me/${phoneNumber}?text=${encodedMessage}`, '_blank');
-    };
+    function formatSlot(slot) {
+      const timestamp = slot[0];
+      const datePart = timestamp.split(' ')[0];
+      return `${timestamp} at ${datePart}`;
+    }
 
-    async function loadAvailableSlots() {
-      const sheetUrl = 'https://docs.google.com/spreadsheets/d/1Sby5FqvmSEGQcId106sz-MLJF1nlwarbfEVMMSIKM74/gviz/tq?tqx=out:csv&sheet=AvailableSlots';
+    function createSlotButton(label) {
+      const btn = document.createElement("button");
+      btn.className = "slot";
+      btn.innerText = label;
+      btn.onclick = () => alert(`Booking for: ${label}`);
+      return btn;
+    }
 
-      try {
-        const response = await fetch(sheetUrl);
-        const csvText = await response.text();
-        const rows = csvText.trim().split('\\n').map(row => row.split(','));
-
-        const container = document.getElementById('slotContainer');
-        container.innerHTML = '';
-
-        for (let i = 1; i < rows.length; i++) {
-          let [dateRaw, timeRaw, status] = rows[i];
-
-          let date = dateRaw.replace(/"/g, '').trim();
-          let time = timeRaw.replace(/"/g, '').trim();
-
-          // Extract only HH:MM from timestamp string
-          const cleanTimeMatch = time.match(/\\d{2}:\\d{2}/g);
-          const cleanTime = cleanTimeMatch ? cleanTimeMatch[0] : time;
-
-          if (status && status.trim().toLowerCase() !== 'booked') {
-            const slotBtn = document.createElement('button');
-            slotBtn.innerText = `${date} at ${cleanTime}`;
-            slotBtn.className = 'slot-button';
-            slotBtn.onclick = () => selectSlot(date, cleanTime);
-            container.appendChild(slotBtn);
+    fetch(SHEET_URL)
+      .then(res => res.text())
+      .then(data => {
+        const rows = data.trim().split("\n").map(row => row.split(","));
+        const slotContainer = document.getElementById("slots-container");
+        rows.slice(1).forEach(row => {
+          if (isSlotAvailable(row)) {
+            const formatted = formatSlot(row);
+            slotContainer.appendChild(createSlotButton(formatted));
           }
-        }
-      } catch (error) {
-        console.error("Error loading slots:", error);
-        document.getElementById('slotContainer').innerText = "Failed to load slots.";
-      }
-    }
-
-    window.onload = loadAvailableSlots;
+        });
+      })
+      .catch(err => {
+        console.error("Error fetching slots:", err);
+        document.getElementById("slots-container").innerText = "Failed to load slots.";
+      });
   </script>
 </body>
 </html>
