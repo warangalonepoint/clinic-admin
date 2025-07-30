@@ -1,111 +1,91 @@
 <!DOCTYPE html><html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Admin Dashboard for Clinic Management - Control Plans, Pricing, and Assignments">
-  <meta name="theme-color" content="#00ff99">
-  <title>Admin Dashboard</title>
+  <meta name="description" content="Doctor Login - WarangalOneStop Clinic Admin Panel">
+  <meta name="keywords" content="clinic, doctor login, admin, appointment, WarangalOneStop">
+  <meta name="author" content="WarangalOneStop">
+  <title>Doctor Login</title>
   <style>
     body {
-      background-color: #000;
-      color: #00ffcc;
-      font-family: 'Segoe UI', sans-serif;
+      background-color: #111;
+      font-family: Arial, sans-serif;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
       margin: 0;
-      padding: 0;
     }
-    .header {
-      background-color: #00ff99;
-      padding: 20px;
-      text-align: center;
-      font-size: 26px;
-      font-weight: bold;
-      color: #000;
-      box-shadow: 0 0 10px #00ff99;
-    }
-    .container {
-      max-width: 500px;
-      margin: 40px auto;
-      padding: 20px;
-      background: #111;
+    .login-box {
+      background-color: #222;
+      padding: 30px;
       border-radius: 12px;
-      box-shadow: 0 0 12px #00ff99;
+      box-shadow: 0 0 20px rgba(0,255,255,0.2);
+      width: 90%;
+      max-width: 400px;
     }
-    .section-title {
+    .login-box h2 {
       text-align: center;
-      font-size: 20px;
       margin-bottom: 20px;
     }
-    .button {
-      display: block;
+    input, select, button {
       width: 100%;
-      padding: 15px;
-      margin: 12px 0;
+      padding: 12px;
+      margin: 10px 0;
       border: none;
-      border-radius: 10px;
+      border-radius: 6px;
       font-size: 16px;
-      font-weight: bold;
+    }
+    input {
+      background: #fff;
       color: #000;
-      background-color: #00ff99;
-      box-shadow: 0 0 6px #00ff99;
-      cursor: pointer;
-      transition: background-color 0.3s;
     }
-    .button:hover {
-      background-color: #00cc88;
-    }
-    .clinic-tabs {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 20px;
-    }
-    .clinic-tab {
-      background-color: #00ffcc;
+    select {
+      background: #ccc;
       color: #000;
-      border-radius: 8px;
-      padding: 10px 15px;
+    }
+    button {
+      background-color: dodgerblue;
+      color: white;
       font-weight: bold;
       cursor: pointer;
-      flex: 1 1 45%;
-      text-align: center;
-      text-decoration: none;
     }
-    .clinic-tab:hover {
-      background-color: #00ccaa;
+    button:hover {
+      background-color: deepskyblue;
     }
   </style>
 </head>
 <body>
-  <div class="header">🔐 Admin Dashboard</div>
-  <div class="container">
-    <div class="section-title">🧭 Control Panel</div>
-    <button class="button" onclick="location.href='activate-pin.html'">🧩 Activate Customer Plan</button>
-    <button class="button" onclick="location.href='edit-pricing.html'">💰 Edit Plan Pricing</button>
-    <button class="button" onclick="location.href='assign-clinics.html'">📝 Assign Clinic to PIN</button>
-    <button class="button" onclick="location.href='test-tools.html'">🧪 Test Tools</button>
-    <div class="section-title">🏥 Clinics</div>
-    <div id="clinics" class="clinic-tabs">
-      <p>Loading clinics...</p>
-    </div>
-  </div>
-  <script>
-    fetch('clinics.json')
-      .then(response => response.json())
-      .then(data => {
-        const container = document.getElementById('clinics');
-        container.innerHTML = '';
-        data.clinics.forEach(clinic => {
-          const link = document.createElement('a');
-          link.href = `index.html?clinic=${encodeURIComponent(clinic.id)}`;
-          link.className = 'clinic-tab';
-          link.textContent = clinic.name;
-          container.appendChild(link);
-        });
-      })
-      .catch(err => {
-        document.getElementById('clinics').innerHTML = '<p style="color:red">Failed to load clinics.</p>';
-        console.error(err);
-      });
-  </script>
-</body>
+  <div class="login-box">
+    <h2>Doctor Login</h2>
+    <input type="password" id="pin" placeholder="...." />
+    <select id="clinicSelect">
+      <option selected disabled>Select Clinic</option>
+      <option>Warangal OneStop Clinic</option>
+      <option>CityCare Hospital</option>
+      <option>LifePlus Diagnostics</option>
+    </select>
+    <button onclick="login()">Login</button>
+  </div>  <script>
+    function login() {
+      const pin = document.getElementById('pin').value.trim();
+      const clinic = document.getElementById('clinicSelect').value.trim();
+      if (!pin || clinic === 'Select Clinic') {
+        alert("Please enter PIN and select a clinic");
+        return;
+      }
+      window.location.href = `dashboard.html?pin=${pin}&clinic=${clinic}`;
+    }
+
+    window.onload = function () {
+      const urlParams = new URLSearchParams(window.location.search);
+      const clinicFromURL = urlParams.get('clinic');
+      if (clinicFromURL) {
+        const dropdown = document.getElementById('clinicSelect');
+        dropdown.innerHTML = `<option selected>${clinicFromURL.replaceAll('-', ' ')}</option>`;
+        dropdown.disabled = true;
+      }
+    }
+  </script></body>
 </html>
