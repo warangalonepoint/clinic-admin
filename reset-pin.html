@@ -1,0 +1,165 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Reset PIN Panel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <style>
+    body {
+      background-color: #111;
+      color: #eee;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    h1 { color: #00ff88; }
+    .search-box input {
+      padding: 10px; width: 60%; border-radius: 6px; border: none; margin-bottom: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      padding: 12px;
+      border: 1px solid #444;
+      text-align: center;
+    }
+    th {
+      background-color: #222;
+    }
+    button {
+      padding: 6px 12px;
+      margin: 2px;
+      background-color: #1e90ff;
+      border: none;
+      color: white;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .edit-modal, .reset-modal {
+      display: none;
+      position: fixed;
+      background: #222;
+      padding: 20px;
+      top: 20%;
+      left: 10%;
+      width: 80%;
+      border: 2px solid #00ff88;
+      border-radius: 10px;
+      z-index: 1000;
+    }
+    .modal input, .modal select {
+      padding: 8px; margin: 6px; width: 80%;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔐 PIN Control Panel</h1>
+  <div class="search-box">
+    <input type="text" id="searchInput" placeholder="Search by PIN / Clinic / Role / Plan" onkeyup="renderTable()" />
+  </div>
+  <div id="pinTableContainer"></div>
+
+  <div id="editModal" class="edit-modal modal">
+    <h3>Edit PIN: <span id="editPin"></span></h3>
+    Role: <select id="editRole">
+      <option value="Doctor">Doctor</option>
+      <option value="Staff">Staff</option>
+    </select><br>
+    Clinic: <input type="text" id="editClinic"><br>
+    Pricing Plan: <select id="editPlan">
+      <option value="Free">Free</option>
+      <option value="1499">₹1,499</option>
+      <option value="4999">₹4,999</option>
+    </select><br>
+    <button onclick="saveEdit()">💾 Save</button>
+    <button onclick="closeModal()">Cancel</button>
+  </div>
+
+  <div id="resetModal" class="reset-modal modal">
+    <h3>Reset PIN: <span id="resetPin"></span></h3>
+    Are you sure you want to reset this PIN?
+    <br><br>
+    <button onclick="confirmReset()">Yes, Reset</button>
+    <button onclick="closeModal()">Cancel</button>
+  </div>
+
+<script>
+  let pins = [
+    { pin: "1234", role: "Doctor", clinic: "OneStop Clinic", plan: "1499" },
+    { pin: "5678", role: "Staff", clinic: "CityCare Hospital", plan: "Free" },
+    { pin: "9999", role: "Admin", clinic: "", plan: "" }
+  ];
+  let currentEditIndex = -1;
+  let resetTargetIndex = -1;
+
+  function renderTable() {
+    const q = document.getElementById("searchInput").value.toLowerCase();
+    const container = document.getElementById("pinTableContainer");
+    let html = '<table><tr><th>PIN</th><th>Role</th><th>Clinic</th><th>Plan</th><th>Actions</th></tr>';
+    pins.forEach((entry, i) => {
+      if (q && !Object.values(entry).some(val => String(val).toLowerCase().includes(q))) return;
+      html += `<tr>
+        <td>${entry.pin}</td>
+        <td>${entry.role}</td>
+        <td>${entry.clinic}</td>
+        <td>${entry.plan}</td>
+        <td>${entry.role === 'Admin' ? '—' : `
+          <button onclick="editPin(${i})">✏️ Edit</button>
+          <button onclick="resetPin(${i})">🔁 Reset</button>
+        `}</td>
+      </tr>`;
+    });
+    html += '</table>';
+    container.innerHTML = html;
+  }
+
+  function editPin(i) {
+    currentEditIndex = i;
+    document.getElementById("editPin").innerText = pins[i].pin;
+    document.getElementById("editRole").value = pins[i].role;
+    document.getElementById("editClinic").value = pins[i].clinic;
+    document.getElementById("editPlan").value = pins[i].plan;
+    document.getElementById("editModal").style.display = "block";
+  }
+
+  function resetPin(i) {
+    resetTargetIndex = i;
+    document.getElementById("resetPin").innerText = pins[i].pin;
+    document.getElementById("resetModal").style.display = "block";
+  }
+
+  function closeModal() {
+    document.getElementById("editModal").style.display = "none";
+    document.getElementById("resetModal").style.display = "none";
+  }
+
+  function saveEdit() {
+    if (currentEditIndex === -1) return;
+    pins[currentEditIndex].role = document.getElementById("editRole").value;
+    pins[currentEditIndex].clinic = document.getElementById("editClinic").value;
+    pins[currentEditIndex].plan = document.getElementById("editPlan").value;
+    closeModal();
+    renderTable();
+    alert("✅ PIN updated.");
+  }
+
+  function confirmReset() {
+    if (resetTargetIndex === -1) return;
+    const oldPin = pins[resetTargetIndex].pin;
+    const newPin = prompt("Enter new 4-digit PIN for " + oldPin + ":");
+    if (newPin && newPin.length === 4) {
+      pins[resetTargetIndex].pin = newPin;
+      alert("✅ PIN reset to " + newPin);
+    }
+    closeModal();
+    renderTable();
+  }
+
+  renderTable();
+</script>
+</body>
+</html>
