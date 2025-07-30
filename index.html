@@ -1,64 +1,61 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Clinic Admin Login</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <meta name="theme-color" content="#000000">
-  <meta name="mobile-web-app-capable" content="yes">
-  <link rel="manifest" href="manifest.json" />
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('service-worker.js');
-    }
-  </script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
   <style>
     body {
-      background: #121212;
-      color: #eee;
-      font-family: Arial, sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-      flex-direction: column;
-    }
-    h1 {
-      margin-bottom: 20px;
-      color: #00e676;
-    }
-    input[type="password"] {
-      padding: 10px;
-      border-radius: 5px;
-      border: none;
-      background: #222;
+      background-color: #000;
       color: #fff;
-      width: 200px;
+      font-family: Arial, sans-serif;
+      padding: 20px;
       text-align: center;
     }
-    button {
-      padding: 10px 20px;
-      margin-top: 10px;
-      background: #00e676;
-      border: none;
-      border-radius: 5px;
-      color: #000;
-      cursor: pointer;
+    .login-box {
+      background: #111;
+      padding: 30px;
+      border-radius: 12px;
+      max-width: 400px;
+      margin: 100px auto;
+      box-shadow: 0 0 10px rgba(0, 255, 0, 0.4);
+    }
+    input[type="password"] {
+      text-align: center;
     }
   </style>
 </head>
 <body>
-  <h1>🔒 Clinic Admin Login</h1>
-  <input type="password" id="pin" placeholder="Enter PIN" />
-  <button onclick="login()">Login</button>
+  <div class="login-box">
+    <h2>🔐 Enter PIN to Login</h2>
+    <input id="pinInput" type="password" maxlength="8" class="form-control my-3" placeholder="Enter PIN" autofocus />
+    <button class="btn btn-success w-100" onclick="checkPIN()">Login</button>
+  </div>
 
   <script>
-    function login() {
-      const pin = document.getElementById("pin").value;
-      if (!pin) return alert("Enter a PIN");
-      localStorage.setItem("clinic_pin", pin);
-      window.location.href = "dashboard.html";
+    const validPins = {
+      "2525": { role: "admin" },
+      "1111": { role: "doctor", clinic: "CityCare Hospital" },
+      "2222": { role: "doctor", clinic: "Sunrise Clinic" },
+      "3333": { role: "doctor", clinic: "OneStop Clinic" }
+    };
+
+    function checkPIN() {
+      const pin = document.getElementById("pinInput").value.trim();
+      const access = validPins[pin];
+
+      if (!access) {
+        alert("❌ Invalid PIN. Please try again.");
+        return;
+      }
+
+      if (access.role === "admin") {
+        window.location.href = "admin-dashboard.html";
+      } else if (access.role === "doctor") {
+        localStorage.setItem("activeClinic", access.clinic);
+        window.location.href = "dashboard.html";
+      }
     }
   </script>
 </body>
