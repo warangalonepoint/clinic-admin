@@ -1,75 +1,68 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Doctor Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <style>
     body {
-      margin: 0;
-      font-family: 'Segoe UI', sans-serif;
+      font-family: Arial, sans-serif;
       background: #111;
       color: #fff;
-    }
-    header {
-      background: #00c77f;
-      padding: 12px;
-      text-align: center;
-      font-size: 22px;
-      font-weight: bold;
-    }
-    .container {
       padding: 20px;
     }
     h2 {
-      font-size: 24px;
-      margin-bottom: 20px;
-      color: #0fffb7;
+      color: #00e676;
     }
-    .button {
-      display: block;
-      width: 100%;
-      margin: 10px 0;
-      padding: 15px;
+    .clinic-banner {
       font-size: 18px;
-      background-color: #222;
-      color: #0fffb7;
-      border: 1px solid #0fffb7;
+      background: #222;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+    .nav-button {
+      padding: 10px 20px;
+      margin: 10px 10px 0 0;
+      font-size: 16px;
+      background: #1f88e5;
+      color: #fff;
+      border: none;
       border-radius: 8px;
-      text-align: left;
+      cursor: pointer;
     }
-    .button:hover {
-      background: #333;
-    }
-    .emoji {
-      margin-right: 10px;
+    .nav-button:hover {
+      background: #1565c0;
     }
   </style>
 </head>
 <body>
 
-  <header>🩺 Doctor Dashboard</header>
+  <h2>Welcome to Doctor Dashboard</h2>
+  <div class="clinic-banner" id="clinicBanner">Loading clinic info...</div>
 
-  <div class="container">
-    <h2>📋 Quick Actions</h2>
-
-    <button class="button" onclick="location.href='bookings.html'">
-      📅 Bookings
-    </button>
-
-    <button class="button" onclick="location.href='staff.html'">
-      🧑‍⚕️ Staff
-    </button>
-
-    <button class="button" onclick="location.href='sync.html'">
-      💾 Backup
-    </button>
-
-    <h2>📊 Appointment Analytics</h2>
-    <button class="button" onclick="location.href='logs.html'">
-      📈 View Logs
-    </button>
+  <div>
+    <button class="nav-button" onclick="goToPage('bookings.html')">📋 Patient Bookings</button>
+    <button class="nav-button" onclick="goToPage('logs.html')">📊 Booking Logs</button>
+    <button class="nav-button" onclick="goToPage('staff.html')">👨‍⚕️ Staff Attendance</button>
+    <button class="nav-button" onclick="goToPage('sync.html')">🔄 Data Sync</button>
   </div>
+
+  <script>
+    const clinic = localStorage.getItem("activeClinic");
+    const pin = localStorage.getItem("userPIN");
+
+    if (!clinic || !pin) {
+      alert("Access denied. Please log in.");
+      window.location.href = "index.html";
+    } else {
+      document.getElementById("clinicBanner").innerText = "🏥 Active Clinic: " + clinic;
+    }
+
+    function goToPage(page) {
+      window.location.href = page;
+    }
+  </script>
 
 </body>
 </html>
