@@ -2,93 +2,64 @@
 <html>
 <head>
   <meta charset="UTF-8" />
-  <title>Login – Clinic Admin</title>
+  <title>Clinic Admin Login</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="theme-color" content="#000000">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="manifest.json" />
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js');
+    }
+  </script>
   <style>
     body {
-      font-family: Arial, sans-serif;
       background: #121212;
-      color: #fff;
-      text-align: center;
-      padding: 40px;
+      color: #eee;
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      flex-direction: column;
     }
-    input, select {
+    h1 {
+      margin-bottom: 20px;
+      color: #00e676;
+    }
+    input[type="password"] {
       padding: 10px;
-      font-size: 16px;
-      margin-top: 10px;
-      border-radius: 8px;
+      border-radius: 5px;
       border: none;
-      width: 250px;
+      background: #222;
+      color: #fff;
+      width: 200px;
+      text-align: center;
     }
     button {
       padding: 10px 20px;
-      margin-top: 20px;
-      background: #1f88e5;
-      color: #fff;
+      margin-top: 10px;
+      background: #00e676;
       border: none;
-      border-radius: 8px;
-      font-size: 16px;
+      border-radius: 5px;
+      color: #000;
       cursor: pointer;
-    }
-    button:hover {
-      background: #1565c0;
-    }
-    .login-box {
-      background: #222;
-      padding: 30px;
-      max-width: 350px;
-      margin: auto;
-      border-radius: 12px;
-      box-shadow: 0 0 10px #000;
     }
   </style>
 </head>
 <body>
-  <div class="login-box">
-    <h2>Doctor Login</h2>
-    <input type="password" id="pinInput" placeholder="Enter PIN" /><br/>
-    <select id="clinicDropdown" disabled></select><br/>
-    <button onclick="onPinLogin()">Login</button>
-  </div>
+  <h1>🔒 Clinic Admin Login</h1>
+  <input type="password" id="pin" placeholder="Enter PIN" />
+  <button onclick="login()">Login</button>
 
   <script>
-    const assignedClinics = {
-      "2525": "Warangal OneStop Clinic",
-      "9876": "CityCare Hospital",
-      "1122": "Kakatiya Heart Center"
-    };
-
-    function onPinLogin() {
-      const pin = document.getElementById("pinInput").value.trim();
-      if (assignedClinics[pin]) {
-        const clinicName = assignedClinics[pin];
-        // Save to localStorage
-        localStorage.setItem("userPIN", pin);
-        localStorage.setItem("activeClinic", clinicName);
-
-        // Fill and lock dropdown
-        const dropdown = document.getElementById("clinicDropdown");
-        dropdown.innerHTML = `<option>${clinicName}</option>`;
-        dropdown.disabled = true;
-
-        // Redirect
-        window.location.href = "dashboard.html";
-      } else {
-        alert("Invalid PIN. Please try again.");
-      }
+    function login() {
+      const pin = document.getElementById("pin").value;
+      if (!pin) return alert("Enter a PIN");
+      localStorage.setItem("clinic_pin", pin);
+      window.location.href = "dashboard.html";
     }
-
-    // Optional: Preload if PIN saved
-    window.onload = () => {
-      const savedPIN = localStorage.getItem("userPIN");
-      if (savedPIN && assignedClinics[savedPIN]) {
-        document.getElementById("pinInput").value = savedPIN;
-        const clinic = assignedClinics[savedPIN];
-        const dropdown = document.getElementById("clinicDropdown");
-        dropdown.innerHTML = `<option>${clinic}</option>`;
-        dropdown.disabled = true;
-      }
-    };
   </script>
 </body>
 </html>
