@@ -1,74 +1,95 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Clinic Public View</title>
+  <title>Clinic View</title>
   <style>
     body {
       background-color: #111;
-      color: #fff;
+      color: white;
       font-family: Arial, sans-serif;
       margin: 0;
       padding: 20px;
     }
-    header {
+
+    .clinic-header {
       display: flex;
       align-items: center;
       gap: 20px;
       background-color: #1e1e1e;
-      padding: 15px;
       border-radius: 10px;
-      margin-bottom: 20px;
+      padding: 20px;
+      margin-bottom: 30px;
     }
-    #clinicLogo {
+
+    .clinic-header img {
       width: 80px;
       height: 80px;
       border-radius: 10px;
       object-fit: cover;
       background-color: #333;
     }
-    .info {
-      flex: 1;
+
+    .clinic-info {
+      display: flex;
+      flex-direction: column;
     }
-    .info h2 {
-      margin: 0;
+
+    .clinic-info h1 {
       font-size: 20px;
+      margin: 0;
       color: #00e676;
     }
-    .info p {
-      margin: 4px 0;
-      font-size: 14px;
+
+    .clinic-info p {
+      margin: 5px 0;
       color: #ccc;
     }
+
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 20px;
+      background-color: #222;
+      border-radius: 10px;
+      overflow: hidden;
     }
+
     th, td {
-      padding: 10px;
-      border-bottom: 1px solid #333;
+      padding: 12px;
       text-align: left;
     }
+
     th {
-      background-color: #222;
+      background-color: #333;
       color: #00e676;
     }
-    tr:hover {
-      background-color: #1a1a1a;
+
+    td {
+      border-top: 1px solid #444;
+    }
+
+    #error {
+      color: red;
+      font-weight: bold;
+      text-align: center;
+      padding-top: 40px;
     }
   </style>
 </head>
 <body>
-  <header>
-    <img id="clinicLogo" src="" alt="Clinic Logo" onerror="this.src='logos/default.png'" />
-    <div class="info">
-      <h2 id="clinicName">Loading...</h2>
-      <p id="clinicAddress"></p>
+  <div id="clinic-container">
+    <div class="clinic-header">
+      <img id="clinic-logo" src="" alt="Clinic Logo" />
+      <div class="clinic-info">
+        <h1 id="clinic-name">Loading...</h1>
+        <p id="clinic-address"></p>
+        <p id="clinic-plan"></p>
+      </div>
     </div>
-  </header>  <main>
-    <h3>Today's Appointments</h3>
-    <table id="logsTable">
+
+    <h2>Today's Appointments</h2>
+    <table>
       <thead>
         <tr>
           <th>Time</th>
@@ -76,40 +97,39 @@
           <th>Reason</th>
         </tr>
       </thead>
-      <tbody></tbody>
+      <tbody id="appointments-body">
+        <tr><td colspan="3" style="text-align:center; color: #888;">No appointments loaded</td></tr>
+      </tbody>
     </table>
-  </main>  <script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const clinicId = urlParams.get('clinic');
+  </div>
 
-    fetch('clinics.json')
-      .then(res => res.json())
+  <div id="error" style="display:none;">Clinic Not Found</div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const clinicId = urlParams.get('clinicId');
+
+    fetch('https://warangalonepoint.github.io/clinic-admin/clinics.json')
+      .then(response => response.json())
       .then(data => {
         const clinic = data.find(c => c.id === clinicId);
-        if (clinic) {
-          document.getElementById('clinicLogo').src = clinic.logo;
-          document.getElementById('clinicName').textContent = clinic.name;
-          document.getElementById('clinicAddress').textContent = clinic.address;
-        } else {
-          document.getElementById('clinicName').textContent = "Clinic Not Found";
+        if (!clinic) {
+          document.getElementById('clinic-container').style.display = 'none';
+          document.getElementById('error').style.display = 'block';
+          return;
         }
-      });
 
-    fetch('logs.csv')
-      .then(res => res.text())
-      .then(text => {
-        const rows = text.trim().split('\n').map(r => r.split(','));
-        const tbody = document.querySelector('#logsTable tbody');
-        const today = new Date().toISOString().split('T')[0];
-
-        rows.forEach(r => {
-          const [date, time, patient, reason, , , pin] = r;
-          if (date === today) {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `<td>${time}</td><td>${patient}</td><td>${reason}</td>`;
-            tbody.appendChild(tr);
-          }
-        });
+        document.getElementById('clinic-name').textContent = clinic.name;
+        document.getElementById('clinic-address').textContent = clinic.address;
+        document.getElementById('clinic-plan').textContent = clinic.plan ? `Plan: ₹${clinic.plan}` : 'Plan: Free';
+        document.getElementById('clinic-logo').src = `https://warangalonepoint.github.io/clinic-admin/${clinic.logo}`;
+      })
+      .catch(error => {
+        console.error('Error loading clinic data:', error);
+        document.getElementById('clinic-container').style.display = 'none';
+        document.getElementById('error').textContent = 'Failed to load clinic data';
+        document.getElementById('error').style.display = 'block';
       });
-  </script></body>
+  </script>
+</body>
 </html>
