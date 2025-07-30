@@ -1,86 +1,85 @@
 <!DOCTYPE html><html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Assign Clinics to Doctors</title>
   <style>
     body {
+      font-family: Arial, sans-serif;
       background-color: #111;
       color: #fff;
-      font-family: Arial, sans-serif;
+      margin: 0;
       padding: 20px;
     }
     h2 {
-      color: #00ff99;
+      text-align: center;
+      color: #00ffcc;
     }
-    .doctor-card {
-      background: #222;
+    .form-container {
+      max-width: 500px;
+      margin: 30px auto;
+      background: #1f1f1f;
       padding: 20px;
-      margin-bottom: 15px;
-      border-radius: 8px;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,255,204,0.2);
     }
-    label, select, input {
+    label {
       display: block;
-      width: 100%;
-      margin-top: 10px;
+      margin: 12px 0 5px;
     }
-    select, input {
+    input, select {
+      width: 100%;
       padding: 10px;
       font-size: 16px;
+      border: none;
+      border-radius: 6px;
+      margin-bottom: 15px;
     }
     button {
-      background-color: #00ff99;
+      background: #00ffcc;
+      color: #000;
       border: none;
       padding: 10px 20px;
-      margin-top: 10px;
       font-size: 16px;
+      border-radius: 6px;
       cursor: pointer;
-      border-radius: 4px;
     }
-    .info {
-      font-size: 12px;
-      color: #aaa;
-      margin-top: 6px;
+    .status {
+      text-align: center;
+      margin-top: 20px;
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
-  <h2>Assign Clinics to Doctors</h2>  <div class="doctor-card">
-    <label for="doctor1">Doctor 1 Name</label>
-    <input type="text" id="doctor1" placeholder="Dr. Name"><label for="clinic1">Assign Clinic</label>
-<select id="clinic1">
+  <h2>🔐 Assign Clinics to Doctors</h2>
+  <div class="form-container">
+    <label for="doctorName">Doctor Name:</label>
+    <input type="text" id="doctorName" placeholder="Enter doctor name..."><label for="clinic">Assign Clinic:</label>
+<select id="clinic">
   <option value="Clinic A">Clinic A</option>
   <option value="Clinic B">Clinic B</option>
   <option value="Clinic C">Clinic C</option>
 </select>
 
-<label for="pin1">PIN for Login</label>
-<input type="text" id="pin1" placeholder="1234">
+<label for="pin">Set PIN:</label>
+<input type="password" id="pin" placeholder="Set PIN (e.g. 1234)">
 
-<button onclick="saveAssignment(1)">Save Assignment</button>
+<button onclick="assignClinic()">Assign</button>
 
-  </div>  <div class="doctor-card">
-    <label for="doctor2">Doctor 2 Name</label>
-    <input type="text" id="doctor2" placeholder="Dr. Name"><label for="clinic2">Assign Clinic</label>
-<select id="clinic2">
-  <option value="Clinic A">Clinic A</option>
-  <option value="Clinic B">Clinic B</option>
-  <option value="Clinic C">Clinic C</option>
-</select>
-
-<label for="pin2">PIN for Login</label>
-<input type="text" id="pin2" placeholder="1234">
-
-<button onclick="saveAssignment(2)">Save Assignment</button>
+<div class="status" id="status"></div>
 
   </div>  <script>
-    function saveAssignment(num) {
-      const name = document.getElementById(`doctor${num}`).value;
-      const clinic = document.getElementById(`clinic${num}`).value;
-      const pin = document.getElementById(`pin${num}`).value;
-
-      alert(`Saved: ${name} assigned to ${clinic} with PIN: ${pin}`);
-      // In production: Save this data to JSON or Firebase
+    function assignClinic() {
+      const doctor = document.getElementById("doctorName").value.trim();
+      const clinic = document.getElementById("clinic").value;
+      const pin = document.getElementById("pin").value.trim();
+      if (!doctor || !clinic || !pin) {
+        document.getElementById("status").innerText = "⚠️ Please fill all fields.";
+        return;
+      }
+      // Simulate saving
+      document.getElementById("status").innerText = `✅ Assigned ${doctor} to ${clinic} with PIN ${pin}`;
     }
   </script></body>
 </html>
