@@ -1,1 +1,55 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Edit Pricing Plans</title>
+  <style>
+    body { background-color: #111; color: #fff; font-family: Arial, sans-serif; padding: 20px; }
+    h2 { color: #00ffcc; text-align: center; }
+    .plan-container { max-width: 600px; margin: 0 auto; }
+    label { display: block; margin-top: 15px; font-weight: bold; }
+    input[type="text"] { width: 100%; padding: 10px; margin-top: 5px; border: none; background: #222; color: #fff; }
+    button { margin-top: 20px; padding: 10px 20px; background: #00ffcc; border: none; color: #111; font-weight: bold; cursor: pointer; }
+    .status { margin-top: 20px; color: #0f0; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="plan-container">
+    <h2>🧾 Edit Pricing Plans</h2><label for="free">Free Plan Features:</label>
+<input type="text" id="free" placeholder="Enter features for Free Plan" />
 
+<label for="basic">Basic Plan ₹1499 Features:</label>
+<input type="text" id="basic" placeholder="Enter features for ₹1499 Plan" />
+
+<label for="pro">Pro Plan ₹4999 Features:</label>
+<input type="text" id="pro" placeholder="Enter features for ₹4999 Plan" />
+
+<label for="lifetime">Lifetime Plan ₹9999 Features:</label>
+<input type="text" id="lifetime" placeholder="Enter features for ₹9999 Plan" />
+
+<button onclick="savePricing()">💾 Save Plans</button>
+<div class="status" id="statusMsg"></div>
+
+  </div>  <script>
+    function savePricing() {
+      const free = document.getElementById('free').value;
+      const basic = document.getElementById('basic').value;
+      const pro = document.getElementById('pro').value;
+      const lifetime = document.getElementById('lifetime').value;
+
+      // Simulate saving (in production, this would be saved in JSON or Firebase)
+      localStorage.setItem("planFeatures", JSON.stringify({ free, basic, pro, lifetime }));
+      document.getElementById('statusMsg').innerText = "✅ Pricing plans saved locally.";
+    }
+
+    // Optional: Pre-fill if previously saved
+    const stored = localStorage.getItem("planFeatures");
+    if (stored) {
+      const data = JSON.parse(stored);
+      document.getElementById('free').value = data.free || "";
+      document.getElementById('basic').value = data.basic || "";
+      document.getElementById('pro').value = data.pro || "";
+      document.getElementById('lifetime').value = data.lifetime || "";
+    }
+  </script></body>
+</html>
