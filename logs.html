@@ -104,6 +104,7 @@
   </div>
 
   <button onclick="exportLogs()">⬇️ Export Logs</button>
+  <button onclick="exportNotes()">🗒 Export Notes</button>
 
   <!-- Doctor Notes Modal -->
   <div id="noteModal">
@@ -120,14 +121,19 @@
     document.getElementById("clinicName").innerText = clinic;
 
     const logsURL = "https://warangalonepoint.github.io/clinic-admin/logs.csv";
-    let logsData = [];
+    const notesURL = "https://warangalonepoint.github.io/clinic-admin/DoctorNotesExport.csv";
 
-    fetch(logsURL)
-      .then(res => res.text())
-      .then(csv => {
-        logsData = Papa.parse(csv, { header: true }).data;
-        filterLogs();
-      });
+    let logsData = [];
+    let doctorNotes = [];
+
+    Promise.all([
+      fetch(logsURL).then(res => res.text()),
+      fetch(notesURL).then(res => res.text())
+    ]).then(([logsCSV, notesCSV]) => {
+      logsData = Papa.parse(logsCSV, { header: true }).data;
+      doctorNotes = Papa.parse(notesCSV, { header: true }).data;
+      filterLogs();
+    });
 
     function filterLogs() {
       const selectedDate = document.getElementById("filterDate").value;
@@ -163,7 +169,15 @@
       link.click();
     }
 
-    // Doctor Notes Logic
+    function exportNotes() {
+      const csvContent = Papa.unparse(doctorNotes);
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "DoctorNotesExport.csv";
+      link.click();
+    }
+
     let currentNoteKey = "";
 
     function openNoteModal(date, time, name) {
@@ -172,7 +186,7 @@
       document.getElementById("noteTime").innerText = time;
       document.getElementById("notePatient").innerText = name;
 
-      const existing = localStorage.getItem(currentNoteKey) || "";
+      const existing = getNoteFromCSV(date, time, name);
       document.getElementById("noteContent").value = existing;
       document.getElementById("noteModal").style.display = "block";
     }
@@ -184,8 +198,18 @@
     function saveNote() {
       const content = document.getElementById("noteContent").value;
       localStorage.setItem(currentNoteKey, content);
-      alert("✅ Note saved locally!");
+      alert("✅ Note saved locally! (Not pushed to CSV yet)");
       closeNoteModal();
+    }
+
+    function getNoteFromCSV(date, time, name) {
+      const match = doctorNotes.find(note =>
+        note.Clinic === clinic &&
+        note.Date === date &&
+        note.Time === time &&
+        note.Name === name
+      );
+      return match ? match.Note : "";
     }
   </script>
 </body>
