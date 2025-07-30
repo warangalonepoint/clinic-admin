@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Book Appointment</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <style>
     body {
       background-color: #000;
@@ -11,33 +11,40 @@
       font-family: Arial, sans-serif;
       padding: 20px;
     }
+
     h2 {
-      color: #f0a500;
+      color: orange;
       text-align: center;
-      font-size: 24px;
     }
+
     input, select, button {
-      display: block;
       width: 100%;
       padding: 12px;
-      margin: 15px 0;
+      margin: 10px 0;
+      border-radius: 6px;
       border: none;
-      border-radius: 8px;
       font-size: 16px;
     }
-    input, select {
-      background-color: #222;
-      color: #fff;
+
+    select, input {
+      background: #eee;
+      color: #000;
     }
+
     button {
-      background-color: #f0a500;
+      background-color: orange;
       color: #000;
       font-weight: bold;
       cursor: pointer;
     }
+
+    button:hover {
+      background-color: #f90;
+    }
   </style>
 </head>
 <body>
+
   <h2>📅 Book Your Appointment</h2>
 
   <input type="text" id="patientName" placeholder="Enter Your Name" />
@@ -51,30 +58,40 @@
     <option value="">Select Time Slot</option>
   </select>
 
-  <button onclick="proceedToConfirmation()">Confirm Booking</button>
+  <button onclick="showConfirmation()">Confirm Booking</button>
 
   <script>
     async function loadAvailableSlots() {
-      const selectedDate = document.getElementById("appointmentDate").value;
-      const dropdown = document.getElementById("appointmentTime");
-      dropdown.innerHTML = '<option value="">Select Time Slot</option>';
+      const date = document.getElementById("appointmentDate").value;
+      const slotSelect = document.getElementById("appointmentTime");
+      slotSelect.innerHTML = '<option value="">Loading...</option>';
 
-      const response = await fetch("https://warangalonepoint.github.io/clinic-admin/Slots.csv");
+      const response = await fetch('https://warangalonepoint.github.io/clinic-admin/Slots.csv');
       const csv = await response.text();
-      const rows = csv.trim().split("\n").slice(1); // skip header
+      const lines = csv.trim().split('\n').slice(1); // skip header
 
-      rows.forEach(row => {
-        const [date, time, status] = row.split(",");
-        if (date === selectedDate && status.trim().toLowerCase() === "available") {
-          const option = document.createElement("option");
-          option.value = time;
-          option.textContent = time;
-          dropdown.appendChild(option);
-        }
+      const options = lines
+        .map(line => {
+          const [slotDate, time, status] = line.split(',');
+          return { slotDate, time, status };
+        })
+        .filter(slot => slot.slotDate === date && slot.status === 'Available');
+
+      slotSelect.innerHTML = '<option value="">Select Time Slot</option>';
+
+      options.forEach(slot => {
+        const opt = document.createElement('option');
+        opt.value = slot.time;
+        opt.textContent = slot.time;
+        slotSelect.appendChild(opt);
       });
+
+      if (options.length === 0) {
+        slotSelect.innerHTML = '<option value="">No Available Slots</option>';
+      }
     }
 
-    function proceedToConfirmation() {
+    function showConfirmation() {
       const name = document.getElementById("patientName").value.trim();
       const reason = document.getElementById("reason").value.trim();
       const date = document.getElementById("appointmentDate").value;
@@ -85,8 +102,8 @@
         return;
       }
 
-      const query = `confirmation.html?name=${encodeURIComponent(name)}&reason=${encodeURIComponent(reason)}&date=${encodeURIComponent(date)}&time=${encodeURIComponent(time)}`;
-      window.location.href = query;
+      const url = `confirmation.html?name=${encodeURIComponent(name)}&reason=${encodeURIComponent(reason)}&date=${date}&time=${time}`;
+      window.location.href = url;
     }
   </script>
 </body>
