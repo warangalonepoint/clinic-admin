@@ -1,79 +1,51 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Staff Attendance</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Staff Attendance & Shifts</title>
   <style>
-    body {
-      background-color: #111;
-      color: white;
-      font-family: sans-serif;
-      padding: 20px;
-    }
-    h2 {
-      color: #1f80e0;
-    }
-    .staff {
-      background-color: #222;
-      padding: 15px;
-      border-radius: 10px;
-      margin-bottom: 10px;
-    }
-    select {
-      margin-top: 5px;
-      padding: 5px;
-      border-radius: 6px;
-    }
-    a.whatsapp {
-      display: inline-block;
-      margin-top: 8px;
-      background: green;
-      color: white;
-      padding: 6px 12px;
-      border-radius: 6px;
-      text-decoration: none;
-    }
+    body { font-family: Arial, sans-serif; background-color: #111; color: #fff; margin: 0; padding: 20px; }
+    h2 { text-align: center; color: #00ff99; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { padding: 8px; border: 1px solid #444; text-align: left; }
+    .shift { color: #00f0ff; }
+    .present { color: #00ff99; }
+    .absent { color: #ff4b5c; }
+    .filter-box { margin-top: 20px; }
   </style>
 </head>
 <body>
-  <h2>👨‍⚕️ Staff Panel</h2>
-  <div id="staffList"></div>
+  <h2>👨‍⚕️ Staff Attendance & Shift Tracker</h2>
+  <div class="filter-box">
+    <label for="filterDate">Select Date:</label>
+    <input type="date" id="filterDate" onchange="loadStaff()" />
+  </div>
+  <table>
+    <thead>
+      <tr><th>Name</th><th>Role</th><th>Status</th><th>Shift Time</th><th>Phone</th></tr>
+    </thead>
+    <tbody id="staffBody"></tbody>
+  </table>  <script>
+    async function loadStaff() {
+      const selectedDate = document.getElementById("filterDate").value;
+      const response = await fetch("https://warangalonepoint.github.io/clinic-admin/staff.csv");
+      const text = await response.text();
+      const rows = text.trim().split("\n").slice(1).map(row => row.split(","));
+      const tbody = document.getElementById("staffBody");
+      tbody.innerHTML = "";
 
-  <script>
-    const staff = [
-      { name: "Anil", role: "Reception", phone: "9390664001" },
-      { name: "Meena", role: "Nurse", phone: "9390664002" },
-      { name: "Dr. Ravi", role: "Doctor", phone: "9390664003" }
-    ];
-
-    function loadStaff() {
-      const container = document.getElementById("staffList");
-      container.innerHTML = "";
-      staff.forEach((s, index) => {
-        container.innerHTML += `
-          <div class="staff">
-            <strong>${s.name}</strong><br>
-            Current Role: 
-            <select onchange="updateRole(${index}, this.value)">
-              <option ${s.role === 'Doctor' ? 'selected' : ''}>Doctor</option>
-              <option ${s.role === 'Reception' ? 'selected' : ''}>Reception</option>
-              <option ${s.role === 'Nurse' ? 'selected' : ''}>Nurse</option>
-              <option ${s.role === 'Lab' ? 'selected' : ''}>Lab</option>
-              <option ${s.role === 'Pharmacy' ? 'selected' : ''}>Pharmacy</option>
-            </select><br>
-            <a class="whatsapp" href="https://wa.me/91${s.phone}" target="_blank">WhatsApp ${s.name}</a>
-          </div>
-        `;
+      rows.forEach(([date, name, role, status, shift, phone]) => {
+        if (date === selectedDate) {
+          const row = `<tr>
+            <td>${name}</td>
+            <td>${role}</td>
+            <td class="${status.toLowerCase()}">${status}</td>
+            <td class="shift">${shift}</td>
+            <td><a href="tel:${phone}" style="color: #0ff">${phone}</a></td>
+          </tr>`;
+          tbody.innerHTML += row;
+        }
       });
     }
-
-    function updateRole(index, newRole) {
-      staff[index].role = newRole;
-      alert(`${staff[index].name}'s role updated to ${newRole}`);
-    }
-
-    loadStaff();
-  </script>
-</body>
+  </script></body>
 </html>
