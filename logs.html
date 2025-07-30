@@ -44,23 +44,46 @@
       font-size: 16px;
     }
     button {
-      padding: 10px 20px;
+      padding: 8px 16px;
       background: #1f88e5;
       color: #fff;
-      font-size: 16px;
+      font-size: 14px;
       border: none;
       border-radius: 8px;
-      cursor: pointer;
       margin-top: 10px;
+      margin-right: 5px;
+      cursor: pointer;
     }
     button:hover {
       background: #1565c0;
+    }
+
+    /* Modal styling */
+    #noteModal {
+      display: none;
+      position: fixed;
+      top: 10%;
+      left: 10%;
+      right: 10%;
+      background: #1e1e1e;
+      padding: 20px;
+      border-radius: 10px;
+      z-index: 999;
+      box-shadow: 0 0 10px #000;
+    }
+    #noteModal textarea {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      background: #121212;
+      color: #fff;
+      border: none;
     }
   </style>
 </head>
 <body>
 
-  <!-- PIN + Clinic Access Protection -->
+  <!-- PIN + Clinic Lock -->
   <script>
     const clinic = localStorage.getItem("activeClinic");
     const pin = localStorage.getItem("userPIN");
@@ -81,6 +104,16 @@
   </div>
 
   <button onclick="exportLogs()">⬇️ Export Logs</button>
+
+  <!-- Doctor Notes Modal -->
+  <div id="noteModal">
+    <h3>🗒 Doctor Notes for <span id="notePatient"></span></h3>
+    <p><strong>Date:</strong> <span id="noteDate"></span> | <strong>Time:</strong> <span id="noteTime"></span></p>
+    <textarea id="noteContent" rows="5"></textarea>
+    <br><br>
+    <button onclick="saveNote()">💾 Save</button>
+    <button onclick="closeNoteModal()">❌ Cancel</button>
+  </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <script>
@@ -103,11 +136,14 @@
       container.innerHTML = "";
       let count = 0;
 
-      logsData.forEach(log => {
+      logsData.forEach((log) => {
         if (log.Date === selectedDate /* && log.Clinic === clinic */) {
           const div = document.createElement("div");
           div.className = "log-entry";
-          div.innerHTML = `👤 ${log.Name}<br>🕒 ${log.Time}<br>📅 ${log.Date}<br>📝 ${log.Reason}`;
+          div.innerHTML = `
+            👤 ${log.Name}<br>🕒 ${log.Time}<br>📅 ${log.Date}<br>📝 ${log.Reason}
+            <br><button onclick="openNoteModal('${log.Date}', '${log.Time}', '${log.Name}')">🗒 Doctor Notes</button>
+          `;
           container.appendChild(div);
           count++;
         }
@@ -125,6 +161,31 @@
       link.href = URL.createObjectURL(blob);
       link.download = "exported_logs.csv";
       link.click();
+    }
+
+    // Doctor Notes Logic
+    let currentNoteKey = "";
+
+    function openNoteModal(date, time, name) {
+      currentNoteKey = `${clinic}_${date}_${time}_${name}`;
+      document.getElementById("noteDate").innerText = date;
+      document.getElementById("noteTime").innerText = time;
+      document.getElementById("notePatient").innerText = name;
+
+      const existing = localStorage.getItem(currentNoteKey) || "";
+      document.getElementById("noteContent").value = existing;
+      document.getElementById("noteModal").style.display = "block";
+    }
+
+    function closeNoteModal() {
+      document.getElementById("noteModal").style.display = "none";
+    }
+
+    function saveNote() {
+      const content = document.getElementById("noteContent").value;
+      localStorage.setItem(currentNoteKey, content);
+      alert("✅ Note saved locally!");
+      closeNoteModal();
     }
   </script>
 </body>
