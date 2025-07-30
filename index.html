@@ -1,80 +1,91 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Clinic Admin Login</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Doctor Login - WarangalOneStop Clinic Admin Panel">
+  <meta name="keywords" content="clinic, doctor login, admin, appointment, WarangalOneStop">
+  <meta name="author" content="WarangalOneStop">
+  <title>Doctor Login</title>
   <style>
     body {
       background-color: #111;
       font-family: Arial, sans-serif;
       color: #fff;
-      margin: 0;
       display: flex;
-      align-items: center;
       justify-content: center;
+      align-items: center;
       height: 100vh;
+      margin: 0;
     }
-    .login-container {
-      background: #222;
+    .login-box {
+      background-color: #222;
       padding: 30px;
       border-radius: 12px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.6);
-      text-align: center;
+      box-shadow: 0 0 20px rgba(0,255,255,0.2);
       width: 90%;
       max-width: 400px;
     }
-    h2 {
+    .login-box h2 {
+      text-align: center;
       margin-bottom: 20px;
     }
-    input[type="password"] {
+    input, select, button {
       width: 100%;
       padding: 12px;
+      margin: 10px 0;
       border: none;
-      border-radius: 8px;
-      margin-bottom: 20px;
+      border-radius: 6px;
       font-size: 16px;
+    }
+    input {
+      background: #fff;
+      color: #000;
+    }
+    select {
+      background: #ccc;
+      color: #000;
     }
     button {
-      width: 100%;
-      padding: 12px;
-      border: none;
-      border-radius: 8px;
-      background: #007bff;
+      background-color: dodgerblue;
       color: white;
-      font-size: 16px;
+      font-weight: bold;
       cursor: pointer;
     }
     button:hover {
-      background: #0056b3;
+      background-color: deepskyblue;
     }
   </style>
 </head>
 <body>
-  <div class="login-container">
+  <div class="login-box">
     <h2>Doctor Login</h2>
-    <input type="password" id="pin" placeholder="Enter PIN" />
+    <input type="password" id="pin" placeholder="...." />
+    <select id="clinicSelect">
+      <option selected disabled>Select Clinic</option>
+      <option>Warangal OneStop Clinic</option>
+      <option>CityCare Hospital</option>
+      <option>LifePlus Diagnostics</option>
+    </select>
     <button onclick="login()">Login</button>
-  </div>
-
-  <script>
-    const pinRoutes = {
-      "2525": "admin-dashboard.html",
-      "1111": "dashboard.html",
-      "2222": "dashboard.html",
-      "3333": "dashboard.html",
-      "4444": "dashboard.html"
-    };
-
+  </div>  <script>
     function login() {
-      const pin = document.getElementById("pin").value.trim();
-      if (pinRoutes[pin]) {
-        localStorage.setItem("clinicPin", pin);
-        window.location.href = pinRoutes[pin];
-      } else {
-        alert("Invalid PIN. Please try again.");
+      const pin = document.getElementById('pin').value.trim();
+      const clinic = document.getElementById('clinicSelect').value.trim();
+      if (!pin || clinic === 'Select Clinic') {
+        alert("Please enter PIN and select a clinic");
+        return;
+      }
+      window.location.href = `dashboard.html?pin=${pin}&clinic=${clinic}`;
+    }
+
+    window.onload = function () {
+      const urlParams = new URLSearchParams(window.location.search);
+      const clinicFromURL = urlParams.get('clinic');
+      if (clinicFromURL) {
+        const dropdown = document.getElementById('clinicSelect');
+        dropdown.innerHTML = `<option selected>${clinicFromURL.replaceAll('-', ' ')}</option>`;
+        dropdown.disabled = true;
       }
     }
-  </script>
-</body>
+  </script></body>
 </html>
