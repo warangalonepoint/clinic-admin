@@ -58,7 +58,6 @@
       background: #1565c0;
     }
 
-    /* Modal styling */
     #noteModal {
       display: none;
       position: fixed;
@@ -83,7 +82,6 @@
 </head>
 <body>
 
-  <!-- PIN + Clinic Lock -->
   <script>
     const clinic = localStorage.getItem("activeClinic");
     const pin = localStorage.getItem("userPIN");
@@ -104,9 +102,9 @@
   </div>
 
   <button onclick="exportLogs()">⬇️ Export Logs</button>
-  <button onclick="exportNotes()">🗒 Export Notes</button>
+  <button onclick="exportNotes()">🗒 Export All Notes</button>
+  <button onclick="exportNewNotes()">🆕 Export New Notes</button>
 
-  <!-- Doctor Notes Modal -->
   <div id="noteModal">
     <h3>🗒 Doctor Notes for <span id="notePatient"></span></h3>
     <p><strong>Date:</strong> <span id="noteDate"></span> | <strong>Time:</strong> <span id="noteTime"></span></p>
@@ -121,10 +119,13 @@
     document.getElementById("clinicName").innerText = clinic;
 
     const logsURL = "https://warangalonepoint.github.io/clinic-admin/logs.csv";
-    const notesURL = "https://warangalonepoint.github.io/clinic-admin/DoctorNotesExport.csv";
+
+    const cleanClinicName = clinic.replace(/\s+/g, '').replace(/[^a-zA-Z]/g, '');
+    const notesURL = `https://warangalonepoint.github.io/clinic-admin/DoctorNotesExport_${cleanClinicName}.csv`;
 
     let logsData = [];
     let doctorNotes = [];
+    let newNotes = [];
 
     Promise.all([
       fetch(logsURL).then(res => res.text()),
@@ -143,7 +144,7 @@
       let count = 0;
 
       logsData.forEach((log) => {
-        if (log.Date === selectedDate /* && log.Clinic === clinic */) {
+        if (log.Date === selectedDate) {
           const div = document.createElement("div");
           div.className = "log-entry";
           div.innerHTML = `
@@ -174,7 +175,20 @@
       const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
-      link.download = "DoctorNotesExport.csv";
+      link.download = `DoctorNotesExport_${cleanClinicName}.csv`;
+      link.click();
+    }
+
+    function exportNewNotes() {
+      if (newNotes.length === 0) {
+        alert("⚠️ No new notes to export.");
+        return;
+      }
+      const csvContent = Papa.unparse(newNotes);
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `NewDoctorNotes_${cleanClinicName}.csv`;
       link.click();
     }
 
@@ -197,8 +211,22 @@
 
     function saveNote() {
       const content = document.getElementById("noteContent").value;
+      const date = document.getElementById("noteDate").innerText;
+      const time = document.getElementById("noteTime").innerText;
+      const name = document.getElementById("notePatient").innerText;
+
+      const noteEntry = {
+        Clinic: clinic,
+        Date: date,
+        Time: time,
+        Name: name,
+        Note: content
+      };
+
       localStorage.setItem(currentNoteKey, content);
-      alert("✅ Note saved locally! (Not pushed to CSV yet)");
+      newNotes.push(noteEntry);
+
+      alert("✅ Note saved locally! Export manually to update CSV.");
       closeNoteModal();
     }
 
