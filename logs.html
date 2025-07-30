@@ -1,160 +1,121 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Clinic Admin - Logs Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Book Appointment</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     body {
-      background-color: #111;
+      background-color: #000;
       color: #fff;
       font-family: Arial, sans-serif;
-      margin: 0;
       padding: 20px;
     }
-    h2 { text-align: center; color: #00ff99; }
-    .pin-screen, .logs-screen { max-width: 800px; margin: auto; display: none; }
-    input[type="password"], input[type="text"], select {
-      width: 100%; padding: 10px; font-size: 16px; margin-top: 15px; border-radius: 5px; border: none;
+    h1 {
+      color: orange;
+      text-align: center;
+    }
+    form {
+      max-width: 400px;
+      margin: 0 auto;
+    }
+    label {
+      display: block;
+      margin-top: 20px;
+    }
+    input, select, button {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      margin-top: 5px;
+      border: none;
+      border-radius: 4px;
     }
     button {
-      padding: 10px 20px; font-size: 16px; margin-top: 20px;
-      background: #00ff99; border: none; cursor: pointer; border-radius: 5px;
-    }
-    table { width: 100%; margin-top: 20px; border-collapse: collapse; }
-    th, td {
-      padding: 8px;
-      border-bottom: 1px solid #444;
-      text-align: left;
-    }
-    .filter-controls { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
-    @media (min-width: 600px) {
-      .filter-controls { flex-direction: row; justify-content: space-between; }
+      background-color: orange;
+      color: black;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 20px;
     }
   </style>
 </head>
 <body>
+  <h1>📅 Book Your Appointment</h1>
+  <form id="bookingForm">
+    <label for="name">Enter Your Name</label>
+    <input type="text" id="name" required /><label for="reason">Reason for Visit</label>
+<input type="text" id="reason" required />
 
-  <!-- PIN Entry Screen -->
-  <div class="pin-screen" id="pinScreen">
-    <h2>🔐 Admin Access</h2>
-    <input type="password" id="pinInput" placeholder="Enter PIN (e.g. 2525)">
-    <button onclick="checkPIN()">Unlock Logs</button>
-  </div>
+<label for="date">Select Date</label>
+<select id="date" required></select>
 
-  <!-- Logs Dashboard -->
-  <div class="logs-screen" id="logsScreen">
-    <h2>📋 Patient Booking Logs</h2>
+<label for="time">Select Time Slot</label>
+<select id="time" required></select>
 
-    <div class="filter-controls">
-      <input type="text" id="searchInput" placeholder="Search by name or reason..." onkeyup="filterLogs()" />
-      <select id="dateFilter" onchange="filterLogsByDate()">
-        <option value="">All Dates</option>
-      </select>
-      <button onclick="exportLogs()">📤 Export</button>
-    </div>
+<button type="submit">Confirm Booking</button>
 
-    <table>
-      <thead>
-        <tr>
-          <th>Date</th><th>Time</th><th>Name</th><th>Reason</th>
-        </tr>
-      </thead>
-      <tbody id="logBody"></tbody>
-    </table>
-  </div>
+  </form>  <script>
+    const sheetUrl = 'https://warangalonepoint.github.io/clinic-admin/Slots.csv';
+    const logsUrl = 'https://warangalonepoint.github.io/clinic-admin/logs.csv';
 
-  <!-- Dark/Light Theme Toggle -->
-  <div style="position:fixed;top:10px;right:10px;z-index:999;">
-    <button onclick="toggleTheme()" style="padding:8px 16px;background:#ccc;color:#000;border:none;border-radius:5px;">🌓 Theme</button>
-  </div>
+    const dateSelect = document.getElementById('date');
+    const timeSelect = document.getElementById('time');
 
-  <script>
-    const PIN = "2525"; // Admin PIN
-    const csvUrl = "https://warangalonepoint.github.io/clinic-admin/logs.csv"; // Live CSV
-    const pinScreen = document.getElementById("pinScreen");
-    const logsScreen = document.getElementById("logsScreen");
+    let allSlots = [];
+    let bookedSlots = [];
 
-    pinScreen.style.display = "block";
-
-    function checkPIN() {
-      const entered = document.getElementById("pinInput").value;
-      if (entered === PIN) {
-        pinScreen.style.display = "none";
-        logsScreen.style.display = "block";
-        loadLogs();
-      } else {
-        alert("❌ Incorrect PIN");
-      }
+    async function fetchCSV(url) {
+      const res = await fetch(url);
+      const text = await res.text();
+      return text.trim().split('\n').slice(1).map(row => row.split(','));
     }
 
-    function loadLogs() {
-      fetch(csvUrl)
-        .then(res => res.text())
-        .then(data => {
-          const rows = data.trim().split("\n").slice(1).map(line => line.split(","));
-          const logBody = document.getElementById("logBody");
-          const dateDropdown = document.getElementById("dateFilter");
-          const uniqueDates = new Set();
-
-          logBody.innerHTML = "";
-
-          rows.forEach(([date, time, name, reason]) => {
-            const row = `<tr><td>${date}</td><td>${time}</td><td>${name}</td><td>${reason}</td></tr>`;
-            logBody.innerHTML += row;
-            uniqueDates.add(date);
-          });
-
-          // Populate date filter
-          uniqueDates.forEach(date => {
-            const opt = document.createElement("option");
-            opt.value = date;
-            opt.textContent = date;
-            dateDropdown.appendChild(opt);
-          });
-        });
+    async function loadSlots() {
+      allSlots = await fetchCSV(sheetUrl);
+      const dates = [...new Set(allSlots.map(row => row[0]))];
+      dateSelect.innerHTML = '<option value="">Select Date</option>' +
+        dates.map(date => `<option value="${date}">${date}</option>`).join('');
     }
 
-    function filterLogs() {
-      const term = document.getElementById("searchInput").value.toLowerCase();
-      const rows = document.querySelectorAll("#logBody tr");
-      rows.forEach(row => {
-        row.style.display = row.innerText.toLowerCase().includes(term) ? "" : "none";
-      });
+    async function loadBookedSlots() {
+      bookedSlots = await fetchCSV(logsUrl);
     }
 
-    function filterLogsByDate() {
-      const date = document.getElementById("dateFilter").value;
-      const rows = document.querySelectorAll("#logBody tr");
-      rows.forEach(row => {
-        const rowDate = row.children[0].innerText;
-        row.style.display = (date === "" || rowDate === date) ? "" : "none";
-      });
+    function updateTimeOptions(selectedDate) {
+      const bookedTimes = bookedSlots
+        .filter(row => row[0] === selectedDate)
+        .map(row => row[1]);
+
+      const available = allSlots
+        .filter(row => row[0] === selectedDate && row[2] === 'Available' && !bookedTimes.includes(row[1]))
+        .map(row => row[1]);
+
+      timeSelect.innerHTML = '<option value="">Select Time Slot</option>' +
+        available.map(time => `<option value="${time}">${time}</option>`).join('');
     }
 
-    function exportLogs() {
-      fetch(csvUrl)
-        .then(res => res.blob())
-        .then(blob => {
-          const a = document.createElement("a");
-          a.href = URL.createObjectURL(blob);
-          a.download = "logs.csv";
-          a.click();
-        });
-    }
+    dateSelect.addEventListener('change', e => {
+      updateTimeOptions(e.target.value);
+    });
 
-    function toggleTheme() {
-      const dark = document.body.style.backgroundColor === "black" || document.body.style.backgroundColor === "#111";
-      if (dark) {
-        document.body.style.backgroundColor = "#fff";
-        document.body.style.color = "#000";
-        document.querySelectorAll("th, td, input, select").forEach(el => el.style.color = "#000");
-      } else {
-        document.body.style.backgroundColor = "#111";
-        document.body.style.color = "#fff";
-        document.querySelectorAll("th, td, input, select").forEach(el => el.style.color = "#fff");
-      }
-    }
-  </script>
-</body>
+    document.getElementById('bookingForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const name = document.getElementById('name').value;
+      const reason = document.getElementById('reason').value;
+      const date = dateSelect.value;
+      const time = timeSelect.value;
+
+      if (!name || !reason || !date || !time) return alert('Please fill all fields.');
+
+      const message = `Hi, I would like to book an appointment.\nName: ${name}\nReason: ${reason}\nDate: ${date}\nTime: ${time}`;
+      const encoded = encodeURIComponent(message);
+      window.location.href = `https://wa.me/919390664577?text=${encoded}`;
+    });
+
+    (async () => {
+      await loadSlots();
+      await loadBookedSlots();
+    })();
+  </script></body>
 </html>
