@@ -1,74 +1,64 @@
-<!DOCTYPE html>
-<html lang="en">
+<!-- Let's begin with index.html. Each file will be updated one by one with the proper manifest and service-worker code embedded. --><!-- ✅ index.html --><!DOCTYPE html><html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Warangal OneStop Clinic</title>
-
-  <!-- PWA Manifest & Theme -->
-  <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#ff6f00" />
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="WOS Clinic">
-  <link rel="apple-touch-icon" href="logo.png" sizes="192x192">
-  <link rel="icon" type="image/png" href="logo.png" sizes="192x192" />
-
-  <!-- Styles -->
-  <style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Warangal OneStop Clinic</title>  <!-- PWA Config -->  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0d6efd">
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js');
+    }
+  </script>  <style>
     body {
       background: #000;
       color: #fff;
-      font-family: sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
+      font-family: Arial, sans-serif;
       margin: 0;
-    }
-    input[type="password"] {
-      padding: 10px;
-      font-size: 20px;
-      width: 200px;
-      margin-bottom: 10px;
-      border-radius: 10px;
-      border: none;
+      padding: 20px;
       text-align: center;
     }
-    button {
-      padding: 10px 20px;
-      background: #1f80e0;
-      color: white;
+    h1 {
+      margin-top: 40px;
+    }
+    .login-box {
+      background-color: #1f1f1f;
+      padding: 30px;
+      border-radius: 12px;
+      max-width: 400px;
+      margin: 40px auto;
+    }
+    input[type="password"] {
+      width: 100%;
+      padding: 12px;
+      margin: 12px 0;
       border: none;
-      font-size: 16px;
-      border-radius: 10px;
+      border-radius: 6px;
     }
-    .error {
-      color: red;
-      margin-top: 10px;
+    button {
+      padding: 12px 20px;
+      background-color: #0d6efd;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
     }
-  </style>
-</head>
+  </style></head>
 <body>
-  <h2>Admin Access</h2>
-  <input type="password" id="pin" placeholder="Enter PIN" maxlength="4" />
-  <button onclick="checkPIN()">Login</button>
-  <div id="msg" class="error"></div>
-
-  <script>
-    const defaultPIN = localStorage.getItem('adminPIN') || "2525";
-    function checkPIN() {
-      const pin = document.getElementById('pin').value;
-      if (pin === defaultPIN) {
+  <h1>🔐 Admin Panel Login</h1>
+  <div class="login-box">
+    <form onsubmit="checkPIN(event)">
+      <input type="password" id="pinInput" placeholder="Enter PIN" required>
+      <button type="submit">Login</button>
+    </form>
+  </div>  <script>
+    function checkPIN(event) {
+      event.preventDefault();
+      const pin = document.getElementById("pinInput").value;
+      if (pin === "2525") {
         window.location.href = "dashboard.html";
       } else {
-        document.getElementById('msg').textContent = "Invalid PIN. Try again.";
+        alert("❌ Invalid PIN. Please try again.");
       }
     }
-
-    document.getElementById('pin').addEventListener('keyup', function(e) {
-      if (e.key === "Enter") checkPIN();
-    });
-  </script>
-</body>
+  </script></body>
 </html>
