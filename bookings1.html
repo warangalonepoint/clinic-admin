@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -73,7 +72,7 @@
 
       const response = await fetch("https://warangalonepoint.github.io/clinic-admin/Slots_" + clinic + ".csv");
       const text = await response.text();
-      const rows = text.split("\n").map(r => r.split(","));
+      const rows = text.split("\\n").map(r => r.split(","));
       const headers = rows.shift();
       const dateIndex = headers.indexOf("Date");
       const timeIndex = headers.indexOf("Time");
@@ -102,7 +101,7 @@
       const date = document.getElementById("date").value;
       if (!name || !reason || !date) return alert("Fill all fields first");
 
-      const msg = `Hi, I want to book an appointment:\nName: ${name}\nDate: ${date}\nTime: ${time}\nReason: ${reason}\nClinic: ${clinic}`;
+      const msg = `Hi, I want to book an appointment:\\nName: ${name}\\nDate: ${date}\\nTime: ${time}\\nReason: ${reason}\\nClinic: ${clinic}`;
       const phone = "9390664577";
       const url = `https://wa.me/91${phone}?text=${encodeURIComponent(msg)}`;
       window.location.href = url;
