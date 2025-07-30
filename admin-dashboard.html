@@ -2,78 +2,65 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin Dashboard</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <title>Admin Dashboard - Clinics</title>
   <style>
     body {
       background-color: #111;
-      color: white;
-      padding: 20px;
+      color: #fff;
       font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    h1 {
+      color: #00e676;
+      font-size: 24px;
     }
     .tab {
-      margin-top: 20px;
-    }
-    .tab button {
-      background-color: #333;
-      color: white;
-      padding: 10px 20px;
-      margin-right: 10px;
-      border: none;
-      cursor: pointer;
-      border-radius: 6px;
-    }
-    .tabcontent {
-      display: none;
-      margin-top: 20px;
-    }
-    .tabcontent.active {
-      display: block;
-    }
-    .clinic-card {
-      background-color: #1f1f1f;
+      margin-top: 30px;
       padding: 15px;
-      border-radius: 10px;
-      margin-bottom: 15px;
+      background-color: #222;
+      border-radius: 8px;
+    }
+    .clinic-button {
+      display: block;
+      width: 100%;
+      margin: 10px 0;
+      padding: 12px;
+      font-size: 16px;
+      background-color: #1e88e5;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .clinic-button:hover {
+      background-color: #1565c0;
     }
   </style>
 </head>
 <body>
-  <h2>⚙️ Admin Dashboard</h2>  <div class="tab">
-    <button onclick="showTab('home')">🏠 Home</button>
-    <button onclick="showTab('clinics')">🏥 Clinics</button>
-  </div>  <div id="home" class="tabcontent active">
-    <h4>Welcome Admin 👋</h4>
-    <p>Use the tabs above to manage clinics.</p>
-  </div>  <div id="clinics" class="tabcontent">
-    <h4>🏥 Clinics</h4>
-    <div id="clinicList"></div>
+  <h1>🏥 Admin Dashboard</h1>  <div class="tab">
+    <h2>Clinics</h2>
+    <div id="clinicList">Loading clinics...</div>
   </div>  <script>
-    function showTab(tabName) {
-      const contents = document.querySelectorAll('.tabcontent');
-      contents.forEach(content => content.classList.remove('active'));
-      document.getElementById(tabName).classList.add('active');
-    }
-
-    async function loadClinics() {
-      const res = await fetch('clinics.json');
-      const clinics = await res.json();
-      const list = document.getElementById('clinicList');
-      list.innerHTML = '';
-      clinics.forEach(clinic => {
-        const card = document.createElement('div');
-        card.className = 'clinic-card';
-        card.innerHTML = `
-          <strong>🏥 ${clinic.clinicName}</strong><br>
-          👨‍⚕️ Doctor: ${clinic.doctor}<br>
-          🌍 City: ${clinic.city}<br>
-          🔐 PIN: ${clinic.pin}<br>
-          <a href="index.html?clinic=${encodeURIComponent(clinic.clinicName)}&pin=${clinic.pin}" target="_blank" class="btn btn-success mt-2">Go to Dashboard</a>
-        `;
-        list.appendChild(card);
+    fetch("clinics.json")
+      .then((response) => response.json())
+      .then((data) => {
+        const list = document.getElementById("clinicList");
+        list.innerHTML = "";
+        data.forEach((clinic) => {
+          const btn = document.createElement("button");
+          btn.className = "clinic-button";
+          btn.textContent = clinic.name;
+          btn.onclick = () => {
+            const encodedName = encodeURIComponent(clinic.name);
+            window.location.href = `index.html?pin=${clinic.pin}&clinic=${encodedName}`;
+          };
+          list.appendChild(btn);
+        });
+      })
+      .catch((err) => {
+        document.getElementById("clinicList").textContent =
+          "Failed to load clinics.";
       });
-    }
-
-    loadClinics();
   </script></body>
 </html>
