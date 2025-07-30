@@ -1,21 +1,21 @@
-clinic,date,time,name,reason,status,notes
-warangal onestop clinic,30-07-2025,09:00,John Doe,Checkup,Booked,Followup
-warangal onestop clinic,30-07-2025,09:10,Jane Smith,Fever,Booked,Medication
-warangal onestop clinic,30-07-2025,09:20,Chaitanya Krishna,Cold,Booked,Prescribed
-warangal onestop clinic,30-07-2025,09:30,Sai Kumar,Allergy,Booked,Refer ENT
-warangal onestop clinic,30-07-2025,09:40,Anjali Rao,General Weakness,Booked,Blood Test
-warangal onestop clinic,30-07-2025,09:50,Mahesh Babu,Consultation,Booked,Advice given
-warangal onestop clinic,30-07-2025,10:00,Ramya Iyer,Headache,Booked,Neuro referral
-warangal onestop clinic,30-07-2025,10:10,Vinay Reddy,Skin Rash,Booked,Prescribed Cream
-warangal onestop clinic,30-07-2025,10:20,Arjun Mehta,Back Pain,Booked,Physio suggested
-warangal onestop clinic,30-07-2025,10:30,Sneha Jain,PCOD Symptoms,Booked,Blood Test
-warangal onestop clinic,30-07-2025,10:40,Nikhil Sharma,Followup,Booked,Stable
-warangal onestop clinic,30-07-2025,10:50,Divya Lakshmi,Stomach Pain,Booked,Ultrasound
-warangal onestop clinic,30-07-2025,11:00,Karthik Naidu,Diabetes Check,Booked,Sugar Monitored
-warangal onestop clinic,30-07-2025,11:10,Swathi Rani,Pregnancy Test,Booked,Report Pending
-warangal onestop clinic,30-07-2025,11:20,Amit Verma,Injury,Booked,Dressing Done
-warangal onestop clinic,30-07-2025,11:30,Sravani Reddy,Migraine,Booked,Advised rest
-warangal onestop clinic,30-07-2025,11:40,Ramesh Gupta,Cold & Cough,Booked,Medicine Given
-warangal onestop clinic,30-07-2025,11:50,Pooja Nair,Acidity,Booked,Prescribed Antacid
-warangal onestop clinic,30-07-2025,12:00,Manoj Das,Chest Pain,Booked,ECG Done
-warangal onestop clinic,30-07-2025,12:10,Tejaswini Rao,Consultation,Booked,Next review in 7 days
+Date,Time,Patient,Reason,ClinicID
+2025-07-30,09:00,Anjali,General Checkup,clinic05
+2025-07-30,09:10,Arjun,Consultation,clinic02
+2025-07-30,09:20,Divya,Consultation,clinic03
+2025-07-30,09:30,Kiran,Fever,clinic04
+2025-07-30,09:40,Kiran,General Checkup,clinic04
+2025-07-30,09:50,Manoj,Follow-up,clinic01
+2025-07-30,10:00,Pooja,General Checkup,clinic03
+2025-07-30,10:10,Neha,Consultation,clinic01
+2025-07-30,10:20,Sneha,Follow-up,clinic02
+2025-07-30,10:30,Ravi,Consultation,clinic03
+2025-07-30,10:40,Divya,General Checkup,clinic05
+2025-07-30,10:50,Rahul,Fever,clinic05
+2025-07-30,11:00,Anjali,Injury,clinic01
+2025-07-30,11:10,Neha,General Checkup,clinic04
+2025-07-30,11:20,Arjun,Follow-up,clinic02
+2025-07-30,11:30,Manoj,Injury,clinic03
+2025-07-30,11:40,Pooja,Consultation,clinic01
+2025-07-30,11:50,Sneha,Fever,clinic05
+2025-07-30,12:00,Kiran,General Checkup,clinic02
+2025-07-30,12:10,Ravi,Follow-up,clinic04
