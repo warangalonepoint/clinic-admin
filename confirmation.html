@@ -1,69 +1,97 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
+  <title>Confirm Booking</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Confirm Appointment</title>
   <style>
     body {
-      background-color: #000;
-      color: #fff;
       font-family: Arial, sans-serif;
+      background: #121212;
+      color: #fff;
       padding: 20px;
-      text-align: center;
-    }
-    .card {
-      background: #111;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 0 10px #444;
-      max-width: 400px;
-      margin: auto;
     }
     h2 {
-      color: #f0ad4e;
+      color: #00e676;
     }
-    p {
-      margin: 10px 0;
+    .clinic-info, .details-box {
+      background: #1e1e1e;
+      padding: 16px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+    .details-box p {
+      margin: 8px 0;
     }
     button {
-      background-color: #f0ad4e;
-      color: #000;
-      padding: 12px 20px;
+      padding: 10px 20px;
       font-size: 16px;
       border: none;
       border-radius: 8px;
-      margin-top: 20px;
+      margin-right: 10px;
       cursor: pointer;
+    }
+    .confirm-btn {
+      background-color: #1f88e5;
+      color: #fff;
+    }
+    .cancel-btn {
+      background-color: #555;
+      color: #fff;
+    }
+    button:hover {
+      opacity: 0.9;
     }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h2>📝 Confirm Your Appointment</h2>
-    <p><strong>Name:</strong> <span id="name"></span></p>
-    <p><strong>Reason:</strong> <span id="reason"></span></p>
-    <p><strong>Date:</strong> <span id="date"></span></p>
-    <p><strong>Time:</strong> <span id="time"></span></p>
-    <button onclick="sendToWhatsApp()">Send via WhatsApp</button>
+
+  <!-- Access Protection -->
+  <script>
+    const clinic = localStorage.getItem("activeClinic");
+    const pin = localStorage.getItem("userPIN");
+    if (!clinic || !pin) {
+      alert("Access denied. Please log in.");
+      window.location.href = "index.html";
+    }
+  </script>
+
+  <h2>📋 Confirm Your Appointment</h2>
+  <div class="clinic-info">🏥 Active Clinic: <span id="clinicName"></span></div>
+
+  <div class="details-box">
+    <p><strong>👤 Name:</strong> <span id="patientName"></span></p>
+    <p><strong>📝 Reason:</strong> <span id="reason"></span></p>
+    <p><strong>📅 Date:</strong> <span id="date"></span></p>
+    <p><strong>🕒 Time:</strong> <span id="time"></span></p>
   </div>
 
+  <button class="confirm-btn" onclick="confirmBooking()">✅ Confirm & Continue</button>
+  <button class="cancel-btn" onclick="goBack()">❌ Cancel</button>
+
   <script>
+    document.getElementById("clinicName").innerText = clinic;
+
+    // Retrieve booking info passed from bookings.html
     const params = new URLSearchParams(window.location.search);
     const name = decodeURIComponent(params.get("name") || "");
     const reason = decodeURIComponent(params.get("reason") || "");
     const date = decodeURIComponent(params.get("date") || "");
     const time = decodeURIComponent(params.get("time") || "");
 
-    document.getElementById("name").textContent = name;
-    document.getElementById("reason").textContent = reason;
-    document.getElementById("date").textContent = date;
-    document.getElementById("time").textContent = time;
+    document.getElementById("patientName").innerText = name;
+    document.getElementById("reason").innerText = reason;
+    document.getElementById("date").innerText = date;
+    document.getElementById("time").innerText = time;
 
-    function sendToWhatsApp() {
-      const message = `Hi, I would like to book an appointment.\nName: ${name}\nReason: ${reason}\nDate: ${date}\nTime: ${time}`;
-      const url = "https://wa.me/919390664577?text=" + encodeURIComponent(message);
-      window.location.href = url;
+    function confirmBooking() {
+      const message = `Appointment Request:\n👤 Name: ${name}\n🏥 Clinic: ${clinic}\n📅 Date: ${date}\n⏰ Time: ${time}\n📝 Reason: ${reason}`;
+      const whatsappURL = `https://wa.me/919390664577?text=${encodeURIComponent(message)}`;
+      window.location.href = whatsappURL;
+    }
+
+    function goBack() {
+      window.location.href = "bookings.html";
     }
   </script>
 </body>
