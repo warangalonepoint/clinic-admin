@@ -1,88 +1,172 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Booking Logs and Daily Summary for Clinic Admin" />
-  <meta name="theme-color" content="#111" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Booking Logs</title>
-  <link rel="manifest" href="manifest.json" />
   <style>
     body {
       background-color: #111;
       color: #fff;
       font-family: Arial, sans-serif;
       padding: 20px;
+      margin: 0;
     }
-    h2 {
+
+    h1 {
       color: limegreen;
+      font-size: 24px;
     }
-    .log-card {
-      background: #222;
-      border-radius: 12px;
-      padding: 15px;
-      margin-bottom: 10px;
-      box-shadow: 0 0 10px #000;
-    }
-    select, button, input {
+
+    select, button {
+      font-size: 16px;
       padding: 10px;
       margin: 10px 0;
-      border-radius: 8px;
-      border: none;
-      font-size: 16px;
+      width: 100%;
+      max-width: 400px;
     }
-    button {
-      background-color: dodgerblue;
-      color: white;
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+
+    th, td {
+      padding: 10px;
+      border: 1px solid #444;
+      text-align: left;
+    }
+
+    th {
+      background-color: #222;
+    }
+
+    .highlight {
+      color: #00f7ff;
+    }
+
+    .section {
+      margin-bottom: 20px;
+    }
+
+    .btn {
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+
+    .btn:hover {
+      background-color: #0056b3;
     }
   </style>
 </head>
 <body>
-  <h2>📊 Booking Logs</h2>
-  <div id="clinicNameDisplay"></div>
-  <select id="dateSelect"></select>
-  <div id="logContainer"></div>
-  <p id="summary"></p>
-  <button onclick="exportLogs()">⬇️ Export Logs</button>  <script>
-    const activeClinic = localStorage.getItem('activeClinic') || 'Not Set';
-    const clinicNameDisplay = document.getElementById('clinicNameDisplay');
-    clinicNameDisplay.innerHTML = `<p>🏥 Active Clinic: ${activeClinic}</p>`;
+  <h1>📊 Booking Logs</h1>
 
-    fetch('logs.csv')
-      .then(res => res.text())
-      .then(data => {
-        const rows = data.trim().split('\n').slice(1);
-        const logs = rows.map(row => {
-          const [clinic, date, time, name, reason] = row.split(',');
-          return { clinic, date, time, name, reason };
-        }).filter(entry => entry.clinic === activeClinic);
+  <div class="section">
+    <div>🏥 <strong>Active Clinic:</strong> Warangal OneStop Clinic</div>
+    <label for="dateDropdown">📅 Select Date:</label>
+    <select id="dateDropdown"></select>
+    <div id="summary" class="highlight"></div>
+  </div>
 
-        const dateSelect = document.getElementById('dateSelect');
-        const dates = [...new Set(logs.map(log => log.date))];
-        dates.forEach(date => {
-          const opt = document.createElement('option');
-          opt.value = date;
-          opt.textContent = date;
-          dateSelect.appendChild(opt);
-        });
+  <table id="logsTable">
+    <thead>
+      <tr>
+        <th>Clinic</th>
+        <th>Date</th>
+        <th>Time</th>
+        <th>Name</th>
+        <th>Reason</th>
+        <th>Status</th>
+        <th>Notes</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 
-        dateSelect.addEventListener('change', () => renderLogs(dateSelect.value));
+  <div class="section">
+    <button class="btn" onclick="exportLogs()">⬇️ Export Logs</button>
+  </div>
 
-        function renderLogs(selectedDate) {
-          const filtered = logs.filter(l => l.date === selectedDate);
-          const logContainer = document.getElementById('logContainer');
-          logContainer.innerHTML = '';
-          filtered.forEach(log => {
-            const div = document.createElement('div');
-            div.className = 'log-card';
-            div.innerHTML = `👤 ${log.name}<br>📅 ${log.date}<br>⏰ ${log.time}<br>📝 ${log.reason}`;
-            logContainer.appendChild(div);
-          });
-          document.getElementById('summary').innerText = `📅 Total bookings on ${selectedDate}: ${filtered.length}`;
-        }
+  <script>
+    const logsUrl = "https://warangalonepoint.github.io/clinic-admin/logs.csv";
+
+    let logs = [];
+
+    async function fetchLogs() {
+      const response = await fetch(logsUrl);
+      const data = await response.text();
+      const rows = data.trim().split("\n").slice(1);
+      logs = rows.map(row => {
+        const [clinic, date, time, name, reason, status, notes] = row.split(",");
+        return { clinic, date, time, name, reason, status, notes };
       });
 
-    function exportLogs() {
-      window.open('logs.csv', '_blank');
+      populateDates();
+      renderLogs();
     }
-  </script></body>
+
+    function populateDates() {
+      const uniqueDates = [...new Set(logs.map(log => log.date))];
+      const dropdown = document.getElementById("dateDropdown");
+      dropdown.innerHTML = "";
+
+      uniqueDates.forEach(date => {
+        const [year, month, day] = date.split("-");
+        const formatted = `${day}/${month}/${year}`;
+        const option = document.createElement("option");
+        option.value = formatted;
+        option.textContent = formatted;
+        dropdown.appendChild(option);
+      });
+
+      dropdown.addEventListener("change", renderLogs);
+    }
+
+    function renderLogs() {
+      const dropdown = document.getElementById("dateDropdown");
+      const [dd, mm, yyyy] = dropdown.value.split("/");
+      const formattedDate = `${yyyy}-${mm}-${dd}`;
+
+      const filtered = logs.filter(log => log.date === formattedDate);
+      const table = document.querySelector("#logsTable tbody");
+      const summary = document.getElementById("summary");
+
+      summary.textContent = `📅 ${formattedDate} – Total Bookings: ${filtered.length}`;
+      table.innerHTML = "";
+
+      filtered.forEach(log => {
+        const row = document.createElement("tr");
+        Object.values(log).forEach(value => {
+          const cell = document.createElement("td");
+          cell.textContent = value;
+          row.appendChild(cell);
+        });
+        table.appendChild(row);
+      });
+    }
+
+    function exportLogs() {
+      const csvContent = "data:text/csv;charset=utf-8," + 
+        ["clinic,date,time,name,reason,status,notes"]
+        .concat(logs.map(log => 
+          [log.clinic, log.date, log.time, log.name, log.reason, log.status, log.notes].join(","))
+        ).join("\n");
+
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", "exported_logs.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    fetchLogs();
+  </script>
+</body>
 </html>
