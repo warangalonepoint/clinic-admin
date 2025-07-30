@@ -1,91 +1,93 @@
-<!DOCTYPE html><html lang="en">
-<head>
+<!DOCTYPE html><html lang="en"><head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Doctor Login - WarangalOneStop Clinic Admin Panel">
-  <meta name="keywords" content="clinic, doctor login, admin, appointment, WarangalOneStop">
-  <meta name="author" content="WarangalOneStop">
-  <title>Doctor Login</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Doctor PIN login for WarangalOneStop BookingBot system" />
+  <meta name="author" content="WarangalOneStop.in" />
+  <meta name="theme-color" content="#000000" />
+  <meta property="og:title" content="WarangalOneStop Clinic Admin" />
+  <meta property="og:description" content="Login to access your clinic dashboard with PIN" />
+  <meta property="og:image" content="/logo.png" />
+  <meta property="og:url" content="https://warangalonepoint.github.io/clinic-admin/index.html" />
+  <title>Doctor Login - WarangalOneStop</title>
+  <link rel="manifest" href="manifest.json">
   <style>
     body {
       background-color: #111;
+      color: white;
       font-family: Arial, sans-serif;
-      color: #fff;
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
       margin: 0;
-    }
-    .login-box {
-      background-color: #222;
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 0 20px rgba(0,255,255,0.2);
-      width: 90%;
-      max-width: 400px;
-    }
-    .login-box h2 {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    input, select, button {
-      width: 100%;
-      padding: 12px;
-      margin: 10px 0;
-      border: none;
-      border-radius: 6px;
-      font-size: 16px;
-    }
-    input {
-      background: #fff;
-      color: #000;
-    }
-    select {
-      background: #ccc;
-      color: #000;
-    }
-    button {
-      background-color: dodgerblue;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: deepskyblue;
-    }
+    }.login-box {
+  background-color: #222;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 0 20px #00000088;
+  width: 90%;
+  max-width: 400px;
+  text-align: center;
+}
+
+input, select, button {
+  width: 100%;
+  padding: 12px;
+  margin: 12px 0;
+  border-radius: 8px;
+  border: none;
+  font-size: 16px;
+}
+
+button {
+  background-color: #007bff;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+h2 {
+  margin-bottom: 20px;
+}
+
   </style>
-</head>
-<body>
+</head><body>
   <div class="login-box">
     <h2>Doctor Login</h2>
-    <input type="password" id="pin" placeholder="...." />
-    <select id="clinicSelect">
-      <option selected disabled>Select Clinic</option>
-      <option>Warangal OneStop Clinic</option>
-      <option>CityCare Hospital</option>
-      <option>LifePlus Diagnostics</option>
-    </select>
+    <input type="password" id="pin" placeholder="Enter PIN" />
+    <select id="clinicDropdown"></select>
     <button onclick="login()">Login</button>
   </div>  <script>
-    function login() {
-      const pin = document.getElementById('pin').value.trim();
-      const clinic = document.getElementById('clinicSelect').value.trim();
-      if (!pin || clinic === 'Select Clinic') {
-        alert("Please enter PIN and select a clinic");
-        return;
+    let clinics = [];
+
+    async function fetchClinics() {
+      try {
+        const res = await fetch('clinics.json');
+        clinics = await res.json();
+        const dropdown = document.getElementById('clinicDropdown');
+        dropdown.innerHTML = '';
+        clinics.forEach(clinic => {
+          const opt = document.createElement('option');
+          opt.value = clinic.folder;
+          opt.textContent = clinic.name;
+          dropdown.appendChild(opt);
+        });
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const preselect = urlParams.get('clinic');
+        if (preselect) dropdown.value = preselect;
+      } catch (e) {
+        alert('Failed to load clinic list.');
       }
-      window.location.href = `dashboard.html?pin=${pin}&clinic=${clinic}`;
     }
 
-    window.onload = function () {
-      const urlParams = new URLSearchParams(window.location.search);
-      const clinicFromURL = urlParams.get('clinic');
-      if (clinicFromURL) {
-        const dropdown = document.getElementById('clinicSelect');
-        dropdown.innerHTML = `<option selected>${clinicFromURL.replaceAll('-', ' ')}</option>`;
-        dropdown.disabled = true;
-      }
+    function login() {
+      const pin = document.getElementById('pin').value.trim();
+      const folder = document.getElementById('clinicDropdown').value;
+      if (!pin || !folder) return alert("Enter PIN and select clinic");
+      sessionStorage.setItem('pin', pin);
+      window.location.href = `${folder}/dashboard.html`;
     }
-  </script></body>
-</html>
+
+    fetchClinics();
+  </script></body></html>
