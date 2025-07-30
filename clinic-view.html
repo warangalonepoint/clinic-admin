@@ -2,57 +2,49 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Clinic View</title>
+  <title>Clinic Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <style>
     body {
       background-color: #111;
       color: white;
       font-family: Arial, sans-serif;
-      margin: 0;
       padding: 20px;
-    }
-
-    .clinic-header {
-      display: flex;
-      align-items: center;
-      gap: 20px;
-      background-color: #1e1e1e;
-      border-radius: 10px;
-      padding: 20px;
-      margin-bottom: 30px;
-    }
-
-    .clinic-header img {
-      width: 80px;
-      height: 80px;
-      border-radius: 10px;
-      object-fit: cover;
-      background-color: #333;
     }
 
     .clinic-info {
       display: flex;
-      flex-direction: column;
+      align-items: center;
+      background: #1f1f1f;
+      padding: 15px;
+      border-radius: 12px;
+      margin-bottom: 20px;
     }
 
-    .clinic-info h1 {
+    .clinic-info img {
+      width: 80px;
+      height: 80px;
+      border-radius: 10px;
+      margin-right: 15px;
+      background: #333;
+    }
+
+    .clinic-name {
       font-size: 20px;
-      margin: 0;
-      color: #00e676;
+      font-weight: bold;
+      color: #00ff66;
     }
 
-    .clinic-info p {
-      margin: 5px 0;
+    .clinic-address {
+      font-size: 14px;
       color: #ccc;
     }
 
     table {
       width: 100%;
+      background: #222;
       border-collapse: collapse;
-      background-color: #222;
-      border-radius: 10px;
-      overflow: hidden;
+      margin-top: 20px;
     }
 
     th, td {
@@ -62,74 +54,83 @@
 
     th {
       background-color: #333;
-      color: #00e676;
+      color: #00ff66;
     }
 
     td {
-      border-top: 1px solid #444;
-    }
-
-    #error {
-      color: red;
-      font-weight: bold;
-      text-align: center;
-      padding-top: 40px;
+      border-bottom: 1px solid #444;
     }
   </style>
 </head>
 <body>
-  <div id="clinic-container">
-    <div class="clinic-header">
-      <img id="clinic-logo" src="" alt="Clinic Logo" />
-      <div class="clinic-info">
-        <h1 id="clinic-name">Loading...</h1>
-        <p id="clinic-address"></p>
-        <p id="clinic-plan"></p>
-      </div>
+  <div class="clinic-info">
+    <img id="clinicLogo" src="" alt="Logo" />
+    <div>
+      <div class="clinic-name" id="clinicName">Loading...</div>
+      <div class="clinic-address" id="clinicAddress"></div>
     </div>
-
-    <h2>Today's Appointments</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Time</th>
-          <th>Patient</th>
-          <th>Reason</th>
-        </tr>
-      </thead>
-      <tbody id="appointments-body">
-        <tr><td colspan="3" style="text-align:center; color: #888;">No appointments loaded</td></tr>
-      </tbody>
-    </table>
   </div>
 
-  <div id="error" style="display:none;">Clinic Not Found</div>
+  <h3>Today's Appointments</h3>
+  <table>
+    <thead>
+      <tr><th>Time</th><th>Patient</th><th>Reason</th></tr>
+    </thead>
+    <tbody id="appointmentsTable">
+      <tr><td colspan="3">Loading...</td></tr>
+    </tbody>
+  </table>
 
   <script>
     const urlParams = new URLSearchParams(window.location.search);
-    const clinicId = urlParams.get('clinicId');
+    const clinicId = urlParams.get("clinicId");
+    const clinicsURL = "https://warangalonepoint.github.io/clinic-admin/clinics.json";
+    const logsURL = "https://warangalonepoint.github.io/clinic-admin/logs.csv";
 
-    fetch('https://warangalonepoint.github.io/clinic-admin/clinics.json')
-      .then(response => response.json())
-      .then(data => {
-        const clinic = data.find(c => c.id === clinicId);
-        if (!clinic) {
-          document.getElementById('clinic-container').style.display = 'none';
-          document.getElementById('error').style.display = 'block';
-          return;
-        }
+    async function loadClinic() {
+      const res = await fetch(clinicsURL);
+      const clinics = await res.json();
+      const clinic = clinics.find(c => c.id === clinicId);
 
-        document.getElementById('clinic-name').textContent = clinic.name;
-        document.getElementById('clinic-address').textContent = clinic.address;
-        document.getElementById('clinic-plan').textContent = clinic.plan ? `Plan: ₹${clinic.plan}` : 'Plan: Free';
-        document.getElementById('clinic-logo').src = `https://warangalonepoint.github.io/clinic-admin/${clinic.logo}`;
-      })
-      .catch(error => {
-        console.error('Error loading clinic data:', error);
-        document.getElementById('clinic-container').style.display = 'none';
-        document.getElementById('error').textContent = 'Failed to load clinic data';
-        document.getElementById('error').style.display = 'block';
+      if (!clinic) {
+        document.getElementById("clinicName").innerText = "Clinic Not Found";
+        return;
+      }
+
+      document.getElementById("clinicName").innerText = clinic.name;
+      document.getElementById("clinicAddress").innerText = clinic.address;
+      document.getElementById("clinicLogo").src = clinic.logo;
+    }
+
+    async function loadAppointments() {
+      const res = await fetch(logsURL);
+      const text = await res.text();
+      const rows = text.trim().split("\n").slice(1);
+      const today = new Date().toISOString().slice(0, 10);
+      const table = document.getElementById("appointmentsTable");
+      table.innerHTML = "";
+
+      const filtered = rows.map(r => r.split(","))
+        .filter(r =>
+          r[0].toLowerCase().includes(clinicId.toLowerCase()) &&
+          r[1] === today &&
+          r[5].toLowerCase() === "booked"
+        );
+
+      if (filtered.length === 0) {
+        table.innerHTML = "<tr><td colspan='3'>No appointments today.</td></tr>";
+        return;
+      }
+
+      filtered.forEach(r => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td>`;
+        table.appendChild(tr);
       });
+    }
+
+    loadClinic();
+    loadAppointments();
   </script>
 </body>
 </html>
