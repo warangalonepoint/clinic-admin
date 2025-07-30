@@ -2,139 +2,178 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Logs Dashboard</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
-      font-family: Arial, sans-serif;
       background-color: #000;
-      color: #fff;
+      color: #0fffb7;
+      font-family: Arial, sans-serif;
       padding: 20px;
-      margin: 0;
     }
-    h2 {
+
+    h1, h2 {
       text-align: center;
-      color: #00BFFF;
     }
-    .nav {
-      text-align: center;
-      margin-bottom: 20px;
+
+    .log-summary {
+      margin-bottom: 30px;
     }
-    .nav button {
-      margin: 5px;
-      padding: 10px 20px;
-      font-size: 16px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      background-color: #333;
-      color: #fff;
+
+    .summary-item {
+      margin: 10px 0;
+      font-size: 18px;
     }
-    .container {
-      display: flex;
-      flex-direction: column;
-    }
-    @media(min-width: 768px) {
-      .container {
-        flex-direction: row;
-        justify-content: space-between;
-      }
-    }
-    .panel {
-      background-color: #111;
-      padding: 20px;
-      border-radius: 10px;
-      margin: 10px;
-      flex: 1;
-    }
-    canvas {
-      width: 100% !important;
-      max-width: 100%;
-      height: auto !important;
-    }
+
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 10px;
+      background-color: #111;
+      color: #fff;
     }
+
     th, td {
-      padding: 8px 12px;
+      border: 1px solid #0fffb7;
+      padding: 10px;
       text-align: left;
-      border-bottom: 1px solid #444;
     }
+
     th {
       background-color: #222;
-      color: #0f0;
+    }
+
+    #searchInput {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      background: #000;
+      color: #0fffb7;
+      border: 1px solid #0fffb7;
+    }
+
+    textarea {
+      width: 100%;
+      height: 60px;
+      background: #000;
+      color: #0fffb7;
+      margin-top: 5px;
+      border: 1px solid #0fffb7;
+      border-radius: 6px;
+      padding: 5px;
+    }
+
+    button {
+      margin-top: 5px;
+      background: #0fffb7;
+      color: #000;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .patient-card {
+      background: #111;
+      color: #fff;
+      padding: 15px;
+      border: 1px solid #0fffb7;
+      margin-bottom: 10px;
+      border-radius: 8px;
     }
   </style>
 </head>
 <body>
-  <h2>📊 Logs Dashboard</h2>
-  <div class="nav">
-    <button onclick="location.href='index.html'">Dashboard</button>
-    <button onclick="location.href='bookings.html'">Bookings</button>
-    <button onclick="location.href='staff.html'">Staff</button>
-    <button onclick="location.href='sync.html'">Sync</button>
+
+  <h1>📊 Booking Logs</h1>
+
+  <div class="log-summary" id="summaryPanel">
+    <div class="summary-item">Total Bookings: <span id="totalBookings">0</span></div>
+    <div class="summary-item">Today’s Bookings: <span id="todaysBookings">0</span></div>
   </div>
 
-  <div class="container">
-    <div class="panel">
-      <h3>📈 Appointment Analytics</h3>
-      <canvas id="chart"></canvas>
-    </div>
-    <div class="panel">
-      <h3>📅 Daily Booking Summary</h3>
-      <table id="summary-table">
-        <thead>
-          <tr><th>Time</th><th>Patient</th><th>Reason</th></tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
+  <table id="logTable">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Time</th>
+        <th>Name</th>
+        <th>Phone</th>
+        <th>Reason</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <div style="margin-top: 40px;">
+    <h2>📝 Patient History Lookup</h2>
+    <input type="text" id="searchInput" placeholder="Search by patient name or time">
+    <div id="patientResults" style="margin-top: 20px;"></div>
   </div>
 
   <script>
-    const csvUrl = 'https://warangalonepoint.github.io/clinic-admin/logs.csv';
+    const logsURL = "https://warangalonepoint.github.io/clinic-admin/logs.csv";
+    let patientLogs = [];
 
-    fetch(csvUrl)
-      .then(response => response.text())
-      .then(data => {
-        const rows = data.split('\\n').slice(1).filter(Boolean);
-        const hourlyCount = {};
-        const tableBody = document.querySelector('#summary-table tbody');
+    fetch(logsURL)
+      .then(res => res.text())
+      .then(csv => {
+        const lines = csv.trim().split("\n");
+        const headers = lines[0].split(",");
+        const now = new Date().toISOString().split("T")[0];
+        let todayCount = 0;
 
-        rows.forEach(row => {
-          const [date, time, name, reason] = row.split(',');
-          const hour = time.split(':')[0] + 'AM';
-          hourlyCount[hour] = (hourlyCount[hour] || 0) + 1;
+        lines.slice(1).forEach((line, index) => {
+          const data = line.split(",");
+          const entry = {};
+          headers.forEach((key, i) => {
+            entry[key.trim()] = data[i]?.trim() || "";
+          });
+          patientLogs.push(entry);
 
-          const tr = document.createElement('tr');
-          tr.innerHTML = `<td>${time}</td><td>${name}</td><td>${reason}</td>`;
-          tableBody.appendChild(tr);
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${entry.Date || ''}</td>
+            <td>${entry.Time || ''}</td>
+            <td>${entry.Name || ''}</td>
+            <td>${entry.Phone || ''}</td>
+            <td>${entry.Reason || ''}</td>
+          `;
+          document.querySelector("#logTable tbody").appendChild(tr);
+
+          if (entry.Date === now) todayCount++;
         });
 
-        const labels = ['9AM', '10AM', '11AM', '12PM', '1PM', '2PM', '3PM', '4PM', '5PM', '6PM', '7PM', '8PM'];
-        const dataPoints = labels.map(hour => hourlyCount[hour] || 0);
-
-        new Chart(document.getElementById('chart'), {
-          type: 'bar',
-          data: {
-            labels: labels,
-            datasets: [{
-              label: 'Appointments by Hour',
-              backgroundColor: '#00BFFF',
-              data: dataPoints
-            }]
-          },
-          options: {
-            responsive: true,
-            scales: {
-              y: { beginAtZero: true }
-            }
-          }
-        });
+        document.getElementById("totalBookings").textContent = patientLogs.length;
+        document.getElementById("todaysBookings").textContent = todayCount;
       });
+
+    document.getElementById("searchInput").addEventListener("input", function () {
+      const query = this.value.toLowerCase();
+      const results = patientLogs.filter(log =>
+        log.Name?.toLowerCase().includes(query) || log.Time?.toLowerCase().includes(query)
+      );
+
+      const container = document.getElementById("patientResults");
+      container.innerHTML = "";
+
+      results.forEach((log, index) => {
+        const noteId = `note_${index}`;
+        container.innerHTML += `
+          <div class="patient-card">
+            <strong>${log.Date || ''} | ${log.Time || ''}</strong><br>
+            👤 <b>${log.Name || 'Unknown'}</b><br>
+            📞 Phone: ${log.Phone || 'N/A'}<br>
+            📋 Reason: ${log.Reason || 'N/A'}<br>
+            <label>Doctor Note:</label>
+            <textarea id="${noteId}">${log.Note || ''}</textarea>
+            <button onclick="alert('Note saved locally. Export feature coming soon.')">💾 Save Note</button>
+          </div>
+        `;
+      });
+    });
   </script>
+
 </body>
 </html>
