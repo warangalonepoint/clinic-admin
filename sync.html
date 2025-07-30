@@ -1,48 +1,47 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Sync Data</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sync Sheet</title>
   <style>
     body {
-      background-color: #111;
-      color: white;
-      font-family: sans-serif;
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: #fff;
       padding: 20px;
+      text-align: center;
     }
-    h2 {
-      color: #1f80e0;
+    textarea {
+      width: 100%;
+      height: 200px;
+      margin-top: 20px;
+      font-family: monospace;
     }
     button {
-      padding: 12px 20px;
-      background: #1f80e0;
+      padding: 10px 20px;
+      background-color: #00ff99;
       border: none;
-      border-radius: 8px;
-      color: white;
-      font-size: 16px;
+      cursor: pointer;
       margin-top: 10px;
-    }
-    .status {
-      margin-top: 20px;
-      color: lightgreen;
+      font-size: 16px;
     }
   </style>
 </head>
 <body>
-  <h2>🔄 Sync with Google Sheets</h2>
-  <p>This will push new appointments and staff logs to your configured Google Sheet.</p>
-  <button onclick="syncNow()">Start Manual Sync</button>
-  <div class="status" id="status"></div>
+  <h2>📥 Upload Updated Logs/Slots</h2>
+  <p>Copy-paste your updated CSV content here and click the sync button.</p><label for="syncType">Select Sheet:</label> <select id="syncType"> <option value="Slots.csv">Slots.csv</option> <option value="logs.csv">logs.csv</option> </select>
 
-  <script>
-    function syncNow() {
-      // Placeholder simulation — real sync would use API
-      document.getElementById('status').innerText = \"Syncing...\";
-      setTimeout(() => {
-        document.getElementById('status').innerText = \"✅ Sync complete. Last sync: \" + new Date().toLocaleString();
-      }, 2000);
+  <textarea id="csvContent" placeholder="Paste your CSV content here..."></textarea>  <br>
+  <button onclick="downloadCSV()">Sync to GitHub</button>  <p><strong>Note:</strong> After syncing, manually upload the downloaded file to your GitHub repo.</p>  <script>
+    function downloadCSV() {
+      const content = document.getElementById("csvContent").value;
+      const type = document.getElementById("syncType").value;
+      const blob = new Blob([content], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = type;
+      link.click();
     }
-  </script>
-</body>
+  </script></body>
 </html>
