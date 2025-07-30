@@ -1,76 +1,89 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Doctor Dashboard</title>
-  <link rel="stylesheet" href="style.css" />
-  <script defer src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Control Panel</title>
+  <style>
+    body {
+      background: #000;
+      color: #0fffb7;
+      font-family: 'Segoe UI', sans-serif;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .pin-panel, .admin-panel {
+      max-width: 400px;
+      margin: auto;
+      background: #111;
+      padding: 20px;
+      border-radius: 12px;
+    }
+    input {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      font-size: 18px;
+      border-radius: 8px;
+      border: 1px solid #0fffb7;
+      background: #000;
+      color: #0fffb7;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      font-size: 18px;
+      background: #0fffb7;
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .hidden {
+      display: none;
+    }
+    .admin-options {
+      margin-top: 20px;
+    }
+    .admin-options button {
+      margin: 8px 0;
+    }
+  </style>
 </head>
 <body>
-  <main>
-    <h1>🩺 Doctor Dashboard</h1><section id="features">
-  <div class="feature-card" id="bookingsCard">
-    <button onclick="location.href='bookings.html'">📅 Bookings</button>
+
+  <h1>🔐 Admin Dashboard</h1>
+
+  <div class="pin-panel" id="pinPanel">
+    <input type="password" id="adminPIN" placeholder="Enter Admin PIN">
+    <button onclick="verifyPIN()">Unlock Dashboard</button>
   </div>
-  <div class="feature-card" id="staffCard">
-    <button onclick="location.href='staff.html'">👨‍⚕️ Staff</button>
+
+  <div class="admin-panel hidden" id="adminPanel">
+    <h2>🎛️ Control Panel</h2>
+    <div class="admin-options">
+      <button onclick="alert('Plan Activation Panel Coming Soon')">🧩 Activate Customer Plan</button>
+      <button onclick="alert('Editable Pricing Coming Soon')">💰 Edit Plan Pricing</button>
+      <button onclick="alert('Doctor List Coming Soon')">📋 View Doctor Plan Assignments</button>
+      <button onclick="alert('More tools coming soon')">🧪 Test Tools</button>
+    </div>
   </div>
-  <div class="feature-card" id="backupCard">
-    <button onclick="location.href='backup.html'">💾 Backup</button>
-  </div>
-</section>
 
-<section id="planWarning" style="display:none; color:red; font-weight:bold;">
-  ⚠️ This feature is not available in your current plan.
-</section>
-
-<section id="analytics">
-  <h2>📊 Appointment Analytics</h2>
-  <canvas id="appointmentChart" height="150"></canvas>
-</section>
-
-  </main>  <script>
-    // Plan detection logic
-    const plan = localStorage.getItem('activePlan') || 'Free';
-
-    const planFeatures = {
-      'Free': ['bookingsCard'],
-      'Basic': ['bookingsCard', 'staffCard'],
-      'Pro': ['bookingsCard', 'staffCard', 'backupCard'],
-      'Lifetime': ['bookingsCard', 'staffCard', 'backupCard']
-    };
-
-    const allCards = ['bookingsCard', 'staffCard', 'backupCard'];
-
-    allCards.forEach(cardId => {
-      const el = document.getElementById(cardId);
-      if (!planFeatures[plan].includes(cardId)) {
-        el.style.opacity = '0.5';
-        el.onclick = () => {
-          document.getElementById('planWarning').style.display = 'block';
-          setTimeout(() => {
-            document.getElementById('planWarning').style.display = 'none';
-          }, 3000);
-        };
+  <script>
+    const CORRECT_PIN = "2525"; // You can change this later
+    function verifyPIN() {
+      const enteredPIN = document.getElementById("adminPIN").value;
+      if (enteredPIN === CORRECT_PIN) {
+        document.getElementById("pinPanel").classList.add("hidden");
+        document.getElementById("adminPanel").classList.remove("hidden");
+      } else {
+        alert("Incorrect PIN. Try again.");
       }
-    });
+    }
+  </script>
 
-    // Dummy chart data
-    new Chart(document.getElementById('appointmentChart'), {
-      type: 'bar',
-      data: {
-        labels: ['9AM', '10AM', '11AM', '12PM', '1PM', '2PM', '3PM'],
-        datasets: [{
-          label: 'Appointments',
-          data: [2, 4, 3, 5, 1, 0, 6],
-          backgroundColor: 'rgba(75,192,192,0.6)'
-        }]
-      },
-      options: {
-        scales: {
-          y: { beginAtZero: true }
-        }
-      }
-    });
-  </script></body>
+</body>
 </html>
