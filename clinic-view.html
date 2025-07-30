@@ -1,125 +1,197 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Clinic View</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <meta charset="UTF-8">
+  <title>Clinic View - WarangalOneStop</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
       background-color: #111;
       color: #fff;
       font-family: Arial, sans-serif;
-      padding: 10px;
-    }
-    .card {
-      background-color: #1f1f1f;
-      border: none;
-      border-radius: 12px;
+      margin: 0;
       padding: 20px;
+    }
+
+    .clinic-info {
+      background-color: #1f1f1f;
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      gap: 16px;
+      align-items: center;
       margin-bottom: 20px;
     }
-    .card-title {
-      color: #00ff99;
+
+    .clinic-info img {
+      width: 64px;
+      height: 64px;
+      border-radius: 12px;
+      object-fit: cover;
     }
-    .table {
+
+    .clinic-meta {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .clinic-meta h2 {
+      margin: 0;
+      font-size: 20px;
+      color: #00ff88;
+    }
+
+    .clinic-meta p {
+      margin: 4px 0;
+      font-size: 14px;
+    }
+
+    h3 {
+      margin-top: 30px;
+      font-size: 18px;
       color: #fff;
     }
-    .table th {
-      color: #00ff99;
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: #1f1f1f;
+      border-radius: 12px;
+      overflow: hidden;
     }
-    img.logo {
-      height: 60px;
-      width: 60px;
-      object-fit: cover;
-      border-radius: 8px;
+
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #333;
     }
-    @media(max-width: 600px) {
-      .table-responsive { font-size: 14px; }
+
+    th {
+      background-color: #222;
+      color: #00ff88;
+    }
+
+    td {
+      font-size: 14px;
+    }
+
+    .plan-badge {
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-weight: bold;
+      font-size: 0.9em;
+    }
+
+    .plan-free {
+      background-color: #555;
+      color: white;
+    }
+
+    .plan-basic {
+      background-color: #1e90ff;
+      color: white;
+    }
+
+    .plan-pro {
+      background-color: #28a745;
+      color: white;
+    }
+
+    .plan-lifetime {
+      background-color: gold;
+      color: black;
     }
   </style>
 </head>
-<body><div class="container">
-  <div id="clinic-card" class="card d-flex align-items-start">
-    <img id="clinic-logo" class="logo me-3" src="" alt="Clinic Logo">
-    <div>
-      <h4 class="card-title" id="clinic-name"></h4>
-      <p id="clinic-address" class="mb-1"></p>
-      <p id="clinic-plan"></p>
+<body>
+  <div class="clinic-info">
+    <img id="clinic-logo" src="logo.png" alt="Logo">
+    <div class="clinic-meta">
+      <h2 id="clinic-name">Clinic Name</h2>
+      <p id="clinic-address">Clinic Address</p>
+      <p>Plan: <span id="clinic-plan" class="plan-badge plan-free">Free</span></p>
     </div>
-  </div>  <h5 class="mt-4">Today's Appointments</h5>
-  <div class="table-responsive">
-    <table class="table table-dark table-striped">
-      <thead>
-        <tr>
-          <th>Time</th>
-          <th>Patient</th>
-          <th>Reason</th>
-        </tr>
-      </thead>
-      <tbody id="appointment-body">
-        <tr><td colspan="3">Loading...</td></tr>
-      </tbody>
-    </table>
-  </div>  <h5 class="mt-4">Doctor's Notes</h5>
-  <div class="table-responsive">
-    <table class="table table-dark table-bordered">
-      <thead>
-        <tr>
-          <th>Time</th>
-          <th>Patient</th>
-          <th>Notes</th>
-        </tr>
-      </thead>
-      <tbody id="notes-body">
-        <tr><td colspan="3">Loading...</td></tr>
-      </tbody>
-    </table>
   </div>
-</div><script>
-  const clinicId = new URLSearchParams(window.location.search).get('clinic')?.toLowerCase();
-  const clinicJsonUrl = 'https://warangalonepoint.github.io/clinic-admin/clinics.json';
-  const logsCsvUrl = 'https://warangalonepoint.github.io/clinic-admin/logs.csv';
 
-  function formatDate(date) {
-    const d = new Date(date);
-    return `${d.getDate().toString().padStart(2, '0')}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getFullYear()}`;
-  }
+  <h3>Today's Appointments</h3>
+  <table id="appointments-table">
+    <thead>
+      <tr>
+        <th>Time</th>
+        <th>Patient</th>
+        <th>Reason</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td colspan="3">Loading...</td></tr>
+    </tbody>
+  </table>
 
-  async function loadClinicDetails() {
-    const res = await fetch(clinicJsonUrl);
-    const clinics = await res.json();
-    const clinic = clinics.find(c => c.id.toLowerCase() === clinicId);
-    if (!clinic) return alert('Clinic not found');
+  <script>
+    const queryParams = new URLSearchParams(window.location.search);
+    const clinicId = queryParams.get("clinic") || "warangal onestop clinic";
+    const today = new Date().toISOString().split("T")[0];
 
-    document.getElementById('clinic-logo').src = `https://warangalonepoint.github.io/clinic-admin/logos/${clinic.logo}`;
-    document.getElementById('clinic-name').textContent = clinic.name;
-    document.getElementById('clinic-address').textContent = clinic.address;
-    document.getElementById('clinic-plan').textContent = `Plan: ₹${clinic.plan || 'free'}`;
-  }
+    async function loadClinicData() {
+      const clinicResp = await fetch("https://warangalonepoint.github.io/clinic-admin/clinics.json");
+      const clinics = await clinicResp.json();
+      const currentClinic = clinics.find(c => c.id.toLowerCase() === clinicId.toLowerCase());
 
-  async function loadLogs() {
-    const res = await fetch(logsCsvUrl);
-    const text = await res.text();
-    const rows = text.trim().split('\n').slice(1).map(r => r.split(','));
-    const today = formatDate(new Date());
-    const appointments = rows.filter(r => r[0].toLowerCase() === clinicId && r[1] === today);
+      if (currentClinic) {
+        document.getElementById("clinic-name").textContent = currentClinic.name;
+        document.getElementById("clinic-address").textContent = currentClinic.address || "—";
+        document.getElementById("clinic-logo").src = currentClinic.logo || "logo.png";
 
-    const appointmentBody = document.getElementById('appointment-body');
-    appointmentBody.innerHTML = appointments.length ? '' : '<tr><td colspan="3">No appointments today.</td></tr>';
-    appointments.forEach(r => {
-      const row = `<tr><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td></tr>`;
-      appointmentBody.insertAdjacentHTML('beforeend', row);
-    });
+        const plan = currentClinic.plan || "free";
+        let planClass = "plan-free";
 
-    const notesBody = document.getElementById('notes-body');
-    notesBody.innerHTML = appointments.length ? '' : '<tr><td colspan="3">No notes available.</td></tr>';
-    appointments.forEach(r => {
-      const row = `<tr><td>${r[2]}</td><td>${r[3]}</td><td>${r[6]}</td></tr>`;
-      notesBody.insertAdjacentHTML('beforeend', row);
-    });
-  }
+        switch (plan.toLowerCase()) {
+          case "free":
+            planClass = "plan-free"; break;
+          case "1499":
+          case "basic":
+            planClass = "plan-basic"; break;
+          case "4999":
+          case "pro":
+            planClass = "plan-pro"; break;
+          case "lifetime":
+            planClass = "plan-lifetime"; break;
+        }
 
-  loadClinicDetails();
-  loadLogs();
-</script></body>
+        const planBadge = document.getElementById("clinic-plan");
+        planBadge.textContent = "₹" + plan;
+        planBadge.className = `plan-badge ${planClass}`;
+      }
+    }
+
+    async function loadAppointments() {
+      const resp = await fetch("https://warangalonepoint.github.io/clinic-admin/logs.csv");
+      const text = await resp.text();
+      const rows = text.split("\n").slice(1).map(r => r.split(","));
+      const tableBody = document.querySelector("#appointments-table tbody");
+      tableBody.innerHTML = "";
+
+      const filtered = rows.filter(r =>
+        r[0].trim().toLowerCase() === clinicId.toLowerCase() &&
+        r[1].trim() === today &&
+        r[4].trim().toLowerCase() === "booked"
+      );
+
+      if (filtered.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="3">No appointments today.</td></tr>`;
+        return;
+      }
+
+      filtered.forEach(row => {
+        const [ , , time, name, reason ] = row;
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${time}</td><td>${name}</td><td>${reason}</td>`;
+        tableBody.appendChild(tr);
+      });
+    }
+
+    loadClinicData();
+    loadAppointments();
+  </script>
+</body>
 </html>
