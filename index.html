@@ -1,64 +1,94 @@
-<!-- Let's begin with index.html. Each file will be updated one by one with the proper manifest and service-worker code embedded. --><!-- ✅ index.html --><!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Warangal OneStop Clinic</title>  <!-- PWA Config -->  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#0d6efd">
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('service-worker.js');
-    }
-  </script>  <style>
+  <meta charset="UTF-8" />
+  <title>Login – Clinic Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <style>
     body {
-      background: #000;
-      color: #fff;
       font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 20px;
+      background: #121212;
+      color: #fff;
       text-align: center;
+      padding: 40px;
     }
-    h1 {
-      margin-top: 40px;
-    }
-    .login-box {
-      background-color: #1f1f1f;
-      padding: 30px;
-      border-radius: 12px;
-      max-width: 400px;
-      margin: 40px auto;
-    }
-    input[type="password"] {
-      width: 100%;
-      padding: 12px;
-      margin: 12px 0;
+    input, select {
+      padding: 10px;
+      font-size: 16px;
+      margin-top: 10px;
+      border-radius: 8px;
       border: none;
-      border-radius: 6px;
+      width: 250px;
     }
     button {
-      padding: 12px 20px;
-      background-color: #0d6efd;
+      padding: 10px 20px;
+      margin-top: 20px;
+      background: #1f88e5;
       color: #fff;
       border: none;
-      border-radius: 6px;
+      border-radius: 8px;
+      font-size: 16px;
       cursor: pointer;
     }
-  </style></head>
+    button:hover {
+      background: #1565c0;
+    }
+    .login-box {
+      background: #222;
+      padding: 30px;
+      max-width: 350px;
+      margin: auto;
+      border-radius: 12px;
+      box-shadow: 0 0 10px #000;
+    }
+  </style>
+</head>
 <body>
-  <h1>🔐 Admin Panel Login</h1>
   <div class="login-box">
-    <form onsubmit="checkPIN(event)">
-      <input type="password" id="pinInput" placeholder="Enter PIN" required>
-      <button type="submit">Login</button>
-    </form>
-  </div>  <script>
-    function checkPIN(event) {
-      event.preventDefault();
-      const pin = document.getElementById("pinInput").value;
-      if (pin === "2525") {
+    <h2>Doctor Login</h2>
+    <input type="password" id="pinInput" placeholder="Enter PIN" /><br/>
+    <select id="clinicDropdown" disabled></select><br/>
+    <button onclick="onPinLogin()">Login</button>
+  </div>
+
+  <script>
+    const assignedClinics = {
+      "2525": "Warangal OneStop Clinic",
+      "9876": "CityCare Hospital",
+      "1122": "Kakatiya Heart Center"
+    };
+
+    function onPinLogin() {
+      const pin = document.getElementById("pinInput").value.trim();
+      if (assignedClinics[pin]) {
+        const clinicName = assignedClinics[pin];
+        // Save to localStorage
+        localStorage.setItem("userPIN", pin);
+        localStorage.setItem("activeClinic", clinicName);
+
+        // Fill and lock dropdown
+        const dropdown = document.getElementById("clinicDropdown");
+        dropdown.innerHTML = `<option>${clinicName}</option>`;
+        dropdown.disabled = true;
+
+        // Redirect
         window.location.href = "dashboard.html";
       } else {
-        alert("❌ Invalid PIN. Please try again.");
+        alert("Invalid PIN. Please try again.");
       }
     }
-  </script></body>
+
+    // Optional: Preload if PIN saved
+    window.onload = () => {
+      const savedPIN = localStorage.getItem("userPIN");
+      if (savedPIN && assignedClinics[savedPIN]) {
+        document.getElementById("pinInput").value = savedPIN;
+        const clinic = assignedClinics[savedPIN];
+        const dropdown = document.getElementById("clinicDropdown");
+        dropdown.innerHTML = `<option>${clinic}</option>`;
+        dropdown.disabled = true;
+      }
+    };
+  </script>
+</body>
 </html>
