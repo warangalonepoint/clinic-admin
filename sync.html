@@ -1,45 +1,98 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html>
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Backup Dashboard</title>
+  <title>Data Sync</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background-color: #111;
+      background: #121212;
       color: #fff;
       padding: 20px;
     }
     h2 {
-      text-align: center;
-      color: #00ff99;
+      color: #00e676;
     }
-    .btn {
-      display: inline-block;
-      background-color: #00ff99;
-      color: #000;
-      padding: 10px 20px;
-      margin: 10px 0;
-      border: none;
-      cursor: pointer;
+    .clinic-info {
+      background: #1e1e1e;
+      padding: 12px;
+      border-radius: 10px;
+      margin-bottom: 20px;
       font-size: 16px;
     }
-    .btn:hover {
-      background-color: #00cc77;
+    .instruction-box {
+      background: #1f1f1f;
+      padding: 16px;
+      border-radius: 10px;
+      margin-top: 15px;
     }
-    .info {
+    ul {
+      padding-left: 20px;
+    }
+    li {
+      margin-bottom: 10px;
+    }
+    code {
+      background: #333;
+      padding: 4px 6px;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+    button {
+      background: #1f88e5;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
       margin-top: 20px;
-      color: #ccc;
-      font-size: 14px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #1565c0;
     }
   </style>
 </head>
 <body>
-  <h2>📦 Backup Tools</h2><a class="btn" href="https://warangalonepoint.github.io/clinic-admin/logs.csv" download>⬇️ Download Booking Logs</a><br /> <a class="btn" href="https://warangalonepoint.github.io/clinic-admin/Slots.csv" download>⬇️ Download Slots Sheet</a><br />
 
-  <div class="info">
-    These backups are always synced with your clinic-admin folder on GitHub. Download anytime.<br />
-    You can also manually edit the CSV files using GitHub's pencil icon (✏️) for quick changes.
+  <!-- PIN + Clinic Lock -->
+  <script>
+    const clinic = localStorage.getItem("activeClinic");
+    const pin = localStorage.getItem("userPIN");
+    if (!clinic || !pin) {
+      alert("Access denied. Please log in.");
+      window.location.href = "index.html";
+    }
+  </script>
+
+  <h2>🔄 Sync & Backup Panel</h2>
+  <div class="clinic-info">🏥 Active Clinic: <span id="clinicName"></span></div>
+
+  <div class="instruction-box">
+    <h3>📁 How to Sync Your Data (Manual Method)</h3>
+    <ul>
+      <li>1. Go to your <strong>Google Sheet</strong> or CSV file (e.g. <code>Slots.csv</code>, <code>logs.csv</code>)</li>
+      <li>2. Publish it to the web or upload to GitHub folder: <code>clinic-admin</code></li>
+      <li>3. Make sure the link looks like: <br>
+        <code>https://warangalonepoint.github.io/clinic-admin/Slots.csv</code></li>
+      <li>4. Refresh this dashboard — your data will auto-load into bookings/logs</li>
+    </ul>
   </div>
+
+  <div class="instruction-box">
+    <h3>🧠 Tips</h3>
+    <ul>
+      <li>✅ Update available slots daily for accurate booking</li>
+      <li>✅ Logs are auto-backed up via CSV</li>
+      <li>✅ Staff can be synced later using <code>staff.csv</code></li>
+    </ul>
+  </div>
+
+  <button onclick="window.location.reload()">🔃 Refresh Sync</button>
+
+  <script>
+    document.getElementById("clinicName").innerText = clinic;
+  </script>
 </body>
 </html>
