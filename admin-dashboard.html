@@ -1,76 +1,62 @@
 <!DOCTYPE html><html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Warangal OneStop Admin Dashboard</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap">
   <style>
     body {
-      background-color: #111;
-      color: #fff;
-      font-family: Arial, sans-serif;
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background-color: #000;
+      color: #00ffbb;
+      text-align: center;
       padding: 20px;
     }
     h1 {
-      color: #00ffcc;
+      margin-bottom: 30px;
+      font-size: 28px;
     }
-    .section {
-      background: #1c1c1c;
-      padding: 20px;
-      margin-top: 20px;
-      border-radius: 10px;
+    .panel {
+      background: #111;
+      padding: 25px;
+      border-radius: 20px;
+      max-width: 420px;
+      margin: auto;
+      box-shadow: 0 0 12px rgba(0, 255, 187, 0.3);
     }
-    select, input, button {
-      padding: 10px;
-      margin: 10px 0;
+    h2 {
+      margin-bottom: 20px;
+      font-size: 22px;
+      color: #fff;
+    }
+    .btn {
+      display: block;
+      width: 100%;
+      background: #00ffbb;
+      color: #000;
+      font-weight: bold;
+      padding: 14px;
+      margin: 12px 0;
+      border: none;
+      border-radius: 12px;
       font-size: 16px;
+      cursor: pointer;
+      transition: background 0.2s;
     }
-    .hidden { display: none; }
+    .btn:hover {
+      background: #00e6aa;
+    }
   </style>
 </head>
 <body>
-  <h1>Warangal OneStop Admin Dashboard</h1>  <div class="section">
-    <h2>📍 Assign Clinic to Doctor</h2>
-    <label for="doctorName">Doctor Name</label>
-    <input type="text" id="doctorName" placeholder="e.g. Dr. Rao">
-    <label for="clinicName">Clinic JSON Key</label>
-    <input type="text" id="clinicName" placeholder="e.g. warangalClinic1">
-    <button onclick="assignClinic()">Assign</button>
-  </div>  <div class="section">
-    <h2>📦 Export Logs / Notes</h2>
-    <button onclick="window.open('logs.html')">Go to Logs Panel</button>
-    <button onclick="window.open('DoctorNotesExport.csv')">Download Doctor Notes</button>
-  </div>  <div class="section">
-    <h2>🛠️ Manage Pricing Plan</h2>
-    <label for="planDoctor">Doctor Name</label>
-    <input type="text" id="planDoctor" placeholder="e.g. Dr. Rao">
-    <label for="planTier">Plan</label>
-    <select id="planTier">
-      <option value="free">Free</option>
-      <option value="1499">₹1,499 Basic</option>
-      <option value="4999">₹4,999 Lifetime</option>
-    </select>
-    <button onclick="savePlan()">Update Plan</button>
-  </div>  <div class="section">
-    <h2>🗂️ Manage Clinic List (Multi-Clinic)</h2>
-    <button onclick="window.open('clinics.json')">View clinics.json</button>
-    <button onclick="alert('Please manually edit clinics.json in GitHub.')">Edit clinics.json</button>
-  </div>  <div class="section">
-    <h2>📞 WhatsApp Booking Setup</h2>
-    <button onclick="window.open('https://wa.me/919390664577?text=I%20want%20to%20book%20an%20appointment')">WhatsApp Booking Demo</button>
-    <p>Replace number in booking.html to set up your doctor's WhatsApp number.</p>
-  </div>  <script>
-    function assignClinic() {
-      const doctor = document.getElementById("doctorName").value.trim();
-      const clinic = document.getElementById("clinicName").value.trim();
-      if (!doctor || !clinic) return alert("Please fill both fields");
-      alert(`✅ Assigned ${clinic} to ${doctor}. Now edit dashboard.html to reflect this.`);
-    }
-
-    function savePlan() {
-      const doctor = document.getElementById("planDoctor").value.trim();
-      const plan = document.getElementById("planTier").value;
-      if (!doctor) return alert("Enter doctor name");
-      alert(`✅ Updated plan for ${doctor} to ${plan}. Update PIN in dashboard.html manually.`);
-    }
-  </script></body>
+  <h1>🔐 Admin Dashboard</h1>
+  <div class="panel">
+    <h2>🧭 Control Panel</h2>
+    <button class="btn" onclick="location.href='activate-pin.html'">🧩 Activate Customer Plan</button>
+    <button class="btn" onclick="location.href='edit-pricing.html'">💰 Edit Plan Pricing</button>
+    <button class="btn" onclick="location.href='assign-clinics.html'">📝 Assign Clinic to PIN</button>
+    <button class="btn" onclick="location.href='test-tools.html'">🧪 Test Tools</button>
+  </div>
+</body>
 </html>
