@@ -1,0 +1,118 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Patient Notes History</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <style>
+    body { background: #121212; color: #eee; font-family: Arial, sans-serif; padding: 20px; }
+    h2 { color: #00e676; }
+    select, input[type="text"], input[type="date"] {
+      padding: 10px; margin: 5px; border-radius: 6px; border: none;
+      background: #1e1e1e; color: #fff;
+    }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td {
+      border: 1px solid #444; padding: 10px; text-align: left;
+    }
+    th { background: #1f1f1f; }
+    tr:nth-child(even) { background: #1a1a1a; }
+    button {
+      padding: 8px 12px; margin: 10px 5px;
+      background-color: #1f88e5; color: #fff;
+      border: none; border-radius: 6px; cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+<h2>📋 Patient Note History</h2>
+
+<select id="clinicSelector" onchange="loadNotes()">
+  <option value="OneStop">OneStop Clinic</option>
+  <option value="CityCare">CityCare Hospital</option>
+</select>
+
+<input type="text" id="searchInput" placeholder="Search name, doctor, reason" onkeyup="filterNotes()" />
+<input type="date" id="fromDate" onchange="filterNotes()" />
+<input type="date" id="toDate" onchange="filterNotes()" />
+<button onclick="exportNotes()">⬇️ Export Filtered</button>
+
+<table id="notesTable">
+  <thead>
+    <tr>
+      <th>Date</th><th>Name</th><th>Phone</th><th>Time</th>
+      <th>Doctor</th><th>Reason</th><th>Note</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<script>
+let allNotes = [];
+
+function loadNotes() {
+  const clinic = document.getElementById("clinicSelector").value;
+  const url = "https://warangalonepoint.github.io/clinic-admin/DoctorNotesExport_" + clinic + ".csv";
+
+  fetch(url)
+    .then(res => res.text())
+    .then(data => {
+      allNotes = Papa.parse(data, { header: true }).data;
+      document.getElementById("searchInput").value = "";
+      document.getElementById("fromDate").value = "";
+      document.getElementById("toDate").value = "";
+      renderTable(allNotes);
+    });
+}
+
+function renderTable(data) {
+  const tbody = document.querySelector("#notesTable tbody");
+  tbody.innerHTML = "";
+  data.forEach(row => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${row.Date}</td><td>${row.Name}</td><td>${row.Phone}</td>
+      <td>${row.Time}</td><td>${row.Doctor}</td><td>${row.Reason}</td><td>${row.Note}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function filterNotes() {
+  const q = document.getElementById("searchInput").value.toLowerCase();
+  const from = document.getElementById("fromDate").value;
+  const to = document.getElementById("toDate").value;
+
+  const filtered = allNotes.filter(row => {
+    const matchesText = Object.values(row).some(val =>
+      String(val).toLowerCase().includes(q)
+    );
+    const matchesDate = (!from || row.Date >= from) && (!to || row.Date <= to);
+    return matchesText && matchesDate;
+  });
+
+  renderTable(filtered);
+}
+
+function exportNotes() {
+  const rows = document.querySelectorAll("#notesTable tbody tr");
+  const csvRows = [["Date", "Name", "Phone", "Time", "Doctor", "Reason", "Note"]];
+  rows.forEach(tr => {
+    const cols = Array.from(tr.children).map(td => td.textContent);
+    csvRows.push(cols);
+  });
+
+  const csv = Papa.unparse(csvRows);
+  const blob = new Blob([csv], { type: "text/csv" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "FilteredNotes.csv";
+  link.click();
+}
+
+loadNotes(); // Initial load
+</script>
+</body>
+</html>
