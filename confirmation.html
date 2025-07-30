@@ -2,86 +2,69 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Confirm Your Booking</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Confirm Appointment</title>
   <style>
     body {
       background-color: #000;
       color: #fff;
       font-family: Arial, sans-serif;
       padding: 20px;
-    }
-
-    h2 {
       text-align: center;
-      color: orange;
-      font-size: 24px;
-      margin-bottom: 20px;
     }
-
-    .summary {
-      background: #1a1a1a;
+    .card {
+      background: #111;
       padding: 20px;
       border-radius: 12px;
       box-shadow: 0 0 10px #444;
-      margin-bottom: 20px;
+      max-width: 400px;
+      margin: auto;
     }
-
-    .summary p {
-      font-size: 18px;
+    h2 {
+      color: #f0ad4e;
+    }
+    p {
       margin: 10px 0;
     }
-
     button {
-      width: 100%;
-      background-color: green;
-      color: #fff;
-      font-size: 18px;
-      padding: 14px;
+      background-color: #f0ad4e;
+      color: #000;
+      padding: 12px 20px;
+      font-size: 16px;
       border: none;
       border-radius: 8px;
+      margin-top: 20px;
       cursor: pointer;
-    }
-
-    button:hover {
-      background-color: #0f0;
-      color: #000;
     }
   </style>
 </head>
 <body>
-
-  <h2>✅ Confirm Your Booking</h2>
-
-  <div class="summary">
-    <p><strong>👤 Name:</strong> <span id="confirmName"></span></p>
-    <p><strong>📝 Reason:</strong> <span id="confirmReason"></span></p>
-    <p><strong>📅 Date:</strong> <span id="confirmDate"></span></p>
-    <p><strong>⏰ Time:</strong> <span id="confirmTime"></span></p>
+  <div class="card">
+    <h2>📝 Confirm Your Appointment</h2>
+    <p><strong>Name:</strong> <span id="name"></span></p>
+    <p><strong>Reason:</strong> <span id="reason"></span></p>
+    <p><strong>Date:</strong> <span id="date"></span></p>
+    <p><strong>Time:</strong> <span id="time"></span></p>
+    <button onclick="sendToWhatsApp()">Send via WhatsApp</button>
   </div>
 
-  <button onclick="sendWhatsApp()">Confirm & Send on WhatsApp</button>
-
   <script>
-    // Get booking details from localStorage
-    const name = localStorage.getItem('patientName') || 'N/A';
-    const reason = localStorage.getItem('reason') || 'N/A';
-    const date = localStorage.getItem('appointmentDate') || 'N/A';
-    const time = localStorage.getItem('appointmentTime') || 'N/A';
+    const params = new URLSearchParams(window.location.search);
+    const name = decodeURIComponent(params.get("name") || "");
+    const reason = decodeURIComponent(params.get("reason") || "");
+    const date = decodeURIComponent(params.get("date") || "");
+    const time = decodeURIComponent(params.get("time") || "");
 
-    // Fill them into HTML
-    document.getElementById('confirmName').textContent = name;
-    document.getElementById('confirmReason').textContent = reason;
-    document.getElementById('confirmDate').textContent = date;
-    document.getElementById('confirmTime').textContent = time;
+    document.getElementById("name").textContent = name;
+    document.getElementById("reason").textContent = reason;
+    document.getElementById("date").textContent = date;
+    document.getElementById("time").textContent = time;
 
-    function sendWhatsApp() {
-      const message = `Hello, I would like to book an appointment.\n\n👤 Name: ${name}\n📝 Reason: ${reason}\n📅 Date: ${date}\n⏰ Time: ${time}`;
-      const encoded = encodeURIComponent(message);
-      const whatsappLink = `https://wa.me/919390664577?text=${encoded}`;
-      window.location.href = whatsappLink;
+    function sendToWhatsApp() {
+      const message = `Hi, I would like to book an appointment.\nName: ${name}\nReason: ${reason}\nDate: ${date}\nTime: ${time}`;
+      const url = "https://wa.me/919390664577?text=" + encodeURIComponent(message);
+      window.location.href = url;
     }
   </script>
-
 </body>
 </html>
