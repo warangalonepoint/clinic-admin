@@ -1,1 +1,86 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Assign Clinics to Doctors</title>
+  <style>
+    body {
+      background-color: #111;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    h2 {
+      color: #00ff99;
+    }
+    .doctor-card {
+      background: #222;
+      padding: 20px;
+      margin-bottom: 15px;
+      border-radius: 8px;
+    }
+    label, select, input {
+      display: block;
+      width: 100%;
+      margin-top: 10px;
+    }
+    select, input {
+      padding: 10px;
+      font-size: 16px;
+    }
+    button {
+      background-color: #00ff99;
+      border: none;
+      padding: 10px 20px;
+      margin-top: 10px;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    .info {
+      font-size: 12px;
+      color: #aaa;
+      margin-top: 6px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Assign Clinics to Doctors</h2>  <div class="doctor-card">
+    <label for="doctor1">Doctor 1 Name</label>
+    <input type="text" id="doctor1" placeholder="Dr. Name"><label for="clinic1">Assign Clinic</label>
+<select id="clinic1">
+  <option value="Clinic A">Clinic A</option>
+  <option value="Clinic B">Clinic B</option>
+  <option value="Clinic C">Clinic C</option>
+</select>
 
+<label for="pin1">PIN for Login</label>
+<input type="text" id="pin1" placeholder="1234">
+
+<button onclick="saveAssignment(1)">Save Assignment</button>
+
+  </div>  <div class="doctor-card">
+    <label for="doctor2">Doctor 2 Name</label>
+    <input type="text" id="doctor2" placeholder="Dr. Name"><label for="clinic2">Assign Clinic</label>
+<select id="clinic2">
+  <option value="Clinic A">Clinic A</option>
+  <option value="Clinic B">Clinic B</option>
+  <option value="Clinic C">Clinic C</option>
+</select>
+
+<label for="pin2">PIN for Login</label>
+<input type="text" id="pin2" placeholder="1234">
+
+<button onclick="saveAssignment(2)">Save Assignment</button>
+
+  </div>  <script>
+    function saveAssignment(num) {
+      const name = document.getElementById(`doctor${num}`).value;
+      const clinic = document.getElementById(`clinic${num}`).value;
+      const pin = document.getElementById(`pin${num}`).value;
+
+      alert(`Saved: ${name} assigned to ${clinic} with PIN: ${pin}`);
+      // In production: Save this data to JSON or Firebase
+    }
+  </script></body>
+</html>
