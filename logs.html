@@ -2,120 +2,103 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Book Appointment</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <title>Booking Logs Dashboard</title>
   <style>
     body {
+      font-family: Arial, sans-serif;
       background-color: #000;
       color: #fff;
-      font-family: Arial, sans-serif;
       padding: 20px;
     }
     h1 {
       color: orange;
       text-align: center;
     }
-    form {
-      max-width: 400px;
-      margin: 0 auto;
+    #controls {
+      margin-bottom: 20px;
+      text-align: center;
     }
-    label {
-      display: block;
+    input, button {
+      padding: 10px;
+      margin: 5px;
+      font-size: 16px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
       margin-top: 20px;
     }
-    input, select, button {
-      width: 100%;
+    th, td {
+      border: 1px solid #555;
       padding: 10px;
-      font-size: 16px;
-      margin-top: 5px;
-      border: none;
-      border-radius: 4px;
+      text-align: center;
     }
-    button {
+    th {
+      background-color: #222;
+    }
+    .btn {
       background-color: orange;
       color: black;
-      font-weight: bold;
+      border: none;
       cursor: pointer;
-      margin-top: 20px;
+    }
+    .btn:hover {
+      background-color: #ff9900;
     }
   </style>
 </head>
 <body>
-  <h1>📅 Book Your Appointment</h1>
-  <form id="bookingForm">
-    <label for="name">Enter Your Name</label>
-    <input type="text" id="name" required /><label for="reason">Reason for Visit</label>
-<input type="text" id="reason" required />
+  <h1>📋 Booking Logs Dashboard</h1>
+  <div id="controls">
+    <label for="filterDate">Filter by Date:</label>
+    <input type="date" id="filterDate">
+    <button class="btn" onclick="loadLogs()">Apply Filter</button>
+    <button class="btn" onclick="exportLogs()">Download CSV</button>
+  </div>
+  <table id="logsTable">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Time</th>
+        <th>Name</th>
+        <th>Reason</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <script>
+    async function loadLogs() {
+      const response = await fetch('https://warangalonepoint.github.io/clinic-admin/logs.csv');
+      const csvText = await response.text();
+      const rows = csvText.trim().split('\n').slice(1);
+      const filterDate = document.getElementById("filterDate").value;
+      const tableBody = document.querySelector("#logsTable tbody");
+      tableBody.innerHTML = "";
+      rows.forEach(row => {
+        const [date, time, name, reason] = row.split(',');
+        if (!filterDate || date === filterDate) {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `<td>${date}</td><td>${time}</td><td>${name}</td><td>${reason}</td>`;
+          tableBody.appendChild(tr);
+        }
+      });
+    }function exportLogs() {
+  const table = document.querySelector("#logsTable");
+  const rows = Array.from(table.querySelectorAll("tr")).map(row =>
+    Array.from(row.querySelectorAll("td,th")).map(cell => cell.innerText).join(",")
+  );
+  const csvContent = rows.join("\n");
+  const blob = new Blob([csvContent], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "filtered_logs.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
-<label for="date">Select Date</label>
-<select id="date" required></select>
+window.onload = loadLogs;
 
-<label for="time">Select Time Slot</label>
-<select id="time" required></select>
-
-<button type="submit">Confirm Booking</button>
-
-  </form>  <script>
-    const sheetUrl = 'https://warangalonepoint.github.io/clinic-admin/Slots.csv';
-    const logsUrl = 'https://warangalonepoint.github.io/clinic-admin/logs.csv';
-
-    const dateSelect = document.getElementById('date');
-    const timeSelect = document.getElementById('time');
-
-    let allSlots = [];
-    let bookedSlots = [];
-
-    async function fetchCSV(url) {
-      const res = await fetch(url);
-      const text = await res.text();
-      return text.trim().split('\n').slice(1).map(row => row.split(','));
-    }
-
-    async function loadSlots() {
-      allSlots = await fetchCSV(sheetUrl);
-      const dates = [...new Set(allSlots.map(row => row[0]))];
-      dateSelect.innerHTML = '<option value="">Select Date</option>' +
-        dates.map(date => `<option value="${date}">${date}</option>`).join('');
-    }
-
-    async function loadBookedSlots() {
-      bookedSlots = await fetchCSV(logsUrl);
-    }
-
-    function updateTimeOptions(selectedDate) {
-      const bookedTimes = bookedSlots
-        .filter(row => row[0] === selectedDate)
-        .map(row => row[1]);
-
-      const available = allSlots
-        .filter(row => row[0] === selectedDate && row[2] === 'Available' && !bookedTimes.includes(row[1]))
-        .map(row => row[1]);
-
-      timeSelect.innerHTML = '<option value="">Select Time Slot</option>' +
-        available.map(time => `<option value="${time}">${time}</option>`).join('');
-    }
-
-    dateSelect.addEventListener('change', e => {
-      updateTimeOptions(e.target.value);
-    });
-
-    document.getElementById('bookingForm').addEventListener('submit', e => {
-      e.preventDefault();
-      const name = document.getElementById('name').value;
-      const reason = document.getElementById('reason').value;
-      const date = dateSelect.value;
-      const time = timeSelect.value;
-
-      if (!name || !reason || !date || !time) return alert('Please fill all fields.');
-
-      const message = `Hi, I would like to book an appointment.\nName: ${name}\nReason: ${reason}\nDate: ${date}\nTime: ${time}`;
-      const encoded = encodeURIComponent(message);
-      window.location.href = `https://wa.me/919390664577?text=${encoded}`;
-    });
-
-    (async () => {
-      await loadSlots();
-      await loadBookedSlots();
-    })();
-  </script></body>
+  </script>
+</body>
 </html>
