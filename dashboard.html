@@ -1,81 +1,105 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>📊 Admin Dashboard</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Dashboard</title>
+  <link rel="icon" href="logo.png" />
   <style>
     body {
       background-color: #000;
-      color: white;
+      color: #fff;
       font-family: Arial, sans-serif;
-      padding: 20px;
+      padding: 0;
+      margin: 0;
+      text-align: center;
     }
     h1 {
-      font-size: 2rem;
-      margin-bottom: 20px;
+      background-color: orange;
+      color: #000;
+      padding: 12px;
+      font-size: 22px;
+      margin: 0;
     }
+    .nav {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+      margin: 20px 0;
+    }
+    .nav a {
+      text-decoration: none;
+      padding: 15px;
+      color: #fff;
+      font-weight: bold;
+      border-radius: 12px;
+      width: 100px;
+      text-align: center;
+    }
+    .nav a:nth-child(1) { background: #007bff; }
+    .nav a:nth-child(2) { background: #ffc107; color: #000; }
+    .nav a:nth-child(3) { background: #6c757d; }
+    .nav a:nth-child(4) { background: #00d9ff; color: #000; }
+    .nav a:nth-child(5) { background: #28a745; }
     canvas {
-      background-color: #111;
-      padding: 20px;
-      border-radius: 8px;
-    }
-    .btn-group {
-      margin-bottom: 30px;
-    }
-    .btn {
-      margin-right: 10px;
+      background: #111;
+      padding: 10px;
+      border-radius: 12px;
+      margin-top: 30px;
     }
   </style>
 </head>
 <body>
   <h1>📋 Dashboard</h1>
-  <div class="btn-group">
-    <a href="bookings.html" class="btn btn-primary">📅 Bookings</a>
-    <a href="staff.html" class="btn btn-warning">👨‍⚕️ Staff</a>
-    <a href="sync.html" class="btn btn-secondary">🔁 Sync</a>
-    <a href="backup.html" class="btn btn-info">💾 Backup</a>
-    <a href="pin-reset.html" class="btn btn-success">🔐 Reset PIN</a>
-  </div>  <h2>📊 Appointment Analytics</h2>
-  <canvas id="appointmentChart" width="400" height="300"></canvas>  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>  <script>
-    async function loadAndRenderChart() {
-      const response = await fetch("https://warangalonepoint.github.io/clinic-admin/logs.csv");
-      const csv = await response.text();
-      const lines = csv.trim().split("\n").slice(1); // skip header
-      const counts = Array(12).fill(0); // 9AM to 8PM => 12 slots
+  <div class="nav">
+    <a href="bookings.html">📅 Bookings</a>
+    <a href="staff.html">👨‍⚕️ Staff</a>
+    <a href="sync.html">🔁 Sync</a>
+    <a href="backup.html">💾 Backup</a>
+    <a href="pin-reset.html">🔐 Reset PIN</a>
+  </div>
 
-      lines.forEach(row => {
-        const cols = row.split(",");
-        const time = cols[1]?.trim();
-        if (time) {
-          const hour = parseInt(time.split(":")[0]);
-          if (hour >= 9 && hour <= 20) {
-            counts[hour - 9]++;
-          }
-        }
-      });
+  <h2>📊 Appointment Analytics</h2>
+  <canvas id="chart" width="340" height="300"></canvas>
 
-      const ctx = document.getElementById("appointmentChart").getContext("2d");
-      new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: ["9AM", "10AM", "11AM", "12PM", "1PM", "2PM", "3PM", "4PM", "5PM", "6PM", "7PM", "8PM"],
-          datasets: [{
-            label: "Appointments by Hour",
-            data: counts,
-            backgroundColor: "dodgerblue"
-          }]
-        },
-        options: {
-          responsive: true,
-          scales: {
-            y: {
-              beginAtZero: true
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    fetch('https://warangalonepoint.github.io/clinic-admin/logs.csv')
+      .then(res => res.text())
+      .then(csv => {
+        const rows = csv.trim().split('\\n').slice(1);
+        const hourMap = {};
+        rows.forEach(row => {
+          const time = row.split(',')[1];
+          const hour = time.split(':')[0];
+          hourMap[hour] = (hourMap[hour] || 0) + 1;
+        });
+
+        const hours = ['09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20'];
+        const counts = hours.map(h => hourMap[h] || 0);
+
+        new Chart(document.getElementById('chart'), {
+          type: 'bar',
+          data: {
+            labels: hours.map(h => h + 'AM').slice(0, 3).concat(hours.slice(3).map(h => (h - 12) + 'PM')),
+            datasets: [{
+              label: 'Appointments by Hour',
+              data: counts,
+              backgroundColor: '#00bfff'
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { display: false }
+            },
+            scales: {
+              y: { beginAtZero: true, ticks: { stepSize: 1 } }
             }
           }
-        }
+        });
       });
-    }
-    loadAndRenderChart();
-  </script></body>
+  </script>
+</body>
 </html>
