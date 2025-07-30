@@ -1,0 +1,12 @@
+[
+  {
+    "id": "clinic01",
+    "name": "Warangal OneStop Clinic",
+    "pin": "2525"
+  },
+  {
+    "id": "clinic02",
+    "name": "Kakatiya Diagnostic Center",
+    "pin": "2020"
+  }
+]
