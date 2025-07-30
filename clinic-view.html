@@ -2,79 +2,96 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Clinic Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Clinic View</title>
   <style>
     body {
-      background-color: #111;
-      color: white;
+      margin: 0;
       font-family: Arial, sans-serif;
-      padding: 20px;
+      background-color: #111;
+      color: #fff;
     }
-
-    .clinic-info {
+    .card {
+      background-color: #222;
+      margin: 20px;
+      padding: 20px;
+      border-radius: 15px;
+    }
+    .clinic-header {
       display: flex;
       align-items: center;
-      background: #1f1f1f;
-      padding: 15px;
-      border-radius: 12px;
-      margin-bottom: 20px;
     }
-
-    .clinic-info img {
-      width: 80px;
-      height: 80px;
+    .clinic-header img {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
       border-radius: 10px;
       margin-right: 15px;
-      background: #333;
+      background: #444;
     }
-
-    .clinic-name {
+    .clinic-header h2 {
+      margin: 0;
       font-size: 20px;
-      font-weight: bold;
-      color: #00ff66;
+      color: #00ff88;
     }
-
     .clinic-address {
       font-size: 14px;
       color: #ccc;
     }
-
-    table {
-      width: 100%;
-      background: #222;
-      border-collapse: collapse;
-      margin-top: 20px;
+    .clinic-plan {
+      font-size: 14px;
+      color: #aaa;
+      margin-top: 5px;
     }
-
+    h3 {
+      margin: 20px;
+      font-size: 18px;
+      color: #fff;
+    }
+    table {
+      width: 90%;
+      margin: auto;
+      border-collapse: collapse;
+      background-color: #1a1a1a;
+      border-radius: 10px;
+      overflow: hidden;
+    }
     th, td {
       padding: 12px;
       text-align: left;
     }
-
     th {
-      background-color: #333;
-      color: #00ff66;
+      background-color: #222;
+      color: #00ff88;
     }
-
     td {
-      border-bottom: 1px solid #444;
+      border-top: 1px solid #333;
+    }
+    tr:last-child td {
+      border-bottom: none;
     }
   </style>
 </head>
 <body>
-  <div class="clinic-info">
-    <img id="clinicLogo" src="" alt="Logo" />
-    <div>
-      <div class="clinic-name" id="clinicName">Loading...</div>
-      <div class="clinic-address" id="clinicAddress"></div>
+  <div class="card">
+    <div class="clinic-header">
+      <img id="clinicLogo" alt="Clinic Logo" />
+      <div>
+        <h2 id="clinicName">Loading...</h2>
+        <div class="clinic-address" id="clinicAddress"></div>
+        <div class="clinic-plan" id="clinicPlan"></div>
+      </div>
     </div>
   </div>
 
   <h3>Today's Appointments</h3>
   <table>
     <thead>
-      <tr><th>Time</th><th>Patient</th><th>Reason</th></tr>
+      <tr>
+        <th>Time</th>
+        <th>Patient</th>
+        <th>Reason</th>
+      </tr>
     </thead>
     <tbody id="appointmentsTable">
       <tr><td colspan="3">Loading...</td></tr>
@@ -87,6 +104,8 @@
     const clinicsURL = "https://warangalonepoint.github.io/clinic-admin/clinics.json";
     const logsURL = "https://warangalonepoint.github.io/clinic-admin/logs.csv";
 
+    let clinicName = "";
+
     async function loadClinic() {
       const res = await fetch(clinicsURL);
       const clinics = await res.json();
@@ -97,9 +116,11 @@
         return;
       }
 
+      clinicName = clinic.name.toLowerCase();
       document.getElementById("clinicName").innerText = clinic.name;
       document.getElementById("clinicAddress").innerText = clinic.address;
       document.getElementById("clinicLogo").src = clinic.logo;
+      document.getElementById("clinicPlan").innerText = clinic.plan ? `Plan: ₹${clinic.plan}` : '';
     }
 
     async function loadAppointments() {
@@ -112,13 +133,13 @@
 
       const filtered = rows.map(r => r.split(","))
         .filter(r =>
-          r[0].toLowerCase().includes(clinicId.toLowerCase()) &&
+          r[0].toLowerCase().includes(clinicName) &&
           r[1] === today &&
           r[5].toLowerCase() === "booked"
         );
 
       if (filtered.length === 0) {
-        table.innerHTML = "<tr><td colspan='3'>No appointments today.</td></tr>";
+        table.innerHTML = "<tr><td colspan='3'>No appointments loaded</td></tr>";
         return;
       }
 
@@ -129,8 +150,8 @@
       });
     }
 
-    loadClinic();
-    loadAppointments();
+    // Run both after loading
+    loadClinic().then(loadAppointments);
   </script>
 </body>
 </html>
