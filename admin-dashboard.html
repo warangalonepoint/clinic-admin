@@ -1,91 +1,79 @@
 <!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Doctor Login - WarangalOneStop Clinic Admin Panel">
-  <meta name="keywords" content="clinic, doctor login, admin, appointment, WarangalOneStop">
-  <meta name="author" content="WarangalOneStop">
-  <title>Doctor Login</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
   <style>
     body {
       background-color: #111;
-      font-family: Arial, sans-serif;
-      color: #fff;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-    }
-    .login-box {
-      background-color: #222;
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 0 20px rgba(0,255,255,0.2);
-      width: 90%;
-      max-width: 400px;
-    }
-    .login-box h2 {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    input, select, button {
-      width: 100%;
-      padding: 12px;
-      margin: 10px 0;
-      border: none;
-      border-radius: 6px;
-      font-size: 16px;
-    }
-    input {
-      background: #fff;
-      color: #000;
-    }
-    select {
-      background: #ccc;
-      color: #000;
-    }
-    button {
-      background-color: dodgerblue;
       color: white;
-      font-weight: bold;
-      cursor: pointer;
+      padding: 20px;
+      font-family: Arial, sans-serif;
     }
-    button:hover {
-      background-color: deepskyblue;
+    .tab {
+      margin-top: 20px;
+    }
+    .tab button {
+      background-color: #333;
+      color: white;
+      padding: 10px 20px;
+      margin-right: 10px;
+      border: none;
+      cursor: pointer;
+      border-radius: 6px;
+    }
+    .tabcontent {
+      display: none;
+      margin-top: 20px;
+    }
+    .tabcontent.active {
+      display: block;
+    }
+    .clinic-card {
+      background-color: #1f1f1f;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 15px;
     }
   </style>
 </head>
 <body>
-  <div class="login-box">
-    <h2>Doctor Login</h2>
-    <input type="password" id="pin" placeholder="...." />
-    <select id="clinicSelect">
-      <option selected disabled>Select Clinic</option>
-      <option>Warangal OneStop Clinic</option>
-      <option>CityCare Hospital</option>
-      <option>LifePlus Diagnostics</option>
-    </select>
-    <button onclick="login()">Login</button>
+  <h2>⚙️ Admin Dashboard</h2>  <div class="tab">
+    <button onclick="showTab('home')">🏠 Home</button>
+    <button onclick="showTab('clinics')">🏥 Clinics</button>
+  </div>  <div id="home" class="tabcontent active">
+    <h4>Welcome Admin 👋</h4>
+    <p>Use the tabs above to manage clinics.</p>
+  </div>  <div id="clinics" class="tabcontent">
+    <h4>🏥 Clinics</h4>
+    <div id="clinicList"></div>
   </div>  <script>
-    function login() {
-      const pin = document.getElementById('pin').value.trim();
-      const clinic = document.getElementById('clinicSelect').value.trim();
-      if (!pin || clinic === 'Select Clinic') {
-        alert("Please enter PIN and select a clinic");
-        return;
-      }
-      window.location.href = `dashboard.html?pin=${pin}&clinic=${clinic}`;
+    function showTab(tabName) {
+      const contents = document.querySelectorAll('.tabcontent');
+      contents.forEach(content => content.classList.remove('active'));
+      document.getElementById(tabName).classList.add('active');
     }
 
-    window.onload = function () {
-      const urlParams = new URLSearchParams(window.location.search);
-      const clinicFromURL = urlParams.get('clinic');
-      if (clinicFromURL) {
-        const dropdown = document.getElementById('clinicSelect');
-        dropdown.innerHTML = `<option selected>${clinicFromURL.replaceAll('-', ' ')}</option>`;
-        dropdown.disabled = true;
-      }
+    async function loadClinics() {
+      const res = await fetch('clinics.json');
+      const clinics = await res.json();
+      const list = document.getElementById('clinicList');
+      list.innerHTML = '';
+      clinics.forEach(clinic => {
+        const card = document.createElement('div');
+        card.className = 'clinic-card';
+        card.innerHTML = `
+          <strong>🏥 ${clinic.clinicName}</strong><br>
+          👨‍⚕️ Doctor: ${clinic.doctor}<br>
+          🌍 City: ${clinic.city}<br>
+          🔐 PIN: ${clinic.pin}<br>
+          <a href="index.html?clinic=${encodeURIComponent(clinic.clinicName)}&pin=${clinic.pin}" target="_blank" class="btn btn-success mt-2">Go to Dashboard</a>
+        `;
+        list.appendChild(card);
+      });
     }
+
+    loadClinics();
   </script></body>
 </html>
