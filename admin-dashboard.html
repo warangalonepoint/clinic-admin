@@ -1,0 +1,76 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Doctor Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+  <script defer src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <main>
+    <h1>🩺 Doctor Dashboard</h1><section id="features">
+  <div class="feature-card" id="bookingsCard">
+    <button onclick="location.href='bookings.html'">📅 Bookings</button>
+  </div>
+  <div class="feature-card" id="staffCard">
+    <button onclick="location.href='staff.html'">👨‍⚕️ Staff</button>
+  </div>
+  <div class="feature-card" id="backupCard">
+    <button onclick="location.href='backup.html'">💾 Backup</button>
+  </div>
+</section>
+
+<section id="planWarning" style="display:none; color:red; font-weight:bold;">
+  ⚠️ This feature is not available in your current plan.
+</section>
+
+<section id="analytics">
+  <h2>📊 Appointment Analytics</h2>
+  <canvas id="appointmentChart" height="150"></canvas>
+</section>
+
+  </main>  <script>
+    // Plan detection logic
+    const plan = localStorage.getItem('activePlan') || 'Free';
+
+    const planFeatures = {
+      'Free': ['bookingsCard'],
+      'Basic': ['bookingsCard', 'staffCard'],
+      'Pro': ['bookingsCard', 'staffCard', 'backupCard'],
+      'Lifetime': ['bookingsCard', 'staffCard', 'backupCard']
+    };
+
+    const allCards = ['bookingsCard', 'staffCard', 'backupCard'];
+
+    allCards.forEach(cardId => {
+      const el = document.getElementById(cardId);
+      if (!planFeatures[plan].includes(cardId)) {
+        el.style.opacity = '0.5';
+        el.onclick = () => {
+          document.getElementById('planWarning').style.display = 'block';
+          setTimeout(() => {
+            document.getElementById('planWarning').style.display = 'none';
+          }, 3000);
+        };
+      }
+    });
+
+    // Dummy chart data
+    new Chart(document.getElementById('appointmentChart'), {
+      type: 'bar',
+      data: {
+        labels: ['9AM', '10AM', '11AM', '12PM', '1PM', '2PM', '3PM'],
+        datasets: [{
+          label: 'Appointments',
+          data: [2, 4, 3, 5, 1, 0, 6],
+          backgroundColor: 'rgba(75,192,192,0.6)'
+        }]
+      },
+      options: {
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
+    });
+  </script></body>
+</html>
