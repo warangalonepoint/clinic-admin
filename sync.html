@@ -1,47 +1,73 @@
 <!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <title>Sync with GitHub</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sync Sheet</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#000000" />
   <style>
     body {
+      margin: 0;
       font-family: Arial, sans-serif;
-      background: #111;
+      background-color: #000;
       color: #fff;
-      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
       text-align: center;
     }
-    textarea {
-      width: 100%;
-      height: 200px;
-      margin-top: 20px;
-      font-family: monospace;
+    h1 {
+      font-size: 28px;
+      margin-bottom: 20px;
     }
     button {
-      padding: 10px 20px;
-      background-color: #00ff99;
+      padding: 12px 24px;
+      font-size: 18px;
+      background-color: #007bff;
+      color: white;
       border: none;
+      border-radius: 6px;
       cursor: pointer;
-      margin-top: 10px;
+      margin: 10px;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    #status {
+      margin-top: 20px;
       font-size: 16px;
+      color: #0f0;
     }
   </style>
 </head>
 <body>
-  <h2>📥 Upload Updated Logs/Slots</h2>
-  <p>Copy-paste your updated CSV content here and click the sync button.</p><label for="syncType">Select Sheet:</label> <select id="syncType"> <option value="Slots.csv">Slots.csv</option> <option value="logs.csv">logs.csv</option> </select>
+  <h1>🔄 Sync Logs from GitHub</h1>
+  <button onclick="syncLogs()">Sync Now</button>
+  <div id="status"></div>  <script>
+    function syncLogs() {
+      const statusDiv = document.getElementById("status");
+      statusDiv.textContent = "Syncing...";
 
-  <textarea id="csvContent" placeholder="Paste your CSV content here..."></textarea>  <br>
-  <button onclick="downloadCSV()">Sync to GitHub</button>  <p><strong>Note:</strong> After syncing, manually upload the downloaded file to your GitHub repo.</p>  <script>
-    function downloadCSV() {
-      const content = document.getElementById("csvContent").value;
-      const type = document.getElementById("syncType").value;
-      const blob = new Blob([content], { type: "text/csv" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = type;
-      link.click();
+      fetch("https://raw.githubusercontent.com/warangalonepoint/clinic-admin/main/logs.csv")
+        .then((res) => {
+          if (!res.ok) throw new Error("Failed to fetch logs.csv");
+          return res.text();
+        })
+        .then((csvText) => {
+          const blob = new Blob([csvText], { type: "text/csv" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "logs.csv";
+          a.click();
+          URL.revokeObjectURL(url);
+          statusDiv.textContent = "✅ Logs synced successfully!";
+        })
+        .catch((err) => {
+          statusDiv.textContent = "❌ Error: " + err.message;
+        });
     }
   </script></body>
 </html>
