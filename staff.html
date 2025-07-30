@@ -1,144 +1,108 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html>
 <head>
   <meta charset="UTF-8" />
+  <title>Staff Attendance</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Staff Dashboard</title>
-  <link rel="manifest" href="manifest.json">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
-      margin: 0;
       font-family: Arial, sans-serif;
-      background-color: #000;
+      background: #121212;
       color: #fff;
+      padding: 20px;
     }
-    header {
-      background-color: #ffa500;
-      padding: 10px;
-      text-align: center;
-      font-size: 22px;
-      font-weight: bold;
+    h2 {
+      color: #00e676;
     }
-    .buttons {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 10px;
-      margin: 20px;
-    }
-    .btn {
-      padding: 15px 25px;
-      border: none;
-      border-radius: 12px;
+    .clinic-info {
+      background: #1e1e1e;
+      padding: 12px;
+      border-radius: 10px;
+      margin-bottom: 20px;
       font-size: 16px;
-      font-weight: bold;
-      color: #000;
-      cursor: pointer;
     }
-    .attendance-btn { background-color: #f39c12; }
-    .role-btn { background-color: #1abc9c; }
-    .refresh-btn { background-color: #3498db; }
-    .log-btn { background-color: #9b59b6; }
-    .toggle-theme-btn { background-color: #e74c3c; color: #fff; }table {
-  width: 90%;
-  margin: 20px auto;
-  border-collapse: collapse;
-  background-color: #222;
-}
-th, td {
-  border: 1px solid #444;
-  padding: 10px;
-  text-align: center;
-}
-th {
-  background-color: #333;
-}
-#chart-container {
-  width: 90%;
-  margin: 20px auto;
-}
-
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #333;
+    }
+    th {
+      background-color: #1f1f1f;
+    }
+    tr:hover {
+      background-color: #222;
+    }
+    .status-present {
+      color: #00e676;
+      font-weight: bold;
+    }
+    .status-absent {
+      color: #ff5252;
+      font-weight: bold;
+    }
+    .info {
+      font-size: 14px;
+      color: #bbb;
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
-  <header>👩‍⚕️ Staff Dashboard</header>  <div class="buttons">
-    <button class="btn attendance-btn" onclick="loadAttendance()">📅 Attendance</button>
-    <button class="btn role-btn" onclick="loadRoles()">🧑‍💼 Roles</button>
-    <button class="btn refresh-btn" onclick="refreshData()">🔄 Refresh</button>
-    <button class="btn log-btn" onclick="downloadLog()">📥 Download Log</button>
-    <button class="btn toggle-theme-btn" onclick="toggleTheme()">🌓 Toggle Theme</button>
-  </div>  <div id="chart-container">
-    <canvas id="staffChart"></canvas>
-  </div>  <table>
+
+  <!-- PIN + Clinic Access Protection -->
+  <script>
+    const clinic = localStorage.getItem("activeClinic");
+    const pin = localStorage.getItem("userPIN");
+    if (!clinic || !pin) {
+      alert("Access denied. Please log in.");
+      window.location.href = "index.html";
+    }
+  </script>
+
+  <h2>👨‍⚕️ Staff Attendance Panel</h2>
+  <div class="clinic-info">🏥 Active Clinic: <span id="clinicName"></span></div>
+
+  <table>
     <thead>
-      <tr><th>Name</th><th>Role</th><th>Attendance</th></tr>
+      <tr>
+        <th>Name</th>
+        <th>Role</th>
+        <th>Status</th>
+        <th>Phone</th>
+      </tr>
     </thead>
-    <tbody id="staffTable"></tbody>
-  </table>  <script>
-    const staff = [
-      { name: 'Akhil', role: 'Reception', attendance: '✅' },
-      { name: 'Sneha', role: 'Nurse', attendance: '✅' },
-      { name: 'Ravi', role: 'Lab Assistant', attendance: '❌' },
-    ];
+    <tbody id="staffTable">
+      <!-- Placeholder rows -->
+      <tr>
+        <td>Dr. Ramesh</td>
+        <td>Consulting Physician</td>
+        <td class="status-present">Present</td>
+        <td>+91 9876543210</td>
+      </tr>
+      <tr>
+        <td>Sneha</td>
+        <td>Receptionist</td>
+        <td class="status-absent">Absent</td>
+        <td>+91 9876500000</td>
+      </tr>
+      <tr>
+        <td>Arun</td>
+        <td>Pharmacist</td>
+        <td class="status-present">Present</td>
+        <td>+91 9876567890</td>
+      </tr>
+    </tbody>
+  </table>
 
-    function loadAttendance() {
-      const tbody = document.getElementById('staffTable');
-      tbody.innerHTML = '';
-      staff.forEach(s => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${s.name}</td><td>${s.role}</td><td>${s.attendance}</td>`;
-        tbody.appendChild(tr);
-      });
-    }
+  <div class="info">🛈 Staff can mark attendance by sending WhatsApp messages with the correct PIN.</div>
 
-    function loadRoles() {
-      alert("Feature coming soon: Staff roles management!");
-    }
-
-    function refreshData() {
-      loadAttendance();
-      updateChart();
-    }
-
-    function downloadLog() {
-      const csv = 'Name,Role,Attendance\n' + staff.map(s => `${s.name},${s.role},${s.attendance}`).join('\n');
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'staff_log.csv';
-      a.click();
-    }
-
-    function updateChart() {
-      const ctx = document.getElementById('staffChart').getContext('2d');
-      new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: staff.map(s => s.name),
-          datasets: [{
-            label: 'Attendance (1 = Present, 0 = Absent)',
-            data: staff.map(s => s.attendance === '✅' ? 1 : 0),
-            backgroundColor: '#3498db',
-          }]
-        },
-        options: {
-          responsive: true,
-          scales: {
-            y: { beginAtZero: true, max: 1 }
-          }
-        }
-      });
-    }
-
-    function toggleTheme() {
-      const isDark = document.body.style.backgroundColor === 'black' || document.body.style.backgroundColor === '';
-      document.body.style.backgroundColor = isDark ? 'white' : 'black';
-      document.body.style.color = isDark ? 'black' : 'white';
-    }
-
-    // Initial load
-    loadAttendance();
-    updateChart();
-  </script></body>
+  <script>
+    document.getElementById("clinicName").innerText = clinic;
+  </script>
+</body>
 </html>
