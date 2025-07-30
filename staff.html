@@ -2,50 +2,143 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Staff Attendance & Shifts</title>
+  <title>Staff Dashboard</title>
+  <link rel="manifest" href="manifest.json">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; background-color: #111; color: #fff; margin: 0; padding: 20px; }
-    h2 { text-align: center; color: #00ff99; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { padding: 8px; border: 1px solid #444; text-align: left; }
-    .shift { color: #00f0ff; }
-    .present { color: #00ff99; }
-    .absent { color: #ff4b5c; }
-    .filter-box { margin-top: 20px; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #000;
+      color: #fff;
+    }
+    header {
+      background-color: #ffa500;
+      padding: 10px;
+      text-align: center;
+      font-size: 22px;
+      font-weight: bold;
+    }
+    .buttons {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin: 20px;
+    }
+    .btn {
+      padding: 15px 25px;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      color: #000;
+      cursor: pointer;
+    }
+    .attendance-btn { background-color: #f39c12; }
+    .role-btn { background-color: #1abc9c; }
+    .refresh-btn { background-color: #3498db; }
+    .log-btn { background-color: #9b59b6; }
+    .toggle-theme-btn { background-color: #e74c3c; color: #fff; }table {
+  width: 90%;
+  margin: 20px auto;
+  border-collapse: collapse;
+  background-color: #222;
+}
+th, td {
+  border: 1px solid #444;
+  padding: 10px;
+  text-align: center;
+}
+th {
+  background-color: #333;
+}
+#chart-container {
+  width: 90%;
+  margin: 20px auto;
+}
+
   </style>
 </head>
 <body>
-  <h2>👨‍⚕️ Staff Attendance & Shift Tracker</h2>
-  <div class="filter-box">
-    <label for="filterDate">Select Date:</label>
-    <input type="date" id="filterDate" onchange="loadStaff()" />
-  </div>
-  <table>
+  <header>👩‍⚕️ Staff Dashboard</header>  <div class="buttons">
+    <button class="btn attendance-btn" onclick="loadAttendance()">📅 Attendance</button>
+    <button class="btn role-btn" onclick="loadRoles()">🧑‍💼 Roles</button>
+    <button class="btn refresh-btn" onclick="refreshData()">🔄 Refresh</button>
+    <button class="btn log-btn" onclick="downloadLog()">📥 Download Log</button>
+    <button class="btn toggle-theme-btn" onclick="toggleTheme()">🌓 Toggle Theme</button>
+  </div>  <div id="chart-container">
+    <canvas id="staffChart"></canvas>
+  </div>  <table>
     <thead>
-      <tr><th>Name</th><th>Role</th><th>Status</th><th>Shift Time</th><th>Phone</th></tr>
+      <tr><th>Name</th><th>Role</th><th>Attendance</th></tr>
     </thead>
-    <tbody id="staffBody"></tbody>
+    <tbody id="staffTable"></tbody>
   </table>  <script>
-    async function loadStaff() {
-      const selectedDate = document.getElementById("filterDate").value;
-      const response = await fetch("https://warangalonepoint.github.io/clinic-admin/staff.csv");
-      const text = await response.text();
-      const rows = text.trim().split("\n").slice(1).map(row => row.split(","));
-      const tbody = document.getElementById("staffBody");
-      tbody.innerHTML = "";
+    const staff = [
+      { name: 'Akhil', role: 'Reception', attendance: '✅' },
+      { name: 'Sneha', role: 'Nurse', attendance: '✅' },
+      { name: 'Ravi', role: 'Lab Assistant', attendance: '❌' },
+    ];
 
-      rows.forEach(([date, name, role, status, shift, phone]) => {
-        if (date === selectedDate) {
-          const row = `<tr>
-            <td>${name}</td>
-            <td>${role}</td>
-            <td class="${status.toLowerCase()}">${status}</td>
-            <td class="shift">${shift}</td>
-            <td><a href="tel:${phone}" style="color: #0ff">${phone}</a></td>
-          </tr>`;
-          tbody.innerHTML += row;
+    function loadAttendance() {
+      const tbody = document.getElementById('staffTable');
+      tbody.innerHTML = '';
+      staff.forEach(s => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${s.name}</td><td>${s.role}</td><td>${s.attendance}</td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function loadRoles() {
+      alert("Feature coming soon: Staff roles management!");
+    }
+
+    function refreshData() {
+      loadAttendance();
+      updateChart();
+    }
+
+    function downloadLog() {
+      const csv = 'Name,Role,Attendance\n' + staff.map(s => `${s.name},${s.role},${s.attendance}`).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'staff_log.csv';
+      a.click();
+    }
+
+    function updateChart() {
+      const ctx = document.getElementById('staffChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: staff.map(s => s.name),
+          datasets: [{
+            label: 'Attendance (1 = Present, 0 = Absent)',
+            data: staff.map(s => s.attendance === '✅' ? 1 : 0),
+            backgroundColor: '#3498db',
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: { beginAtZero: true, max: 1 }
+          }
         }
       });
     }
+
+    function toggleTheme() {
+      const isDark = document.body.style.backgroundColor === 'black' || document.body.style.backgroundColor === '';
+      document.body.style.backgroundColor = isDark ? 'white' : 'black';
+      document.body.style.color = isDark ? 'black' : 'white';
+    }
+
+    // Initial load
+    loadAttendance();
+    updateChart();
   </script></body>
 </html>
