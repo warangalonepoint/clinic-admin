@@ -1,50 +1,75 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Doctor Dashboard</title>
   <style>
-    body { background: #111; color: #fff; font-family: Arial, sans-serif; padding: 20px; }
-    h1, h2 { color: #00ffcc; }
-    label, select, input, button { font-size: 16px; }
-    select, input { width: 100%; padding: 10px; margin: 10px 0; background: #222; color: #fff; border: 1px solid #333; border-radius: 5px; }
-    button { padding: 10px 20px; background: #00ffcc; color: #000; border: none; border-radius: 5px; cursor: pointer; }
-    button:hover { background: #00ccaa; }
-    #statusMsg { margin-top: 10px; color: #0f0; }
-    #planPanel { background: #222; padding: 20px; border-radius: 10px; margin-top: 40px; }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #111;
+      color: #fff;
+    }
+    header {
+      background: #00c77f;
+      padding: 12px;
+      text-align: center;
+      font-size: 22px;
+      font-weight: bold;
+    }
+    .container {
+      padding: 20px;
+    }
+    h2 {
+      font-size: 24px;
+      margin-bottom: 20px;
+      color: #0fffb7;
+    }
+    .button {
+      display: block;
+      width: 100%;
+      margin: 10px 0;
+      padding: 15px;
+      font-size: 18px;
+      background-color: #222;
+      color: #0fffb7;
+      border: 1px solid #0fffb7;
+      border-radius: 8px;
+      text-align: left;
+    }
+    .button:hover {
+      background: #333;
+    }
+    .emoji {
+      margin-right: 10px;
+    }
   </style>
 </head>
 <body>
-  <h1>⚙️ Admin Dashboard</h1>  <div id="planPanel">
-    <h2>🔐 Activate Pricing Plan</h2><label for="planSelect">Select Plan:</label>
-<select id="planSelect">
-  <option value="free">Free (₹0)</option>
-  <option value="basic">Basic (₹1499)</option>
-  <option value="pro">Pro (₹4999)</option>
-  <option value="lifetime">Lifetime (₹6499)</option>
-</select>
 
-<label for="customPrice">Set Custom Price (Optional):</label>
-<input type="number" id="customPrice" placeholder="Enter Custom Price" />
+  <header>🩺 Doctor Dashboard</header>
 
-<button onclick="activatePlan()">Activate</button>
-<p id="statusMsg"></p>
+  <div class="container">
+    <h2>📋 Quick Actions</h2>
 
-  </div>  <script>
-    function activatePlan() {
-      const plan = document.getElementById("planSelect").value;
-      const price = document.getElementById("customPrice").value || "Not set";
-      localStorage.setItem("activePlan", plan);
-      localStorage.setItem("planPrice", price);
-      document.getElementById("statusMsg").innerText = `✅ Plan "${plan.toUpperCase()}" activated at ₹${price}`;
-    }
+    <button class="button" onclick="location.href='bookings.html'">
+      📅 Bookings
+    </button>
 
-    window.onload = function () {
-      const plan = localStorage.getItem("activePlan");
-      const price = localStorage.getItem("planPrice");
-      if (plan) {
-        document.getElementById("statusMsg").innerText = `✔️ Current Plan: ${plan.toUpperCase()} | ₹${price}`;
-      }
-    };
-  </script></body>
+    <button class="button" onclick="location.href='staff.html'">
+      🧑‍⚕️ Staff
+    </button>
+
+    <button class="button" onclick="location.href='sync.html'">
+      💾 Backup
+    </button>
+
+    <h2>📊 Appointment Analytics</h2>
+    <button class="button" onclick="location.href='logs.html'">
+      📈 View Logs
+    </button>
+  </div>
+
+</body>
 </html>
