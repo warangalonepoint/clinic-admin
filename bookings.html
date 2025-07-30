@@ -1,9 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Book Appointment</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <style>
     body {
       background: #111;
@@ -43,20 +42,12 @@
   </style>
 </head>
 <body>
-  <h2>📅 Book Your Appointment</h2>
+  <h2>📅 Book Your Appointment</h2>  <input type="text" id="patientName" placeholder="Enter Your Name" />
+  <input type="text" id="reason" placeholder="Reason for Visit" /><label>Select Date</label> <input type="date" id="appointmentDate" />
 
-  <input type="text" id="patientName" placeholder="Enter Your Name" />
-  <input type="text" id="reason" placeholder="Reason for Visit" />
+<label>Select Time Slot</label> <select id="appointmentTime"> <option value="">Loading slots...</option> </select>
 
-  <label>Select Date</label>
-  <input type="date" id="appointmentDate" />
-
-  <label>Select Time Slot</label>
-  <select id="appointmentTime">
-    <option value="">Loading slots...</option>
-  </select>
-
-  <button onclick="showConfirmation()">Confirm Booking</button>
+<button onclick="showConfirmation()">Confirm Booking</button>
 
   <div class="confirmation" id="confirmationBox">
     <h3>Confirm Your Booking</h3>
@@ -65,9 +56,7 @@
     <p><strong>Date:</strong> <span id="confDate"></span></p>
     <p><strong>Time:</strong> <span id="confTime"></span></p>
     <button onclick="redirectToWhatsApp()">✅ Final Confirm & WhatsApp</button>
-  </div>
-
-  <script>
+  </div>  <script>
     const slotsURL = "https://warangalonepoint.github.io/clinic-admin/Slots.csv";
     const logsURL = "https://warangalonepoint.github.io/clinic-admin/logs.csv";
 
@@ -129,7 +118,7 @@
       const time = document.getElementById("appointmentTime").value;
 
       const message = `Hello, I want to book an appointment:\n\nName: ${name}\nReason: ${reason}\nDate: ${date}\nTime: ${time}`;
-      const phone = "919390664577"; // Your WhatsApp number without +
+      const phone = "919390664577";
       const link = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
       window.location.href = link;
     }
@@ -140,6 +129,5 @@
       document.getElementById("appointmentDate").value = today;
       loadAvailableSlots();
     };
-  </script>
-</body>
+  </script></body>
 </html>
