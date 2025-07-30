@@ -1,2 +1,21 @@
-{ "name": "Warangal OneStop Clinic", "short_name": "ClinicBot", "start_url": "index.html", "display": "standalone", "background_color": "#000000", "theme_color": "#00ff99", "orientation": "portrait", "icons": [ { "src": "logo.png", "sizes": "192x192", "type": "image/png" }, { "src": "logo.png", "sizes": "512x512", "type": "image/png" } ] }
-
+{
+  "name": "Warangal OneStop Clinic",
+  "short_name": "ClinicApp",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#121212",
+  "theme_color": "#1f88e5",
+  "description": "Book appointments, manage staff, and track patient logs — all from your clinic’s dashboard.",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
