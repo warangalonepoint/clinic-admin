@@ -1,97 +1,85 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Confirm Booking</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="theme-color" content="#000000">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="manifest.json" />
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js');
+    }
+  </script>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: #121212;
+      background-color: #111;
       color: #fff;
+      font-family: Arial, sans-serif;
       padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
     }
-    h2 {
+    h1 {
       color: #00e676;
     }
-    .clinic-info, .details-box {
+    .confirmation-box {
       background: #1e1e1e;
-      padding: 16px;
-      border-radius: 10px;
-      margin-bottom: 20px;
+      padding: 20px;
+      border-radius: 8px;
+      margin-top: 20px;
+      width: 100%;
+      max-width: 400px;
     }
-    .details-box p {
-      margin: 8px 0;
+    input, select {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      background: #222;
+      border: none;
+      border-radius: 5px;
+      color: #fff;
     }
     button {
+      background: #00e676;
+      color: #000;
       padding: 10px 20px;
-      font-size: 16px;
       border: none;
-      border-radius: 8px;
-      margin-right: 10px;
+      border-radius: 5px;
+      margin-top: 10px;
       cursor: pointer;
-    }
-    .confirm-btn {
-      background-color: #1f88e5;
-      color: #fff;
-    }
-    .cancel-btn {
-      background-color: #555;
-      color: #fff;
-    }
-    button:hover {
-      opacity: 0.9;
     }
   </style>
 </head>
 <body>
-
-  <!-- Access Protection -->
-  <script>
-    const clinic = localStorage.getItem("activeClinic");
-    const pin = localStorage.getItem("userPIN");
-    if (!clinic || !pin) {
-      alert("Access denied. Please log in.");
-      window.location.href = "index.html";
-    }
-  </script>
-
-  <h2>📋 Confirm Your Appointment</h2>
-  <div class="clinic-info">🏥 Active Clinic: <span id="clinicName"></span></div>
-
-  <div class="details-box">
-    <p><strong>👤 Name:</strong> <span id="patientName"></span></p>
-    <p><strong>📝 Reason:</strong> <span id="reason"></span></p>
-    <p><strong>📅 Date:</strong> <span id="date"></span></p>
-    <p><strong>🕒 Time:</strong> <span id="time"></span></p>
+  <h1>Confirm Your Appointment</h1>
+  <div class="confirmation-box">
+    <p><strong>Slot:</strong> <span id="slotInfo">Loading...</span></p>
+    <input type="text" id="name" placeholder="Your Name">
+    <input type="text" id="reason" placeholder="Reason for Visit">
+    <button onclick="confirmBooking()">Book via WhatsApp</button>
   </div>
 
-  <button class="confirm-btn" onclick="confirmBooking()">✅ Confirm & Continue</button>
-  <button class="cancel-btn" onclick="goBack()">❌ Cancel</button>
-
   <script>
-    document.getElementById("clinicName").innerText = clinic;
-
-    // Retrieve booking info passed from bookings.html
     const params = new URLSearchParams(window.location.search);
-    const name = decodeURIComponent(params.get("name") || "");
-    const reason = decodeURIComponent(params.get("reason") || "");
-    const date = decodeURIComponent(params.get("date") || "");
-    const time = decodeURIComponent(params.get("time") || "");
-
-    document.getElementById("patientName").innerText = name;
-    document.getElementById("reason").innerText = reason;
-    document.getElementById("date").innerText = date;
-    document.getElementById("time").innerText = time;
+    const slot = params.get("slot");
+    const date = params.get("date");
+    const clinic = params.get("clinic") || "OneStop";
+    document.getElementById("slotInfo").textContent = `${date} at ${slot}`;
 
     function confirmBooking() {
-      const message = `Appointment Request:\n👤 Name: ${name}\n🏥 Clinic: ${clinic}\n📅 Date: ${date}\n⏰ Time: ${time}\n📝 Reason: ${reason}`;
-      const whatsappURL = `https://wa.me/919390664577?text=${encodeURIComponent(message)}`;
-      window.location.href = whatsappURL;
-    }
+      const name = document.getElementById("name").value.trim();
+      const reason = document.getElementById("reason").value.trim();
+      if (!name || !reason) return alert("Please enter your name and reason");
 
-    function goBack() {
-      window.location.href = "bookings.html";
+      const msg = encodeURIComponent(
+        `Appointment Booking:\\nClinic: ${clinic}\\nDate: ${date}\\nTime: ${slot}\\nName: ${name}\\nReason: ${reason}`
+      );
+      const phone = "+919390664577"; // clinic WhatsApp number
+      window.location.href = `https://wa.me/${phone}?text=${msg}`;
     }
   </script>
 </body>
