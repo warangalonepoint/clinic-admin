@@ -1,105 +1,120 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard</title>
-  <link rel="icon" href="logo.png" />
+  <link rel="manifest" href="manifest.json">
   <style>
-    body {
-      background-color: #000;
-      color: #fff;
-      font-family: Arial, sans-serif;
-      padding: 0;
-      margin: 0;
-      text-align: center;
-    }
-    h1 {
-      background-color: orange;
-      color: #000;
-      padding: 12px;
-      font-size: 22px;
-      margin: 0;
-    }
-    .nav {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 12px;
-      margin: 20px 0;
-    }
-    .nav a {
-      text-decoration: none;
-      padding: 15px;
-      color: #fff;
-      font-weight: bold;
-      border-radius: 12px;
-      width: 100px;
-      text-align: center;
-    }
-    .nav a:nth-child(1) { background: #007bff; }
-    .nav a:nth-child(2) { background: #ffc107; color: #000; }
-    .nav a:nth-child(3) { background: #6c757d; }
-    .nav a:nth-child(4) { background: #00d9ff; color: #000; }
-    .nav a:nth-child(5) { background: #28a745; }
-    canvas {
-      background: #111;
-      padding: 10px;
-      border-radius: 12px;
-      margin-top: 30px;
-    }
+    :root {
+      --bg-color: #000;
+      --text-color: #fff;
+      --button-bg: #333;
+      --button-text: #fff;
+    }[data-theme="light"] {
+  --bg-color: #f4f4f4;
+  --text-color: #000;
+  --button-bg: #ddd;
+  --button-text: #000;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  text-align: center;
+  padding: 20px;
+}
+
+h1 {
+  font-size: 28px;
+}
+
+.button {
+  padding: 10px 20px;
+  margin: 10px;
+  background-color: var(--button-bg);
+  color: var(--button-text);
+  border: none;
+  border-radius: 6px;
+  font-size: 18px;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+  transition: background 0.3s;
+}
+
+.button:hover {
+  background-color: #555;
+}
+
+.container {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+#theme-toggle {
+  margin-top: 20px;
+  background-color: #007bff;
+  color: white;
+}
+
   </style>
 </head>
 <body>
-  <h1>📋 Dashboard</h1>
-  <div class="nav">
-    <a href="bookings.html">📅 Bookings</a>
-    <a href="staff.html">👨‍⚕️ Staff</a>
-    <a href="sync.html">🔁 Sync</a>
-    <a href="backup.html">💾 Backup</a>
-    <a href="pin-reset.html">🔐 Reset PIN</a>
-  </div>
-
+  <div class="container">
+    <h1>📋 Dashboard</h1>
+    <button class="button" onclick="location.href='bookings.html'">📅 Bookings</button>
+    <button class="button" onclick="location.href='staff.html'">👨‍⚕️ Staff</button>
+    <button class="button" onclick="location.href='sync.html'">🔁 Sync</button>
+    <button class="button" onclick="location.href='backup.html'">💾 Backup</button>
+    <button class="button" onclick="location.href='pin-reset.html'">🔐 Reset PIN</button><div style="margin-top: 40px;">
   <h2>📊 Appointment Analytics</h2>
-  <canvas id="chart" width="340" height="300"></canvas>
+  <canvas id="chart" height="300"></canvas>
+</div>
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script>
-    fetch('https://warangalonepoint.github.io/clinic-admin/logs.csv')
-      .then(res => res.text())
-      .then(csv => {
-        const rows = csv.trim().split('\\n').slice(1);
-        const hourMap = {};
-        rows.forEach(row => {
-          const time = row.split(',')[1];
-          const hour = time.split(':')[0];
-          hourMap[hour] = (hourMap[hour] || 0) + 1;
-        });
+<button id="theme-toggle" class="button" onclick="toggleTheme()">🌓 Toggle Theme</button>
 
-        const hours = ['09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20'];
-        const counts = hours.map(h => hourMap[h] || 0);
+  </div>  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>  <script>
+    const hourData = JSON.parse(localStorage.getItem('appointmentsByHour')) || {};
 
-        new Chart(document.getElementById('chart'), {
-          type: 'bar',
-          data: {
-            labels: hours.map(h => h + 'AM').slice(0, 3).concat(hours.slice(3).map(h => (h - 12) + 'PM')),
-            datasets: [{
-              label: 'Appointments by Hour',
-              data: counts,
-              backgroundColor: '#00bfff'
-            }]
-          },
-          options: {
-            responsive: true,
-            plugins: {
-              legend: { display: false }
-            },
-            scales: {
-              y: { beginAtZero: true, ticks: { stepSize: 1 } }
-            }
+    const labels = ["9AM","10AM","11AM","12PM","1PM","2PM","3PM","4PM","5PM","6PM","7PM","8PM"];
+    const data = labels.map(hour => hourData[hour] || 0);
+
+    new Chart(document.getElementById("chart"), {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: "Appointments by Hour",
+          backgroundColor: "#3399ff",
+          data: data
+        }]
+      },
+      options: {
+        plugins: {
+          legend: {
+            display: false
           }
-        });
-      });
-  </script>
-</body>
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { stepSize: 1 }
+          }
+        }
+      }
+    });
+
+    // Theme Toggle
+    function toggleTheme() {
+      const currentTheme = document.documentElement.getAttribute("data-theme") || "dark";
+      const newTheme = currentTheme === "dark" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", newTheme);
+      localStorage.setItem("admin-theme", newTheme);
+    }
+
+    // Load Theme on Init
+    const savedTheme = localStorage.getItem("admin-theme") || "dark";
+    document.documentElement.setAttribute("data-theme", savedTheme);
+  </script></body>
 </html>
