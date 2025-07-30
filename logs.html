@@ -3,208 +3,148 @@
 <head>
   <meta charset="UTF-8" />
   <title>Booking Logs</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="theme-color" content="#000000">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="manifest.json" />
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js');
+    }
+  </script>
   <style>
-    body { font-family: Arial, sans-serif; background: #121212; color: #fff; padding: 20px; }
-    h2 { color: #00e676; }
-    .clinic-info { background: #1e1e1e; padding: 12px; border-radius: 10px; margin-bottom: 20px; }
-    input[type="date"] {
-      padding: 10px; font-size: 16px; border-radius: 8px; border: none;
-      margin-bottom: 20px; background: #1f1f1f; color: #fff;
+    body {
+      background-color: #111;
+      color: #eee;
+      font-family: Arial, sans-serif;
+      padding: 20px;
     }
-    .log-entry {
-      background: #1f1f1f; padding: 12px; border-radius: 10px; margin-bottom: 10px;
+    h1 {
+      color: #00e676;
+      text-align: center;
     }
-    .summary-box { background: #1e1e1e; padding: 15px; border-radius: 10px; margin-top: 20px; }
-    button {
-      background: #1f88e5; color: white; border: none; border-radius: 8px;
-      padding: 10px 15px; margin: 10px 5px 0 0; cursor: pointer;
+    select, input {
+      margin: 10px 5px;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      background: #222;
+      color: #fff;
     }
-    #noteModal {
-      display: none; position: fixed; top: 10%; left: 10%; right: 10%;
-      background: #1e1e1e; padding: 20px; border-radius: 10px; z-index: 999;
-      box-shadow: 0 0 10px #000;
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
     }
-    textarea {
-      width: 100%; height: 100px; border-radius: 8px; background: #121212;
-      color: #fff; border: none; padding: 10px;
+    th, td {
+      border: 1px solid #444;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #00e676;
+      color: #000;
+    }
+    .chart-container {
+      width: 100%;
+      margin-top: 30px;
     }
   </style>
 </head>
 <body>
+  <h1>📊 Booking Logs</h1>
 
-<script>
-const clinic = localStorage.getItem("activeClinic");
-const pin = localStorage.getItem("userPIN");
-if (!clinic || !pin) {
-  alert("Access denied. Please log in.");
-  window.location.href = "index.html";
-}
-</script>
+  <label>Clinic:
+    <select id="clinicSelect">
+      <option value="OneStop">OneStop</option>
+      <option value="CityCare">CityCare</option>
+    </select>
+  </label>
 
-<h2>📊 Booking Logs</h2>
-<div class="clinic-info">🏥 Active Clinic: <span id="clinicName"></span></div>
-<input type="date" id="filterDate" onchange="filterLogs()" />
-<div id="logsContainer"></div>
-<div class="summary-box" id="summaryBox"></div>
-<canvas id="bookingChart" width="400" height="250"></canvas>
+  <label>From: <input type="date" id="fromDate"></label>
+  <label>To: <input type="date" id="toDate"></label>
+  <button onclick="loadLogs()">Load Logs</button>
+  <button onclick="exportCSV()">Export</button>
 
-<button onclick="exportLogs()">⬇️ Export Logs</button>
-<button onclick="exportNotes()">🗒 Export All Notes</button>
-<button onclick="exportNewNotes()">🆕 Export New Notes</button>
+  <div id="summary"></div>
+  <div class="chart-container">
+    <canvas id="logChart"></canvas>
+  </div>
+  <table id="logTable"></table>
 
-<div id="noteModal">
-  <h3>🗒 Doctor Notes for <span id="notePatient"></span></h3>
-  <p><strong>Date:</strong> <span id="noteDate"></span> | <strong>Time:</strong> <span id="noteTime"></span></p>
-  <textarea id="noteContent"></textarea>
-  <br><br>
-  <button onclick="saveNote()">💾 Save</button>
-  <button onclick="closeNoteModal()">❌ Cancel</button>
-</div>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    async function loadLogs() {
+      const clinic = document.getElementById("clinicSelect").value;
+      const from = document.getElementById("fromDate").value;
+      const to = document.getElementById("toDate").value;
+      const res = await fetch(`https://warangalonepoint.github.io/clinic-admin/logs_${clinic}.csv`);
+      const text = await res.text();
+      const rows = text.trim().split('\\n').map(r => r.split(','));
+      const headers = rows.shift();
+      const dateIndex = headers.indexOf("Date");
+      const nameIndex = headers.indexOf("Name");
+      const timeIndex = headers.indexOf("Time");
 
-<script>
-document.getElementById("clinicName").innerText = clinic;
-const logsURL = "https://warangalonepoint.github.io/clinic-admin/logs.csv";
-const cleanClinicName = clinic.replace(/\\s+/g, '').replace(/[^a-zA-Z]/g, '');
-const notesURL = `https://warangalonepoint.github.io/clinic-admin/DoctorNotesExport_${cleanClinicName}.csv`;
-
-let logsData = [], doctorNotes = [], newNotes = [];
-
-Promise.all([
-  fetch(logsURL).then(res => res.text()),
-  fetch(notesURL).then(res => res.text())
-]).then(([logsCSV, notesCSV]) => {
-  logsData = Papa.parse(logsCSV, { header: true }).data;
-  doctorNotes = Papa.parse(notesCSV, { header: true }).data;
-  document.getElementById("filterDate").valueAsDate = new Date();
-  filterLogs();
-});
-
-function filterLogs() {
-  const selectedDate = document.getElementById("filterDate").value;
-  const container = document.getElementById("logsContainer");
-  const summary = document.getElementById("summaryBox");
-  const ctx = document.getElementById("bookingChart").getContext("2d");
-
-  container.innerHTML = "";
-  let count = 0;
-  const timeCounts = {};
-
-  logsData.forEach(log => {
-    if (log.Date === selectedDate && log.Clinic === clinic) {
-      const div = document.createElement("div");
-      div.className = "log-entry";
-      div.innerHTML = `
-        👤 ${log.Name}<br>🕒 ${log.Time}<br>📅 ${log.Date}<br>📝 ${log.Reason}
-        <br><button onclick="openNoteModal('${log.Date}', '${log.Time}', '${log.Name}')">🗒 Doctor Notes</button>
-      `;
-      container.appendChild(div);
-      count++;
-      const time = log.Time || "Unknown";
-      timeCounts[time] = (timeCounts[time] || 0) + 1;
-    }
-  });
-
-  summary.innerText = selectedDate
-    ? `📅 ${selectedDate} – Total Appointments: ${count}`
-    : "📅 Select a date to see total bookings.";
-
-  const times = Object.keys(timeCounts).sort();
-  const counts = times.map(t => timeCounts[t]);
-
-  if (window.chartRef) window.chartRef.destroy();
-  window.chartRef = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: times,
-      datasets: [{
-        label: 'Bookings per Time Slot',
-        data: counts,
-        backgroundColor: '#1f88e5'
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: { display: false },
-        title: { display: true, text: '🕒 Slot Booking Distribution' }
-      },
-      scales: {
-        y: { beginAtZero: true, ticks: { precision: 0 } }
+      let filtered = rows;
+      if (from && to) {
+        filtered = rows.filter(r => r[dateIndex] >= from && r[dateIndex] <= to);
       }
+
+      let html = "<tr><th>Date</th><th>Name</th><th>Time</th></tr>";
+      filtered.forEach(r => {
+        html += `<tr><td>${r[dateIndex]}</td><td>${r[nameIndex]}</td><td>${r[timeIndex]}</td></tr>`;
+      });
+      document.getElementById("logTable").innerHTML = html;
+
+      const summary = {};
+      filtered.forEach(r => {
+        summary[r[dateIndex]] = (summary[r[dateIndex]] || 0) + 1;
+      });
+
+      const labels = Object.keys(summary);
+      const data = Object.values(summary);
+      renderChart(labels, data);
+      document.getElementById("summary").innerText = `Total Appointments: ${filtered.length}`;
     }
-  });
-}
 
-function exportLogs() {
-  const csvContent = Papa.unparse(logsData);
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = "exported_logs.csv";
-  link.click();
-}
+    function renderChart(labels, data) {
+      const ctx = document.getElementById("logChart").getContext("2d");
+      if (window.logChart) window.logChart.destroy();
+      window.logChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Appointments',
+            data: data,
+            backgroundColor: '#00e676'
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false },
+            title: { display: true, text: 'Appointments per Day' }
+          }
+        }
+      });
+    }
 
-function exportNotes() {
-  const csvContent = Papa.unparse(doctorNotes);
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = `DoctorNotesExport_${cleanClinicName}.csv`;
-  link.click();
-}
-
-function exportNewNotes() {
-  if (newNotes.length === 0) {
-    alert("⚠️ No new notes to export.");
-    return;
-  }
-  const csvContent = Papa.unparse(newNotes);
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = `NewDoctorNotes_${cleanClinicName}.csv`;
-  link.click();
-}
-
-let currentNoteKey = "";
-
-function openNoteModal(date, time, name) {
-  currentNoteKey = `${clinic}_${date}_${time}_${name}`;
-  document.getElementById("noteDate").innerText = date;
-  document.getElementById("noteTime").innerText = time;
-  document.getElementById("notePatient").innerText = name;
-
-  const existing = getNoteFromCSV(date, time, name);
-  document.getElementById("noteContent").value = existing;
-  document.getElementById("noteModal").style.display = "block";
-}
-
-function closeNoteModal() {
-  document.getElementById("noteModal").style.display = "none";
-}
-
-function saveNote() {
-  const content = document.getElementById("noteContent").value;
-  const date = document.getElementById("noteDate").innerText;
-  const time = document.getElementById("noteTime").innerText;
-  const name = document.getElementById("notePatient").innerText;
-
-  const noteEntry = { Clinic: clinic, Date: date, Time: time, Name: name, Note: content };
-  localStorage.setItem(currentNoteKey, content);
-  newNotes.push(noteEntry);
-  alert("✅ Note saved locally. Upload manually to CSV.");
-  closeNoteModal();
-}
-
-function getNoteFromCSV(date, time, name) {
-  const match = doctorNotes.find(note =>
-    note.Clinic === clinic && note.Date === date && note.Time === time && note.Name === name
-  );
-  return match ? match.Note : "";
-}
-</script>
+    function exportCSV() {
+      const table = document.getElementById("logTable");
+      let csv = "";
+      for (let row of table.rows) {
+        let cells = Array.from(row.cells).map(cell => cell.innerText);
+        csv += cells.join(",") + "\\n";
+      }
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "exported_logs.csv";
+      a.click();
+    }
+  </script>
 </body>
-<html>
+</html>
