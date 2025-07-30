@@ -2,90 +2,80 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Clinic View</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <style>
     body {
-      margin: 0;
-      font-family: Arial, sans-serif;
       background-color: #111;
       color: #fff;
-    }
-    .card {
-      background-color: #222;
-      margin: 20px;
+      font-family: 'Inter', sans-serif;
       padding: 20px;
-      border-radius: 15px;
+      margin: 0;
     }
-    .clinic-header {
+    .clinic-card {
+      background-color: #1e1e1e;
+      padding: 20px;
+      border-radius: 16px;
       display: flex;
       align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
     }
-    .clinic-header img {
-      width: 60px;
-      height: 60px;
-      object-fit: cover;
-      border-radius: 10px;
-      margin-right: 15px;
+    .clinic-card img {
+      width: 64px;
+      height: 64px;
+      border-radius: 12px;
       background: #444;
     }
-    .clinic-header h2 {
-      margin: 0;
+    .clinic-details {
+      display: flex;
+      flex-direction: column;
+    }
+    .clinic-name {
       font-size: 20px;
+      font-weight: 600;
       color: #00ff88;
     }
-    .clinic-address {
+    .plan {
       font-size: 14px;
+      margin-top: 4px;
       color: #ccc;
     }
-    .clinic-plan {
-      font-size: 14px;
-      color: #aaa;
-      margin-top: 5px;
-    }
-    h3 {
-      margin: 20px;
-      font-size: 18px;
-      color: #fff;
-    }
     table {
-      width: 90%;
-      margin: auto;
+      width: 100%;
       border-collapse: collapse;
-      background-color: #1a1a1a;
-      border-radius: 10px;
-      overflow: hidden;
+      margin-top: 12px;
     }
     th, td {
       padding: 12px;
       text-align: left;
     }
     th {
-      background-color: #222;
       color: #00ff88;
     }
     td {
-      border-top: 1px solid #333;
+      color: #eee;
+      border-bottom: 1px solid #333;
     }
-    tr:last-child td {
-      border-bottom: none;
+    .no-data {
+      padding: 16px;
+      color: #aaa;
     }
   </style>
 </head>
 <body>
-  <div class="card">
-    <div class="clinic-header">
-      <img id="clinicLogo" alt="Clinic Logo" />
-      <div>
-        <h2 id="clinicName">Loading...</h2>
-        <div class="clinic-address" id="clinicAddress"></div>
-        <div class="clinic-plan" id="clinicPlan"></div>
-      </div>
+  <div class="clinic-card">
+    <img src="logo.png" alt="Logo">
+    <div class="clinic-details">
+      <div class="clinic-name" id="clinicName">Warangal OneStop Clinic</div>
+      <div>1-8-320, Hanamkonda Chowrasta,<br>Warangal, Telangana - 506001</div>
+      <div class="plan" id="planText">Plan: —</div>
     </div>
   </div>
 
-  <h3>Today's Appointments</h3>
-  <table>
+  <h2>Today's Appointments</h2>
+  <table id="appointmentsTable">
     <thead>
       <tr>
         <th>Time</th>
@@ -93,65 +83,59 @@
         <th>Reason</th>
       </tr>
     </thead>
-    <tbody id="appointmentsTable">
-      <tr><td colspan="3">Loading...</td></tr>
+    <tbody id="appointmentsBody">
+      <tr><td colspan="3" class="no-data">Loading...</td></tr>
     </tbody>
   </table>
 
   <script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const clinicId = urlParams.get("clinicId");
-    const clinicsURL = "https://warangalonepoint.github.io/clinic-admin/clinics.json";
-    const logsURL = "https://warangalonepoint.github.io/clinic-admin/logs.csv";
+    const LOGS_URL = 'https://warangalonepoint.github.io/clinic-admin/logs.csv';
+    const CLINIC_NAME = "warangal onestop clinic";
 
-    let clinicName = "";
+    const today = new Date();
+    const dd = String(today.getDate()).padStart(2, '0');
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const yyyy = today.getFullYear();
+    const todayStr = `${dd}-${mm}-${yyyy}`;
 
-    async function loadClinic() {
-      const res = await fetch(clinicsURL);
-      const clinics = await res.json();
-      const clinic = clinics.find(c => c.id === clinicId);
+    async function loadLogs() {
+      const res = await fetch(LOGS_URL);
+      const csv = await res.text();
+      const rows = csv.trim().split('\n').slice(1).map(r => r.split(','));
 
-      if (!clinic) {
-        document.getElementById("clinicName").innerText = "Clinic Not Found";
-        return;
-      }
+      const filtered = rows.filter(r => 
+        r[0].trim().toLowerCase() === CLINIC_NAME &&
+        r[1].trim() === todayStr &&
+        r[5].toLowerCase() === 'booked'
+      );
 
-      clinicName = clinic.name.toLowerCase();
-      document.getElementById("clinicName").innerText = clinic.name;
-      document.getElementById("clinicAddress").innerText = clinic.address;
-      document.getElementById("clinicLogo").src = clinic.logo;
-      document.getElementById("clinicPlan").innerText = clinic.plan ? `Plan: ₹${clinic.plan}` : '';
-    }
-
-    async function loadAppointments() {
-      const res = await fetch(logsURL);
-      const text = await res.text();
-      const rows = text.trim().split("\n").slice(1);
-      const today = new Date().toISOString().slice(0, 10);
-      const table = document.getElementById("appointmentsTable");
-      table.innerHTML = "";
-
-      const filtered = rows.map(r => r.split(","))
-        .filter(r =>
-          r[0].toLowerCase().includes(clinicName) &&
-          r[1] === today &&
-          r[5].toLowerCase() === "booked"
-        );
+      const body = document.getElementById('appointmentsBody');
+      body.innerHTML = '';
 
       if (filtered.length === 0) {
-        table.innerHTML = "<tr><td colspan='3'>No appointments loaded</td></tr>";
-        return;
+        body.innerHTML = '<tr><td colspan="3" class="no-data">No appointments today.</td></tr>';
+      } else {
+        filtered.forEach(row => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${row[2]}</td><td>${row[3]}</td><td>${row[4]}</td>`;
+          body.appendChild(tr);
+        });
       }
-
-      filtered.forEach(r => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td>`;
-        table.appendChild(tr);
-      });
     }
 
-    // Run both after loading
-    loadClinic().then(loadAppointments);
+    // Set plan if available later (optional enhancement)
+    fetch('https://warangalonepoint.github.io/clinic-admin/clinics.json')
+      .then(res => res.json())
+      .then(json => {
+        const clinic = json.find(c => c.name.toLowerCase() === CLINIC_NAME);
+        if (clinic?.plan) {
+          document.getElementById('planText').textContent = `Plan: ₹${clinic.plan}`;
+        }
+      }).catch(() => {
+        document.getElementById('planText').textContent = 'Plan: —';
+      });
+
+    loadLogs();
   </script>
 </body>
 </html>
