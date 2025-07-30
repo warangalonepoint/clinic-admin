@@ -1,1 +1,71 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Activate Customer Plan</title>
+  <style>
+    body {
+      background-color: #000;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      color: #00ffaa;
+    }
+    label {
+      display: block;
+      margin-top: 20px;
+      font-weight: bold;
+    }
+    input, select, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 8px;
+      border-radius: 6px;
+      border: none;
+      font-size: 16px;
+    }
+    button {
+      background-color: #00ffaa;
+      color: black;
+      font-weight: bold;
+      margin-top: 20px;
+      cursor: pointer;
+    }
+    #status {
+      margin-top: 20px;
+      font-size: 18px;
+      color: #00ffaa;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔐 Activate Customer Plan</h1><label for="clinicId">Clinic/Doctor ID:</label> <input type="text" id="clinicId" placeholder="Enter unique ID (e.g., dr123)" />
 
+<label for="plan">Select Plan:</label> <select id="plan"> <option value="Free">🆓 Free</option> <option value="1499">💸 ₹1499 - Basic</option> <option value="4999">🌟 ₹4999 - Lifetime</option> </select>
+
+<label for="pin">Enter Activation PIN:</label> <input type="password" id="pin" placeholder="Enter secure PIN" />
+
+<button onclick="activatePlan()">Activate Plan</button>
+
+  <div id="status"></div>  <script>
+    function activatePlan() {
+      const clinicId = document.getElementById('clinicId').value.trim();
+      const plan = document.getElementById('plan').value;
+      const pin = document.getElementById('pin').value.trim();
+      const statusDiv = document.getElementById('status');
+
+      if (!clinicId || !pin) {
+        statusDiv.textContent = '❌ Please fill all fields';
+        return;
+      }
+
+      const encoded = btoa(`${clinicId}|${plan}|${pin}`);
+      localStorage.setItem(`plan_${clinicId}`, encoded);
+      statusDiv.textContent = `✅ Plan for ${clinicId} activated: ${plan}`;
+    }
+  </script></body>
+</html>
