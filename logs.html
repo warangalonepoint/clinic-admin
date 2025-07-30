@@ -1,179 +1,131 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Logs Dashboard</title>
+  <title>Booking Logs</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
-      background-color: #000;
-      color: #0fffb7;
       font-family: Arial, sans-serif;
+      background: #121212;
+      color: #fff;
       padding: 20px;
     }
-
-    h1, h2 {
-      text-align: center;
+    h2 {
+      color: #00e676;
     }
-
-    .log-summary {
-      margin-bottom: 30px;
+    .clinic-info {
+      background: #1e1e1e;
+      padding: 12px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      font-size: 16px;
     }
-
-    .summary-item {
-      margin: 10px 0;
-      font-size: 18px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background-color: #111;
-      color: #fff;
-    }
-
-    th, td {
-      border: 1px solid #0fffb7;
-      padding: 10px;
-      text-align: left;
-    }
-
-    th {
-      background-color: #222;
-    }
-
-    #searchInput {
-      width: 100%;
+    input[type="date"] {
       padding: 10px;
       font-size: 16px;
-      border-radius: 6px;
-      margin-bottom: 20px;
-      background: #000;
-      color: #0fffb7;
-      border: 1px solid #0fffb7;
-    }
-
-    textarea {
-      width: 100%;
-      height: 60px;
-      background: #000;
-      color: #0fffb7;
-      margin-top: 5px;
-      border: 1px solid #0fffb7;
-      border-radius: 6px;
-      padding: 5px;
-    }
-
-    button {
-      margin-top: 5px;
-      background: #0fffb7;
-      color: #000;
-      border: none;
-      padding: 8px 12px;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-
-    .patient-card {
-      background: #111;
-      color: #fff;
-      padding: 15px;
-      border: 1px solid #0fffb7;
-      margin-bottom: 10px;
       border-radius: 8px;
+      border: none;
+      width: 100%;
+      max-width: 300px;
+      margin-bottom: 20px;
+    }
+    .log-entry {
+      background: #1f1f1f;
+      padding: 12px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+    }
+    .summary-box {
+      margin-top: 20px;
+      padding: 15px;
+      background: #1e1e1e;
+      border-radius: 10px;
+      font-size: 16px;
+    }
+    button {
+      padding: 10px 20px;
+      background: #1f88e5;
+      color: #fff;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    button:hover {
+      background: #1565c0;
     }
   </style>
 </head>
 <body>
 
-  <h1>📊 Booking Logs</h1>
-
-  <div class="log-summary" id="summaryPanel">
-    <div class="summary-item">Total Bookings: <span id="totalBookings">0</span></div>
-    <div class="summary-item">Today’s Bookings: <span id="todaysBookings">0</span></div>
-  </div>
-
-  <table id="logTable">
-    <thead>
-      <tr>
-        <th>Date</th>
-        <th>Time</th>
-        <th>Name</th>
-        <th>Phone</th>
-        <th>Reason</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-
-  <div style="margin-top: 40px;">
-    <h2>📝 Patient History Lookup</h2>
-    <input type="text" id="searchInput" placeholder="Search by patient name or time">
-    <div id="patientResults" style="margin-top: 20px;"></div>
-  </div>
-
+  <!-- PIN + Clinic Access Protection -->
   <script>
+    const clinic = localStorage.getItem("activeClinic");
+    const pin = localStorage.getItem("userPIN");
+    if (!clinic || !pin) {
+      alert("Access denied. Please log in.");
+      window.location.href = "index.html";
+    }
+  </script>
+
+  <h2>📊 Booking Logs</h2>
+  <div class="clinic-info">🏥 Active Clinic: <span id="clinicName"></span></div>
+
+  <input type="date" id="filterDate" onchange="filterLogs()" />
+  <div id="logsContainer"></div>
+
+  <div class="summary-box" id="summaryBox">
+    📅 Select a date to see total bookings.
+  </div>
+
+  <button onclick="exportLogs()">⬇️ Export Logs</button>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <script>
+    document.getElementById("clinicName").innerText = clinic;
+
     const logsURL = "https://warangalonepoint.github.io/clinic-admin/logs.csv";
-    let patientLogs = [];
+    let logsData = [];
 
     fetch(logsURL)
       .then(res => res.text())
       .then(csv => {
-        const lines = csv.trim().split("\n");
-        const headers = lines[0].split(",");
-        const now = new Date().toISOString().split("T")[0];
-        let todayCount = 0;
-
-        lines.slice(1).forEach((line, index) => {
-          const data = line.split(",");
-          const entry = {};
-          headers.forEach((key, i) => {
-            entry[key.trim()] = data[i]?.trim() || "";
-          });
-          patientLogs.push(entry);
-
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td>${entry.Date || ''}</td>
-            <td>${entry.Time || ''}</td>
-            <td>${entry.Name || ''}</td>
-            <td>${entry.Phone || ''}</td>
-            <td>${entry.Reason || ''}</td>
-          `;
-          document.querySelector("#logTable tbody").appendChild(tr);
-
-          if (entry.Date === now) todayCount++;
-        });
-
-        document.getElementById("totalBookings").textContent = patientLogs.length;
-        document.getElementById("todaysBookings").textContent = todayCount;
+        logsData = Papa.parse(csv, { header: true }).data;
+        filterLogs();
       });
 
-    document.getElementById("searchInput").addEventListener("input", function () {
-      const query = this.value.toLowerCase();
-      const results = patientLogs.filter(log =>
-        log.Name?.toLowerCase().includes(query) || log.Time?.toLowerCase().includes(query)
-      );
-
-      const container = document.getElementById("patientResults");
+    function filterLogs() {
+      const selectedDate = document.getElementById("filterDate").value;
+      const container = document.getElementById("logsContainer");
+      const summary = document.getElementById("summaryBox");
       container.innerHTML = "";
+      let count = 0;
 
-      results.forEach((log, index) => {
-        const noteId = `note_${index}`;
-        container.innerHTML += `
-          <div class="patient-card">
-            <strong>${log.Date || ''} | ${log.Time || ''}</strong><br>
-            👤 <b>${log.Name || 'Unknown'}</b><br>
-            📞 Phone: ${log.Phone || 'N/A'}<br>
-            📋 Reason: ${log.Reason || 'N/A'}<br>
-            <label>Doctor Note:</label>
-            <textarea id="${noteId}">${log.Note || ''}</textarea>
-            <button onclick="alert('Note saved locally. Export feature coming soon.')">💾 Save Note</button>
-          </div>
-        `;
+      logsData.forEach(log => {
+        if (log.Date === selectedDate /* && log.Clinic === clinic */) {
+          const div = document.createElement("div");
+          div.className = "log-entry";
+          div.innerHTML = `👤 ${log.Name}<br>🕒 ${log.Time}<br>📅 ${log.Date}<br>📝 ${log.Reason}`;
+          container.appendChild(div);
+          count++;
+        }
       });
-    });
-  </script>
 
+      summary.innerText = selectedDate
+        ? `📅 ${selectedDate} – Total Bookings: ${count}`
+        : "📅 Select a date to see total bookings.";
+    }
+
+    function exportLogs() {
+      const csvContent = Papa.unparse(logsData);
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "exported_logs.csv";
+      link.click();
+    }
+  </script>
 </body>
 </html>
