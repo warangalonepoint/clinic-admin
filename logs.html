@@ -2,171 +2,147 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Booking Logs</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
       background-color: #111;
       color: #fff;
-      font-family: Arial, sans-serif;
+      font-family: 'Segoe UI', sans-serif;
       padding: 20px;
       margin: 0;
     }
-
-    h1 {
-      color: limegreen;
-      font-size: 24px;
-    }
-
-    select, button {
-      font-size: 16px;
-      padding: 10px;
-      margin: 10px 0;
-      width: 100%;
-      max-width: 400px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 15px;
-    }
-
-    th, td {
-      padding: 10px;
-      border: 1px solid #444;
-      text-align: left;
-    }
-
-    th {
-      background-color: #222;
-    }
-
-    .highlight {
-      color: #00f7ff;
-    }
-
-    .section {
+    h2 {
+      color: #00ff55;
+      text-align: center;
       margin-bottom: 20px;
     }
-
-    .btn {
-      background-color: #007bff;
-      color: #fff;
+    select, button {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      font-size: 16px;
+      border-radius: 8px;
       border: none;
-      cursor: pointer;
-      border-radius: 5px;
     }
-
-    .btn:hover {
-      background-color: #0056b3;
+    select {
+      background: #222;
+      color: #fff;
+    }
+    button {
+      background-color: #2196f3;
+      color: white;
+      cursor: pointer;
+    }
+    canvas {
+      background-color: #222;
+      border-radius: 10px;
+      padding: 10px;
+      margin-top: 20px;
+    }
+    .info-box {
+      background: #222;
+      padding: 10px;
+      border-radius: 10px;
+      margin: 10px 0;
+      font-size: 16px;
     }
   </style>
 </head>
 <body>
-  <h1>📊 Booking Logs</h1>
+  <h2>📊 Booking Logs</h2>
 
-  <div class="section">
-    <div>🏥 <strong>Active Clinic:</strong> Warangal OneStop Clinic</div>
-    <label for="dateDropdown">📅 Select Date:</label>
-    <select id="dateDropdown"></select>
-    <div id="summary" class="highlight"></div>
-  </div>
+  <div class="info-box">🏥 Active Clinic: <span id="clinicName"></span></div>
 
-  <table id="logsTable">
-    <thead>
-      <tr>
-        <th>Clinic</th>
-        <th>Date</th>
-        <th>Time</th>
-        <th>Name</th>
-        <th>Reason</th>
-        <th>Status</th>
-        <th>Notes</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+  <select id="dateDropdown"></select>
 
-  <div class="section">
-    <button class="btn" onclick="exportLogs()">⬇️ Export Logs</button>
-  </div>
+  <div class="info-box" id="totalBookings">📅 Total Bookings: 0</div>
+
+  <button onclick="exportLogs()">⬇️ Export Logs</button>
+
+  <canvas id="bookingChart" height="200"></canvas>
 
   <script>
-    const logsUrl = "https://warangalonepoint.github.io/clinic-admin/logs.csv";
+    const dropdown = document.getElementById('dateDropdown');
+    const totalBookingsText = document.getElementById('totalBookings');
+    const chartCtx = document.getElementById('bookingChart').getContext('2d');
+    const clinicName = localStorage.getItem('active_clinic') || 'Warangal OneStop Clinic';
+    const activeClinic = clinicName.toLowerCase().trim();
+    document.getElementById("clinicName").textContent = clinicName;
 
-    let logs = [];
+    let bookingChart;
 
-    async function fetchLogs() {
-      const response = await fetch(logsUrl);
-      const data = await response.text();
-      const rows = data.trim().split("\n").slice(1);
-      logs = rows.map(row => {
-        const [clinic, date, time, name, reason, status, notes] = row.split(",");
-        return { clinic, date, time, name, reason, status, notes };
+    async function loadCSV(url) {
+      const res = await fetch(url);
+      const text = await res.text();
+      const rows = text.trim().split('\n').slice(1);
+      return rows.map(row => {
+        const [clinic, date, time, name, reason, status, notes] = row.split(',');
+        return {
+          clinic: clinic.toLowerCase().trim(),
+          date: date.trim(),
+          time,
+          name,
+          reason,
+          status,
+          notes
+        };
       });
-
-      populateDates();
-      renderLogs();
     }
 
-    function populateDates() {
-      const uniqueDates = [...new Set(logs.map(log => log.date))];
-      const dropdown = document.getElementById("dateDropdown");
-      dropdown.innerHTML = "";
-
-      uniqueDates.forEach(date => {
-        const [year, month, day] = date.split("-");
-        const formatted = `${day}/${month}/${year}`;
-        const option = document.createElement("option");
-        option.value = formatted;
-        option.textContent = formatted;
-        dropdown.appendChild(option);
+    function populateDropdown(logs) {
+      const dates = [...new Set(logs.map(log => log.date))];
+      dropdown.innerHTML = '';
+      dates.forEach(date => {
+        const opt = document.createElement('option');
+        opt.value = opt.textContent = date;
+        dropdown.appendChild(opt);
       });
-
-      dropdown.addEventListener("change", renderLogs);
     }
 
-    function renderLogs() {
-      const dropdown = document.getElementById("dateDropdown");
-      const [dd, mm, yyyy] = dropdown.value.split("/");
-      const formattedDate = `${yyyy}-${mm}-${dd}`;
+    function updateUI(logs, selectedDate) {
+      const filtered = logs.filter(log => log.date === selectedDate && log.clinic === activeClinic);
+      totalBookingsText.textContent = `📅 ${selectedDate} – Total Bookings: ${filtered.length}`;
 
-      const filtered = logs.filter(log => log.date === formattedDate);
-      const table = document.querySelector("#logsTable tbody");
-      const summary = document.getElementById("summary");
+      if (bookingChart) bookingChart.destroy();
 
-      summary.textContent = `📅 ${formattedDate} – Total Bookings: ${filtered.length}`;
-      table.innerHTML = "";
-
-      filtered.forEach(log => {
-        const row = document.createElement("tr");
-        Object.values(log).forEach(value => {
-          const cell = document.createElement("td");
-          cell.textContent = value;
-          row.appendChild(cell);
-        });
-        table.appendChild(row);
+      bookingChart = new Chart(chartCtx, {
+        type: 'bar',
+        data: {
+          labels: filtered.map(l => l.time),
+          datasets: [{
+            label: 'Bookings',
+            data: filtered.map(() => 1),
+            backgroundColor: '#4caf50'
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { title: { display: true, text: 'Time' } },
+            y: {
+              title: { display: true, text: 'Count' },
+              ticks: { stepSize: 1, precision: 0 }
+            }
+          }
+        }
       });
+    }
+
+    async function main() {
+      const logs = await loadCSV('logs.csv');
+      populateDropdown(logs);
+      dropdown.addEventListener('change', () => updateUI(logs, dropdown.value));
+      if (dropdown.value) updateUI(logs, dropdown.value);
     }
 
     function exportLogs() {
-      const csvContent = "data:text/csv;charset=utf-8," + 
-        ["clinic,date,time,name,reason,status,notes"]
-        .concat(logs.map(log => 
-          [log.clinic, log.date, log.time, log.name, log.reason, log.status, log.notes].join(","))
-        ).join("\n");
-
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", "exported_logs.csv");
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      window.location.href = 'logs.csv';
     }
 
-    fetchLogs();
+    main();
   </script>
 </body>
 </html>
