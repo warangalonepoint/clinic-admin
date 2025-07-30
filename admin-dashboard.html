@@ -1,89 +1,76 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Admin Control Panel</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Warangal OneStop Admin Dashboard</title>
   <style>
     body {
-      background: #000;
-      color: #0fffb7;
-      font-family: 'Segoe UI', sans-serif;
+      background-color: #111;
+      color: #fff;
+      font-family: Arial, sans-serif;
       padding: 20px;
     }
     h1 {
-      text-align: center;
-      margin-bottom: 20px;
+      color: #00ffcc;
     }
-    .pin-panel, .admin-panel {
-      max-width: 400px;
-      margin: auto;
-      background: #111;
+    .section {
+      background: #1c1c1c;
       padding: 20px;
-      border-radius: 12px;
-    }
-    input {
-      width: 100%;
-      padding: 12px;
-      margin: 10px 0;
-      font-size: 18px;
-      border-radius: 8px;
-      border: 1px solid #0fffb7;
-      background: #000;
-      color: #0fffb7;
-    }
-    button {
-      width: 100%;
-      padding: 12px;
-      font-size: 18px;
-      background: #0fffb7;
-      color: #000;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    .hidden {
-      display: none;
-    }
-    .admin-options {
       margin-top: 20px;
+      border-radius: 10px;
     }
-    .admin-options button {
-      margin: 8px 0;
+    select, input, button {
+      padding: 10px;
+      margin: 10px 0;
+      font-size: 16px;
     }
+    .hidden { display: none; }
   </style>
 </head>
 <body>
-
-  <h1>🔐 Admin Dashboard</h1>
-
-  <div class="pin-panel" id="pinPanel">
-    <input type="password" id="adminPIN" placeholder="Enter Admin PIN">
-    <button onclick="verifyPIN()">Unlock Dashboard</button>
-  </div>
-
-  <div class="admin-panel hidden" id="adminPanel">
-    <h2>🎛️ Control Panel</h2>
-    <div class="admin-options">
-      <button onclick="alert('Plan Activation Panel Coming Soon')">🧩 Activate Customer Plan</button>
-      <button onclick="alert('Editable Pricing Coming Soon')">💰 Edit Plan Pricing</button>
-      <button onclick="alert('Doctor List Coming Soon')">📋 View Doctor Plan Assignments</button>
-      <button onclick="alert('More tools coming soon')">🧪 Test Tools</button>
-    </div>
-  </div>
-
-  <script>
-    const CORRECT_PIN = "2525"; // You can change this later
-    function verifyPIN() {
-      const enteredPIN = document.getElementById("adminPIN").value;
-      if (enteredPIN === CORRECT_PIN) {
-        document.getElementById("pinPanel").classList.add("hidden");
-        document.getElementById("adminPanel").classList.remove("hidden");
-      } else {
-        alert("Incorrect PIN. Try again.");
-      }
+  <h1>Warangal OneStop Admin Dashboard</h1>  <div class="section">
+    <h2>📍 Assign Clinic to Doctor</h2>
+    <label for="doctorName">Doctor Name</label>
+    <input type="text" id="doctorName" placeholder="e.g. Dr. Rao">
+    <label for="clinicName">Clinic JSON Key</label>
+    <input type="text" id="clinicName" placeholder="e.g. warangalClinic1">
+    <button onclick="assignClinic()">Assign</button>
+  </div>  <div class="section">
+    <h2>📦 Export Logs / Notes</h2>
+    <button onclick="window.open('logs.html')">Go to Logs Panel</button>
+    <button onclick="window.open('DoctorNotesExport.csv')">Download Doctor Notes</button>
+  </div>  <div class="section">
+    <h2>🛠️ Manage Pricing Plan</h2>
+    <label for="planDoctor">Doctor Name</label>
+    <input type="text" id="planDoctor" placeholder="e.g. Dr. Rao">
+    <label for="planTier">Plan</label>
+    <select id="planTier">
+      <option value="free">Free</option>
+      <option value="1499">₹1,499 Basic</option>
+      <option value="4999">₹4,999 Lifetime</option>
+    </select>
+    <button onclick="savePlan()">Update Plan</button>
+  </div>  <div class="section">
+    <h2>🗂️ Manage Clinic List (Multi-Clinic)</h2>
+    <button onclick="window.open('clinics.json')">View clinics.json</button>
+    <button onclick="alert('Please manually edit clinics.json in GitHub.')">Edit clinics.json</button>
+  </div>  <div class="section">
+    <h2>📞 WhatsApp Booking Setup</h2>
+    <button onclick="window.open('https://wa.me/919390664577?text=I%20want%20to%20book%20an%20appointment')">WhatsApp Booking Demo</button>
+    <p>Replace number in booking.html to set up your doctor's WhatsApp number.</p>
+  </div>  <script>
+    function assignClinic() {
+      const doctor = document.getElementById("doctorName").value.trim();
+      const clinic = document.getElementById("clinicName").value.trim();
+      if (!doctor || !clinic) return alert("Please fill both fields");
+      alert(`✅ Assigned ${clinic} to ${doctor}. Now edit dashboard.html to reflect this.`);
     }
-  </script>
 
-</body>
+    function savePlan() {
+      const doctor = document.getElementById("planDoctor").value.trim();
+      const plan = document.getElementById("planTier").value;
+      if (!doctor) return alert("Enter doctor name");
+      alert(`✅ Updated plan for ${doctor} to ${plan}. Update PIN in dashboard.html manually.`);
+    }
+  </script></body>
 </html>
